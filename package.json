@@ -1,0 +1,41 @@
+{
+  "name": "widgetuv",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "TSC_COMPILE_ON_ERROR=true vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@heygen/streaming-avatar": "^2.0.9",
+    "@livekit/components-react": "^2.8.1",
+    "@livekit/components-styles": "^1.1.4",
+    "@tailwindcss/vite": "^4.0.1",
+    "axios": "^1.7.9",
+    "livekit-client": "^2.9.1",
+    "lucide-react": "^0.474.0",
+    "path-browserify": "^1.0.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwind-scrollbar-hide": "^2.0.0",
+    "tailwindcss": "^4.0.1",
+    "ultravox-client": "^0.3.4",
+    "zustand": "^5.0.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react-swc": "^3.5.0",
+    "eslint": "^9.17.0",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "eslint-plugin-react-refresh": "^0.4.16",
+    "globals": "^15.14.0",
+    "typescript": "~5.6.2",
+    "typescript-eslint": "^8.18.2",
+    "vite": "^6.0.5"
+  }
+}
