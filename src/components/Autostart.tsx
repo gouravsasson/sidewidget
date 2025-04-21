@@ -8,7 +8,7 @@ import useSessionStore from "../store/session";
 import { useUltravoxStore } from "../store/ultrasession";
 import logo from "../assets/logo.png";
 
-const VoiceAIWidget = () => {
+const Autostart = () => {
   const [expanded, setExpanded] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [isRecording, setIsRecording] = useState(false);
@@ -106,10 +106,15 @@ const VoiceAIWidget = () => {
     }
   };
 
+  //autostart
+  useEffect(() => {
+    handleMicClick();
+  }, []);
+
   // Handle mic button click
   const handleMicClick = async () => {
     try {
-      if (!isListening) {
+      if (!isListening && status === "disconnected") {
         const response = await axios.post(`${baseurl}/api/start-thunder/`, {
           agent_code: agent_id,
           schema_name: schema,
@@ -197,8 +202,26 @@ const VoiceAIWidget = () => {
     }
   }, [isRecording]);
 
-  const toggleExpand = () => {
+  const toggleExpand = async () => {
     setExpanded(!expanded);
+    if (!expanded && status === "disconnected") {
+      const response = await axios.post(`${baseurl}/api/start-thunder/`, {
+        agent_code: agent_id,
+        schema_name: schema,
+      });
+
+      const wssUrl = response.data.joinUrl;
+      setCallId(response.data.callId);
+      setCallSessionId(response.data.call_session_id);
+      // console.log("Mic button clicked!", wssUrl);
+
+      if (wssUrl) {
+        session.joinCall(`${wssUrl}`);
+      } else {
+        // console.error("WebSocket URL is not set");
+      }
+      toggleVoice(true);
+    }
   };
 
   const handleClose = async () => {
@@ -398,4 +421,4 @@ const VoiceAIWidget = () => {
     </div>
   );
 };
-export default VoiceAIWidget;
+export default Autostart;
