@@ -24,6 +24,7 @@ const Autostart = () => {
   const [message, setMessage] = useState("");
 
   const { agent_id, schema } = useWidgetContext();
+  
   const { callId, callSessionId, setCallId, setCallSessionId } =
     useSessionStore();
   const {
