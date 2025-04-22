@@ -24,7 +24,7 @@ const Autostart = () => {
   const [message, setMessage] = useState("");
 
   const { agent_id, schema } = useWidgetContext();
-  
+
   const { callId, callSessionId, setCallId, setCallSessionId } =
     useSessionStore();
   const {
@@ -253,17 +253,14 @@ const Autostart = () => {
       {expanded ? (
         <div
           className={`bg-gray-900/50 backdrop-blur-sm w-[309px] h-[521px] rounded-2xl shadow-2xl overflow-hidden border ${
-            isGlowing
-              ? "border-yellow-300 shadow-yellow-400/40"
-              : "border-yellow-400"
+            isGlowing ? "border-blue-300 shadow-blue-400/40" : "border-blue-400"
           } transition-all duration-500`}
         >
-          {/* Header with glow effect */}
           <div className="relative p-4 flex justify-between bg-black items-center">
-            <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/10 via-transparent to-yellow-500/5"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-transparent to-blue-500/5"></div>
             <div className="relative flex items-center">
-              <div className="bg-black rounded-full w-8 h-8 flex items-center justify-center mr-2 border border-yellow-400 shadow-lg shadow-yellow-400/20">
-                <span className="text-yellow-400 font-bold text-xl">
+              <div className="bg-black rounded-full w-8 h-8 flex items-center justify-center mr-2 border border-blue-400 shadow-lg shadow-blue-400/20">
+                <span className="text-blue-400 font-bold text-xl">
                   <img src={logo} alt="logo" className="w-6 h-6" />
                 </span>
               </div>
@@ -274,68 +271,56 @@ const Autostart = () => {
             <div className="relative flex space-x-2">
               <button
                 onClick={toggleExpand}
-                className="text-gray-300 hover:text-yellow-400 transition-colors"
+                className="text-gray-300 hover:text-blue-400 transition-colors"
               >
                 <Minimize2 size={18} />
               </button>
               <button
                 onClick={handleClose}
-                className="text-gray-300 hover:text-yellow-400 transition-colors"
+                className="text-gray-300 hover:text-blue-400 transition-colors"
               >
                 <X size={18} />
               </button>
             </div>
           </div>
 
-          {/* Microphone Button with enhanced visual effects */}
           <div className="pt-10 flex flex-col items-center justify-center relative overflow-hidden w-full">
-            {/* Background glow effects */}
-            <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/10 to-transparent"></div>
-            <div className="absolute w-full h-64 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-yellow-400/10 rounded-full blur-3xl"></div>
-            <div className="absolute w-52 h-52  left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-yellow-400/20 rounded-full blur-xl animate-pulse"></div>
-            <div className="absolute w-40 h-40  left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-yellow-400/25 rounded-full blur-md animate-pulse"></div>
+            <div className="absolute inset-0 bg-gradient-to-b from-blue-500/10 to-transparent"></div>
+            <div className="absolute w-full h-64 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-blue-400/10 rounded-full blur-3xl"></div>
+            <div className="absolute w-52 h-52  left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-blue-400/20 rounded-full blur-xl animate-pulse"></div>
+            <div className="absolute w-40 h-40  left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-blue-400/25 rounded-full blur-md animate-pulse"></div>
 
-            {/* Decorative elements */}
-            {/* <div className="absolute w-full h-full">
-              <div className="absolute top-1/4 left-1/4 w-1 h-1 bg-yellow-300 rounded-full animate-ping"></div>
-              <div className="absolute top-3/4 left-1/3 w-1 h-1 bg-yellow-300 rounded-full animate-ping delay-300"></div>
-              <div className="absolute top-1/3 right-1/4 w-1 h-1 bg-yellow-300 rounded-full animate-ping delay-700"></div>
-              <div className="absolute bottom-1/4 right-1/3 w-1 h-1 bg-yellow-300 rounded-full animate-ping delay-500"></div>
-              <div className="absolute top-1/2 left-1/5 w-1 h-1 bg-yellow-300 rounded-full animate-ping delay-200"></div>
-            </div> */}
-
-            {/* Microphone button with pulse animations */}
             <div className="relative">
               {isRecording && pulseEffects.small && (
-                <div className="absolute inset-0 -m-3 bg-yellow-400 opacity-30 rounded-full animate-ping"></div>
+                <div className="absolute inset-0 -m-3 bg-blue-400 opacity-30 rounded-full animate-ping"></div>
               )}
               {isRecording && pulseEffects.medium && (
-                <div className="absolute inset-0 -m-6 bg-yellow-500 opacity-20 rounded-full animate-pulse"></div>
+                <div className="absolute inset-0 -m-6 bg-blue-500 opacity-20 rounded-full animate-pulse"></div>
               )}
               {isRecording && pulseEffects.large && (
-                <div className="absolute inset-0 -m-12 bg-yellow-600 opacity-10 rounded-full animate-pulse"></div>
+                <div className="absolute inset-0 -m-12 bg-blue-600 opacity-10 rounded-full animate-pulse"></div>
               )}
               {isGlowing && (
-                <div className="absolute inset-0 -m-5 bg-yellow-400 opacity-50 rounded-full animate-ping"></div>
+                <div className="absolute inset-0 -m-5 bg-blue-400 opacity-50 rounded-full animate-ping"></div>
               )}
               {isGlowing && (
-                <div className="absolute inset-0 -m-10 bg-yellow-400 opacity-30 rounded-full animate-pulse"></div>
+                <div className="absolute inset-0 -m-10 bg-blue-400 opacity-30 rounded-full animate-pulse"></div>
               )}
               <button
                 onClick={handleMicClick}
                 className={`relative z-10 bg-black rounded-full w-36 h-36 flex items-center justify-center border-2 ${
                   isGlowing
-                    ? "border-yellow-300 shadow-xl shadow-yellow-400/60"
-                    : "border-yellow-400 shadow-lg"
-                } shadow-yellow-400/30 transition-all duration-500 ${
+                    ? "border-blue-300 shadow-xl shadow-blue-400/60"
+                    : "border-blue-400 shadow-lg"
+                } shadow-blue-400/30 transition-all duration-500 ${
                   isRecording ? "scale-110" : "hover:scale-105"
                 } backdrop-blur-sm`}
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-yellow-900/20 rounded-full"></div>
-                <div className="absolute inset-0 bg-gradient-to-tr from-yellow-400/5 via-transparent to-transparent rounded-full"></div>
+                <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-blue-900/20 rounded-full"></div>
+                <div className="absolute inset-0 bg-gradient-to-tr from-blue-400/5 via-transparent to-transparent rounded-full"></div>
                 <div className="flex items-center justify-center">
                   <span
-                    className={`text-yellow-400 font-bold text-6xl drop-shadow-xl tracking-tighter ${
+                    className={`text-blue-400 font-bold text-6xl drop-shadow-xl tracking-tighter ${
                       isRecording ? "animate-pulse" : ""
                     }`}
                   >
@@ -345,39 +330,28 @@ const Autostart = () => {
               </button>
             </div>
 
-            <p className="text-yellow-400 text-sm mt-5 font-medium drop-shadow-md bg-black/30 px-4 py-1 rounded-full backdrop-blur-sm border border-yellow-400/20">
+            <p className="text-blue-400 text-sm mt-5 font-medium drop-shadow-md bg-black/30 px-4 py-1 rounded-full backdrop-blur-sm border border-blue-400/20">
               {speech}
             </p>
 
-            {/* Transcription Box with enhanced styling */}
             <div className="relative p-4 w-full ">
-              <div className="absolute inset-0 "></div>
-              <div className="relative">
-                <div className="flex justify-between items-center mb-2">
-                  {/* <div className="text-yellow-400 text-sm font-medium">
-                  Real-time transcription
-                </div> */}
-                  {isRecording && (
-                    <div className="flex items-center">
-                      <div className="w-2 h-2 bg-red-500 rounded-full mr-1 animate-pulse"></div>
-                      <span className="text-red-400 text-xs">LIVE</span>
-                    </div>
-                  )}
+              {isRecording && (
+                <div className="flex items-center mb-2">
+                  <div className="w-2 h-2 bg-red-500 rounded-full mr-1 animate-pulse"></div>
+                  <span className="text-red-400 text-xs">LIVE</span>
                 </div>
-                <div
-                  ref={containerRef}
-                  className=" bg-white backdrop-blur-sm rounded-xl p-4 h-16 text-white shadow-inner border border-gray-800 overflow-y-auto scrollbar-hide ring-yellow-400/80"
-                >
-                  <div className="relative">
-                    <span className="text-black">{transcripts}</span>
-                  </div>
+              )}
+              <div
+                ref={containerRef}
+                className=" bg-white backdrop-blur-sm rounded-xl p-4 h-16 text-white shadow-inner border border-gray-800 overflow-y-auto scrollbar-hide ring-blue-400/80"
+              >
+                <div className="relative">
+                  <span className="text-black">{transcripts}</span>
                 </div>
               </div>
             </div>
 
-            {/* Input Area with glass effect */}
             <div className="relative p-3 ">
-              <div className="absolute inset-0"></div>
               <div className="relative flex items-center space-x-2">
                 <input
                   type="text"
@@ -392,12 +366,12 @@ const Autostart = () => {
                     }
                   }}
                   placeholder="Type your message..."
-                  className="flex-1 bg-white text-black p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-400/80 placeholder-gray-500 border border-gray-700"
+                  className="flex-1 bg-white text-black p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400/80 placeholder-gray-500 border border-gray-700"
                 />
                 <button
                   type="button"
                   onClick={handleSubmit}
-                  className="p-3 bg-gradient-to-r from-yellow-500 to-yellow-400 rounded-xl hover:from-yellow-400 hover:to-yellow-300 transition-colors shadow-md hover:shadow-yellow-400/30"
+                  className="p-3 bg-gradient-to-r from-blue-500 to-blue-400 rounded-xl hover:from-blue-400 hover:to-blue-300 transition-colors shadow-md hover:shadow-blue-400/30"
                 >
                   <Send size={20} className="text-black" />
                 </button>
@@ -408,12 +382,12 @@ const Autostart = () => {
       ) : (
         <button
           onClick={toggleExpand}
-          className="bg-black rounded-full w-16 h-16 flex items-center justify-center shadow-2xl border-2 border-yellow-400 hover:bg-gray-900 transition-all hover:scale-110 hover:shadow-yellow-400/50"
+          className="bg-black rounded-full w-16 h-16 flex items-center justify-center shadow-2xl border-2 border-blue-400 hover:bg-gray-900 transition-all hover:scale-110 hover:shadow-blue-400/50"
         >
           <div className="relative">
-            <div className="absolute inset-0 -m-1 bg-yellow-400/40 rounded-full animate-ping"></div>
-            <div className="absolute inset-0 -m-3 bg-yellow-400/20 rounded-full animate-pulse"></div>
-            <span className="text-yellow-400 font-bold text-3xl relative z-10 drop-shadow-xl tracking-tighter">
+            <div className="absolute inset-0 -m-1 bg-blue-400/40 rounded-full animate-ping"></div>
+            <div className="absolute inset-0 -m-3 bg-blue-400/20 rounded-full animate-pulse"></div>
+            <span className="text-blue-400 font-bold text-3xl relative z-10 drop-shadow-xl tracking-tighter">
               <img src={logo} alt="logo" className="w-10 h-10" />
             </span>
           </div>

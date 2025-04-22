@@ -9,6 +9,7 @@ import Autostart from "./components/Autostart";
 function App() {
   const [showPopup, setShowPopup] = useState(false);
   const { schema, type } = useWidgetContext();
+  // const type = "autostart";
   const [exitConfirmed, setExitConfirmed] = useState(false);
   const { session, setTranscripts, setIsListening, status } =
     useUltravoxStore();
