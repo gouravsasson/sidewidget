@@ -38,7 +38,7 @@ interface CustomWidgetProps {
   widgetTheme: WidgetTheme | null;
 }
 
-const CustomWidget: React.FC<CustomWidgetProps> = ({ widgetTheme }) => {
+const CustomWidget: React.FC<CustomWidgetProps> = () => {
   const [expanded, setExpanded] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [isRecording, setIsRecording] = useState(false);
@@ -80,6 +80,28 @@ const CustomWidget: React.FC<CustomWidgetProps> = ({ widgetTheme }) => {
   const storedIds = localStorage.getItem("callSessionId");
 
   const debugMessages = new Set(["debug"]);
+  const [widgetTheme, setWidgetTheme] = useState<WidgetTheme | null>(null);
+  const onlyOnce = useRef(false);
+
+  useEffect(() => {
+    if (onlyOnce.current) return;
+
+    const getWidgetTheme = async () => {
+      try {
+        const response = await axios.get(
+          `${baseurl}/api/ultravox-widget-settings/${schema}/${agent_id}/`
+        );
+        const data = response.data.response;
+        console.log(data);
+        setWidgetTheme(data);
+        onlyOnce.current = true;
+      } catch (error) {
+        console.error("Failed to fetch widget theme:", error);
+      }
+    };
+
+    getWidgetTheme();
+  }, []);
 
   useEffect(() => {
     if (status === "disconnected") {
@@ -535,6 +557,10 @@ const CustomWidget: React.FC<CustomWidgetProps> = ({ widgetTheme }) => {
 
     return styles;
   };
+
+  if (!onlyOnce.current || !widgetTheme) {
+    return null; // Or return <div>Loading...</div>
+  }
 
   return (
     <div style={getWidgetStyles()} className="flex flex-col items-end">

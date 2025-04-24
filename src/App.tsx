@@ -172,33 +172,10 @@ function App() {
   const baseurl = "https://app.snowie.ai";
   // const agent_id = "68ec3404-7c46-4028-b7f3-42bae5c4976f";
   // const schema = "6af30ad4-a50c-4acc-8996-d5f562b6987f";
-  const [widgetTheme, setWidgetTheme] = useState<WidgetTheme | null>(null);
-  const onlyOnce = useRef(false);
-
-  useEffect(() => {
-    if (onlyOnce.current) return;
-
-    const getWidgetTheme = async () => {
-      try {
-        const response = await axios.get(
-          `${baseurl}/api/ultravox-widget-settings/${schema}/${agent_id}/`
-        );
-        const data = response.data.response;
-        console.log(data);
-        setWidgetTheme(data);
-        onlyOnce.current = true;
-      } catch (error) {
-        console.error("Failed to fetch widget theme:", error);
-      }
-    };
-
-    getWidgetTheme();
-  }, []);
+  
 
   // Wait until widgetTheme is fetched before rendering
-  if (!onlyOnce.current || !widgetTheme) {
-    return null; // Or return <div>Loading...</div>
-  }
+  
 
   const widgetMap: Record<string, JSX.Element> = {
     autostart: <Autostart />,
