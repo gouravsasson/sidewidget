@@ -1,26 +1,32 @@
 import { create } from "zustand";
 
-// Zustand store for sessionId
-const useSessionStore = create((set) => ({
-  sessionId: null, // Initial value of sessionId
-  setSessionId: (id) => set({ sessionId: id }), // Function to set the sessionId
-  getSessionId: () => {
-    // Getter function to retrieve the sessionId
-    const state = useSessionStore.getState();
-    return state.sessionId;
-  },
-  callId:null,
-  callSessionId:null,
-  setCallId:(id:string)=>set({callId:id}),
-  setCallSessionId:(id:string)=>set({callSessionId:id}),
-  getCallId: () => {
-    const state = useSessionStore.getState();
-    return state.callId;
-  },
-  getCallSessionId: () => {
-    const state = useSessionStore.getState();
-    return state.callSessionId;
-  }
+// Define the type of the store for TypeScript (optional but recommended)
+type SessionStore = {
+  sessionId: string | null;
+  setSessionId: (id: string) => void;
+  getSessionId: () => string | null;
+
+  callId: string | null;
+  setCallId: (id: string) => void;
+  getCallId: () => string | null;
+
+  callSessionIds: string[]; // Changed from a single string to an array
+  setCallSessionIds: (ids: string[]) => void;
+  getCallSessionIds: () => string[];
+};
+
+const useSessionStore = create<SessionStore>((set) => ({
+  sessionId: null,
+  setSessionId: (id) => set({ sessionId: id }),
+  getSessionId: () => useSessionStore.getState().sessionId,
+
+  callId: null,
+  setCallId: (id) => set({ callId: id }),
+  getCallId: () => useSessionStore.getState().callId,
+
+  callSessionIds: [], // Now it's an array
+  setCallSessionIds: (ids) => set({ callSessionIds: ids }),
+  getCallSessionIds: () => useSessionStore.getState().callSessionIds,
 }));
 
 export default useSessionStore;
