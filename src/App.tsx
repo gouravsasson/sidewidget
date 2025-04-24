@@ -164,23 +164,21 @@ import { WidgetTheme } from "./components/CustomWidget";
 function App() {
   const [showPopup, setShowPopup] = useState(false);
   const { agent_id, schema, type } = useWidgetContext();
-  // const type = "customwidget";
-  const [exitConfirmed, setExitConfirmed] = useState(false);
-  const { session, setTranscripts, setIsListening, status } =
-    useUltravoxStore();
+  // const type = "autostart";
+  // const [exitConfirmed, setExitConfirmed] = useState(false);
+  // const { session, setTranscripts, setIsListening, status } =
+  //   useUltravoxStore();
   // const { callId, callSessionId } = useSessionStore();
-  const baseurl = "https://app.snowie.ai";
+  // const baseurl = "https://app.snowie.ai";
   // const agent_id = "68ec3404-7c46-4028-b7f3-42bae5c4976f";
   // const schema = "6af30ad4-a50c-4acc-8996-d5f562b6987f";
-  
 
   // Wait until widgetTheme is fetched before rendering
-  
 
   const widgetMap: Record<string, JSX.Element> = {
     autostart: <Autostart />,
     forkartik: <Forkartik />,
-    customwidget: <CustomWidget widgetTheme={widgetTheme} />,
+    customwidget: <CustomWidget />,
   };
 
   return widgetMap[type] || null;

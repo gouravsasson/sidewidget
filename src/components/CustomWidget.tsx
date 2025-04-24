@@ -34,11 +34,9 @@ export interface WidgetTheme {
   };
 }
 
-interface CustomWidgetProps {
-  widgetTheme: WidgetTheme | null;
-}
+const CustomWidget = () => {
+  const [widgetTheme, setWidgetTheme] = useState<WidgetTheme | null>(null);
 
-const CustomWidget: React.FC<CustomWidgetProps> = () => {
   const [expanded, setExpanded] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [isRecording, setIsRecording] = useState(false);
@@ -80,7 +78,6 @@ const CustomWidget: React.FC<CustomWidgetProps> = () => {
   const storedIds = localStorage.getItem("callSessionId");
 
   const debugMessages = new Set(["debug"]);
-  const [widgetTheme, setWidgetTheme] = useState<WidgetTheme | null>(null);
   const onlyOnce = useRef(false);
 
   useEffect(() => {
