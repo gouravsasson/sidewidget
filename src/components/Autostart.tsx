@@ -25,7 +25,7 @@ const Autostart = () => {
 
   const { agent_id, schema } = useWidgetContext();
 
-  const { callId, callSessionId, setCallId, setCallSessionId } =
+  const { callId, callSessionIds, setCallId, setCallSessionIds } =
     useSessionStore();
   const {
     setSession,
@@ -37,8 +37,9 @@ const Autostart = () => {
     setStatus,
   } = useUltravoxStore();
   const baseurl = "https://app.snowie.ai";
-  // const agent_id = "43279ed4-9039-49c8-b11b-e90f3f7c588c";
-  // const schema = "6af30ad4-a50c-4acc-8996-d5f562b6987f";
+  // const agent_id = "bd204830-afcb-4ddb-881c-4f7b2d00dd95";
+  // const schema = "21babbd4-cd63-4763-9b08-671951c04470";
+
   const debugMessages = new Set(["debug"]);
   console.log(status);
 
@@ -65,7 +66,7 @@ const Autostart = () => {
         const response = await axios.post(
           `${baseurl}/api/end-call-session-ultravox/`,
           {
-            call_session_id: callSessionId,
+            call_session_id: callSessionIds,
             call_id: callId,
             schema_name: schema,
           }
@@ -123,7 +124,7 @@ const Autostart = () => {
 
         const wssUrl = response.data.joinUrl;
         setCallId(response.data.callId);
-        setCallSessionId(response.data.call_session_id);
+        setCallSessionIds(response.data.call_session_id);
         // console.log("Mic button clicked!", wssUrl);
 
         if (wssUrl) {
@@ -137,7 +138,7 @@ const Autostart = () => {
         const response = await axios.post(
           `${baseurl}/api/end-call-session-ultravox/`,
           {
-            call_session_id: callSessionId,
+            call_session_id: callSessionIds,
             call_id: callId,
             schema_name: schema,
           }
@@ -213,7 +214,7 @@ const Autostart = () => {
 
       const wssUrl = response.data.joinUrl;
       setCallId(response.data.callId);
-      setCallSessionId(response.data.call_session_id);
+      setCallSessionIds(response.data.call_session_id);
       // console.log("Mic button clicked!", wssUrl);
 
       if (wssUrl) {
@@ -231,7 +232,7 @@ const Autostart = () => {
     const response = await axios.post(
       `${baseurl}/api/end-call-session-ultravox/`,
       {
-        call_session_id: callSessionId,
+        call_session_id: callSessionIds,
         call_id: callId,
         schema_name: schema,
       }
