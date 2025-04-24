@@ -177,7 +177,7 @@ function App() {
 
   const widgetMap: Record<string, JSX.Element> = {
     autostart: <Autostart />,
-    forkartik: <Forkartik />,
+    normal: <Forkartik />,
     customwidget: <CustomWidget />,
   };
 
