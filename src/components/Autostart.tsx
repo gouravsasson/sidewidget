@@ -109,9 +109,9 @@ const Autostart = () => {
   };
 
   //autostart
-  useEffect(() => {
-    handleMicClick();
-  }, []);
+  // useEffect(() => {
+  //   handleMicClick();
+  // }, []);
 
   // Handle mic button click
   const handleMicClick = async () => {
