@@ -69,6 +69,8 @@ const CustomWidget = () => {
   } = useUltravoxStore();
   const baseurl = "https://app.snowie.ai";
   const { agent_id, schema } = useWidgetContext();
+  console.log("agent_id", agent_id);
+  console.log("schema", schema);
 
   // const agent_id = "68ec3404-7c46-4028-b7f3-42bae5c4976f";
   // const schema = "6af30ad4-a50c-4acc-8996-d5f562b6987f";
