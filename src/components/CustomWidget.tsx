@@ -577,13 +577,13 @@ const CustomWidget = () => {
         >
           {/* Header with glow effect */}
           <div
-            className="relative p-4 flex justify-between bg-black items-center"
+            className="relative p-4 flex justify-between items-center"
             style={{
               backgroundColor: widgetTheme?.bot_bubble_color,
             }}
           >
             <div className="relative flex items-center">
-              <div className="bg-black rounded-full w-8 h-8 flex items-center justify-center mr-2 border border-yellow-400 shadow-lg shadow-yellow-400/20">
+              <div className=" rounded-full w-8 h-8 flex items-center justify-center mr-2 border border-yellow-400 shadow-lg shadow-yellow-400/20">
                 <span className="text-yellow-400 font-bold text-xl">
                   <img
                     src={widgetTheme?.bot_logo}
