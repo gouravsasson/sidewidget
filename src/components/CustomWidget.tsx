@@ -575,10 +575,10 @@ const CustomWidget = () => {
         >
           {/* Header with glow effect */}
           <div
-            className="relative p-4 flex justify-between items-center"
+            className="relative p-4 flex justify-between items-center "
             style={{
               backgroundColor: widgetTheme?.bot_bubble_color,
-              borderColor: widgetTheme?.bot_border_color,
+              borderBottom: `1px solid ${widgetTheme?.bot_border_color}`,
             }}
           >
             <div className="relative flex items-center">
@@ -687,8 +687,8 @@ const CustomWidget = () => {
                   borderColor: widgetTheme?.bot_border_color,
                 }}
               >
-                {/* <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-yellow-900/20 rounded-full"></div> */}
-                {/* <div className="absolute inset-0 bg-gradient-to-tr from-yellow-400/5 via-transparent to-transparent rounded-full"></div> */}
+                {/* <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-yellow-900/20 rounded-full"></div>
+                <div className="absolute inset-0 bg-gradient-to-tr from-yellow-400/5 via-transparent to-transparent rounded-full"></div> */}
                 <div className="flex items-center justify-center">
                   <span
                     className={`text-yellow-400 font-bold text-6xl drop-shadow-xl tracking-tighter ${
