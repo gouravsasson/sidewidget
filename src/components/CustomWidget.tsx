@@ -650,9 +650,9 @@ const CustomWidget = () => {
               <button
                 onClick={handleMicClick}
                 className={`relative z-10 bg-black rounded-full w-36 h-36 flex items-center justify-center border-2 ${
-                  isGlowing
-                    ? "border-yellow-300 shadow-xl shadow-yellow-400/60"
-                    : "border-yellow-400 shadow-lg"
+                  // isGlowing
+                  //   ? "border-yellow-300 shadow-xl shadow-yellow-400/60"
+                  //   : "border-yellow-400 shadow-lg"
                 } shadow-yellow-400/30 transition-all duration-500 ${
                   isRecording ? "scale-110" : "hover:scale-105"
                 } backdrop-blur-sm`}
