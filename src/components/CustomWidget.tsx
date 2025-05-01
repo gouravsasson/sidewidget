@@ -586,7 +586,7 @@ const CustomWidget = () => {
               <div className="bg-black rounded-full w-8 h-8 flex items-center justify-center mr-2 border border-yellow-400 shadow-lg shadow-yellow-400/20">
                 <span className="text-yellow-400 font-bold text-xl">
                   <img
-                    src={widgetTheme?.bot_logo || logo}
+                    src={widgetTheme?.bot_logo}
                     alt="logo"
                     className="w-6 h-6"
                   />
