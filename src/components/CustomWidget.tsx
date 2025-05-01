@@ -567,9 +567,9 @@ const CustomWidget = () => {
       {expanded ? (
         <div
           className={`bg-gray-900/50 backdrop-blur-sm w-[309px] h-[521px] rounded-2xl shadow-2xl overflow-hidden border ${
-            isGlowing
-              ? "border-yellow-300 shadow-yellow-400/40"
-              : "border-yellow-400"
+            // isGlowing
+            //   ? "border-yellow-300 shadow-yellow-400/40"
+            //   : "border-yellow-400"
           } transition-all duration-500`}
           style={{
             backgroundColor: widgetTheme?.bot_background_color,
@@ -586,7 +586,7 @@ const CustomWidget = () => {
           >
             <div className="relative flex items-center">
               <div
-                className=" rounded-full w-8 h-8 flex items-center justify-center mr-2 border border-yellow-400 shadow-lg shadow-yellow-400/20"
+                className=" rounded-full w-8 h-8 flex items-center justify-center mr-2 border shadow-lg shadow-yellow-400/20"
                 style={{
                   borderColor: widgetTheme?.bot_border_color,
                 }}
@@ -612,7 +612,7 @@ const CustomWidget = () => {
               </button>
               <button
                 onClick={handleClose}
-                className="text-gray-300 hover:text-yellow-400 transition-colors"
+                className="text-gray-300 transition-colors"
               >
                 <X size={18} />
               </button>
@@ -726,7 +726,7 @@ const CustomWidget = () => {
             )}
 
             {/* Input Area with glass effect */}
-            {widgetTheme?.bot_show_chat && (
+            {/* {widgetTheme?.bot_show_chat && ( */}
               <div className="relative p-3 ">
                 <div className="absolute inset-0"></div>
                 <div className="relative flex items-center space-x-2">
@@ -748,7 +748,7 @@ const CustomWidget = () => {
                   <button
                     type="button"
                     onClick={handleSubmit}
-                    className="p-3 bg-gradient-to-r from-yellow-500 to-yellow-400 rounded-xl  transition-colors shadow-md hover:shadow-yellow-400/30"
+                    className="p-3 bg-gradient-to-r from-yellow-500 to-yellow-400 rounded-xl  transition-colors shadow-md"
                     style={{
                       backgroundColor: widgetTheme?.bot_button_color,
                       borderColor: widgetTheme?.bot_border_color,
@@ -765,7 +765,7 @@ const CustomWidget = () => {
                   </button>
                 </div>
               </div>
-            )}
+            {/* )} */}
           </div>
         </div>
       ) : (
