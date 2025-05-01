@@ -48,6 +48,7 @@ const CustomWidget = () => {
   const [speech, setSpeech] = useState("");
   const [isVisible, setIsVisible] = useState(true);
   const [auto_end_call, setAutoEndCall] = useState(false);
+  const [hovered, setHovered] = useState(false);
   const [pulseEffects, setPulseEffects] = useState({
     small: false,
     medium: false,
@@ -604,13 +605,35 @@ const CustomWidget = () => {
                 onClick={togglemute}
                 className="text-gray-300 transition-colors"
               >
-                <Minimize2 size={18} />
+                <Minimize2
+                  size={18}
+                  style={{
+                    color: hovered
+                      ? widgetTheme?.bot_button_hover_color
+                      : widgetTheme?.bot_button_color,
+                    transition: "color 0.3s ease",
+                    cursor: "pointer",
+                  }}
+                  onMouseEnter={() => setHovered(true)}
+                  onMouseLeave={() => setHovered(false)}
+                />
               </button>
               <button
                 onClick={handleClose}
                 className="text-gray-300 transition-colors"
               >
-                <X size={18} />
+                <X
+                  size={18}
+                  style={{
+                    color: hovered
+                      ? widgetTheme?.bot_button_hover_color
+                      : widgetTheme?.bot_button_color,
+                    transition: "color 0.3s ease",
+                    cursor: "pointer",
+                  }}
+                  onMouseEnter={() => setHovered(true)}
+                  onMouseLeave={() => setHovered(false)}
+                />
               </button>
             </div>
           </div>
