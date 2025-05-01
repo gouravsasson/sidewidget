@@ -31,6 +31,7 @@ export interface WidgetTheme {
     bot_status_bar_color: string;
     bot_status_bar_text_color: string;
     bot_animation_color: string;
+    bot_name: string;
   };
 }
 
@@ -593,7 +594,7 @@ const CustomWidget = () => {
                 </span>
               </div>
               <span className="text-white font-bold text-lg">
-                Voice Assistant
+                {widgetTheme?.bot_name || "Voice Assistant"}
               </span>
             </div>
             <div className="relative flex space-x-2">
