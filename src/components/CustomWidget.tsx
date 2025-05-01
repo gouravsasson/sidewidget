@@ -747,7 +747,13 @@ const CustomWidget = () => {
                       color: widgetTheme?.bot_button_text_color,
                     }}
                   >
-                    <Send size={20} className="text-black" />
+                    <Send
+                      size={20}
+                      className="text-black"
+                      style={{
+                        color: widgetTheme?.bot_button_text_color,
+                      }}
+                    />
                   </button>
                 </div>
               </div>
@@ -793,6 +799,7 @@ const CustomWidget = () => {
               style={{
                 backgroundColor: widgetTheme?.bot_bubble_color,
                 borderColor: widgetTheme?.bot_border_color,
+                color: widgetTheme?.bot_button_text_color,
               }}
             >
               TALK TO ME
