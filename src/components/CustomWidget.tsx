@@ -585,7 +585,8 @@ const CustomWidget = () => {
             }}
           >
             <div className="relative flex items-center">
-              <div className=" rounded-full w-8 h-8 flex items-center justify-center mr-2 border border-yellow-400 shadow-lg shadow-yellow-400/20"
+              <div
+                className=" rounded-full w-8 h-8 flex items-center justify-center mr-2 border border-yellow-400 shadow-lg shadow-yellow-400/20"
                 style={{
                   borderColor: widgetTheme?.bot_border_color,
                 }}
@@ -605,7 +606,7 @@ const CustomWidget = () => {
             <div className="relative flex space-x-2">
               <button
                 onClick={togglemute}
-                className="text-gray-300 hover:text-yellow-400 transition-colors"
+                className="text-gray-300 transition-colors"
               >
                 <Minimize2 size={18} />
               </button>
@@ -654,14 +655,14 @@ const CustomWidget = () => {
               )} */}
               <button
                 onClick={handleMicClick}
-                className={`relative z-10 bg-black rounded-full w-36 h-36 flex items-center justify-center border-2 ${
+                className={`relative z-10 bg-black rounded-full w-36 h-36 flex items-center justify-center border-2 
                   // isGlowing
                   //   ? "border-yellow-300 shadow-xl shadow-yellow-400/60"
                   //   : "border-yellow-400 shadow-lg"
-                }
-                 shadow-yellow-400/30 transition-all duration-500 ${
-                  isRecording ? "scale-110" : "hover:scale-105"
-                } backdrop-blur-sm`}
+                
+                  ${
+                    isRecording ? "scale-110" : "hover:scale-105"
+                  } backdrop-blur-sm`}
                 style={{
                   backgroundColor: widgetTheme?.bot_bubble_color,
                   borderColor: widgetTheme?.bot_border_color,
@@ -747,7 +748,7 @@ const CustomWidget = () => {
                   <button
                     type="button"
                     onClick={handleSubmit}
-                    className="p-3 bg-gradient-to-r from-yellow-500 to-yellow-400 rounded-xl hover:from-yellow-400 hover:to-yellow-300 transition-colors shadow-md hover:shadow-yellow-400/30"
+                    className="p-3 bg-gradient-to-r from-yellow-500 to-yellow-400 rounded-xl  transition-colors shadow-md hover:shadow-yellow-400/30"
                     style={{
                       backgroundColor: widgetTheme?.bot_button_color,
                       borderColor: widgetTheme?.bot_border_color,
@@ -772,7 +773,7 @@ const CustomWidget = () => {
           <div className="flex flex-col items-center gap-1 justify-center">
             <button
               onClick={toggleExpand}
-              className="bg-black rounded-full w-20 h-20 flex items-center justify-center shadow-2xl border-2 border-yellow-400 hover:bg-gray-900 transition-all hover:scale-110"
+              className="bg-black rounded-full w-20 h-20 flex items-center justify-center shadow-2xl border-2 border-yellow-400  transition-all hover:scale-110"
               style={{
                 backgroundColor: widgetTheme?.bot_bubble_color,
                 borderColor: widgetTheme?.bot_border_color,
@@ -818,6 +819,3 @@ const CustomWidget = () => {
   );
 };
 export default CustomWidget;
-sGlowing
-                  //   ? "border-yellow-300 shadow-xl shadow-yellow-400/60"
-                  //   : "border-yellow-400 shadow-lg"
