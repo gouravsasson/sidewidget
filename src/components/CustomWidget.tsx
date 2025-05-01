@@ -772,7 +772,7 @@ const CustomWidget = () => {
           <div className="flex flex-col items-center gap-1 justify-center">
             <button
               onClick={toggleExpand}
-              className="bg-black rounded-full w-20 h-20 flex items-center justify-center shadow-2xl border-2 border-yellow-400 hover:bg-gray-900 transition-all hover:scale-110 hover:shadow-yellow-400/50"
+              className="bg-black rounded-full w-20 h-20 flex items-center justify-center shadow-2xl border-2 border-yellow-400 hover:bg-gray-900 transition-all hover:scale-110"
               style={{
                 backgroundColor: widgetTheme?.bot_bubble_color,
                 borderColor: widgetTheme?.bot_border_color,
