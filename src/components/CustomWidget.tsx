@@ -581,10 +581,15 @@ const CustomWidget = () => {
             className="relative p-4 flex justify-between items-center"
             style={{
               backgroundColor: widgetTheme?.bot_bubble_color,
+              borderColor: widgetTheme?.bot_border_color,
             }}
           >
             <div className="relative flex items-center">
-              <div className=" rounded-full w-8 h-8 flex items-center justify-center mr-2 border border-yellow-400 shadow-lg shadow-yellow-400/20">
+              <div className=" rounded-full w-8 h-8 flex items-center justify-center mr-2 border border-yellow-400 shadow-lg shadow-yellow-400/20"
+                style={{
+                  borderColor: widgetTheme?.bot_border_color,
+                }}
+              >
                 <span className="text-yellow-400 font-bold text-xl">
                   <img
                     src={widgetTheme?.bot_logo}
@@ -653,7 +658,8 @@ const CustomWidget = () => {
                   // isGlowing
                   //   ? "border-yellow-300 shadow-xl shadow-yellow-400/60"
                   //   : "border-yellow-400 shadow-lg"
-                } shadow-yellow-400/30 transition-all duration-500 ${
+                }
+                 shadow-yellow-400/30 transition-all duration-500 ${
                   isRecording ? "scale-110" : "hover:scale-105"
                 } backdrop-blur-sm`}
                 style={{
@@ -661,8 +667,8 @@ const CustomWidget = () => {
                   borderColor: widgetTheme?.bot_border_color,
                 }}
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-yellow-900/20 rounded-full"></div>
-                <div className="absolute inset-0 bg-gradient-to-tr from-yellow-400/5 via-transparent to-transparent rounded-full"></div>
+                {/* <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-yellow-900/20 rounded-full"></div> */}
+                {/* <div className="absolute inset-0 bg-gradient-to-tr from-yellow-400/5 via-transparent to-transparent rounded-full"></div> */}
                 <div className="flex items-center justify-center">
                   <span
                     className={`text-yellow-400 font-bold text-6xl drop-shadow-xl tracking-tighter ${
@@ -796,11 +802,11 @@ const CustomWidget = () => {
             </button>
             <button
               onClick={toggleExpand}
-              className="inline-block w-[120px] px-4 py-1 bg-black text-[#FFD700] border-2 border-[#FFD700] rounded-full font-inter font-bold text-sm no-underline text-center transition-all duration-300  hover:bg-black"
+              className="inline-block w-[120px] px-4 py-1 bg-black text-[#FFD700] border-2 border-[#FFD700] rounded-full font-inter font-bold text-sm no-underline text-center transition-all duration-300 "
               style={{
                 backgroundColor: widgetTheme?.bot_bubble_color,
                 borderColor: widgetTheme?.bot_border_color,
-                color: widgetTheme?.bot_button_text_color,
+                color: widgetTheme?.bot_border_color,
               }}
             >
               TALK TO ME
@@ -812,3 +818,6 @@ const CustomWidget = () => {
   );
 };
 export default CustomWidget;
+sGlowing
+                  //   ? "border-yellow-300 shadow-xl shadow-yellow-400/60"
+                  //   : "border-yellow-400 shadow-lg"
