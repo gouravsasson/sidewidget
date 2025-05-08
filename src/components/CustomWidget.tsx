@@ -106,17 +106,17 @@ const CustomWidget = () => {
 
   useEffect(() => {
     if (status === "disconnected") {
-      setSpeech("Talk To John");
+      setSpeech(`Talk To ${widgetTheme?.bot_name}`);
     } else if (status === "connecting") {
-      setSpeech("Connecting To John");
+      setSpeech(`Connecting To ${widgetTheme?.bot_name}`);
     } else if (status === "speaking") {
-      setSpeech("John is Speaking");
+      setSpeech(`${widgetTheme?.bot_name} is Speaking`);
     } else if (status === "connected") {
-      setSpeech("Connected To John");
+      setSpeech(`Connected To ${widgetTheme?.bot_name}`);
     } else if (status === "disconnecting") {
-      setSpeech("Ending Conversation With John");
+      setSpeech(`Ending Conversation With ${widgetTheme?.bot_name}`);
     } else if (status === "listening") {
-      setSpeech("John is Listening");
+      setSpeech(`${widgetTheme?.bot_name} is Listening`);
     }
   }, [status]);
 
@@ -235,14 +235,11 @@ const CustomWidget = () => {
 
   const handleMicClickForReconnect = async (id) => {
     try {
-      const response = await axios.post(
-        `${baseurl}/api/start-thunder/`,
-        {
-          agent_code: agent_id,
-          schema_name: schema,
-          prior_call_id: id,
-        }
-      );
+      const response = await axios.post(`${baseurl}/api/start-thunder/`, {
+        agent_code: agent_id,
+        schema_name: schema,
+        prior_call_id: id,
+      });
 
       const wssUrl = response.data.joinUrl;
       const callId = response.data.callId;
@@ -285,13 +282,10 @@ const CustomWidget = () => {
   const handleMicClick = async () => {
     try {
       if (status === "disconnected") {
-        const response = await axios.post(
-          `${baseurl}/api/start-thunder/`,
-          {
-            agent_code: agent_id,
-            schema_name: schema,
-          }
-        );
+        const response = await axios.post(`${baseurl}/api/start-thunder/`, {
+          agent_code: agent_id,
+          schema_name: schema,
+        });
 
         const wssUrl = response.data.joinUrl;
         const callId = response.data.callId;
