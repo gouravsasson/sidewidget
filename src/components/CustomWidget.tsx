@@ -436,7 +436,7 @@ const CustomWidget = () => {
       setExpanded(!expanded);
       await session.leaveCall();
       const response = await axios.post(
-        `${baseurl}/api/end-call-session-ultravox/`,
+        `${baseurl}/api/end-call-session-thunder/`,
         {
           call_session_id: callSessionIds,
           schema_name: schema,
