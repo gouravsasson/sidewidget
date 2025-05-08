@@ -236,7 +236,7 @@ const CustomWidget = () => {
   const handleMicClickForReconnect = async (id) => {
     try {
       const response = await axios.post(
-        `${baseurl}/api/start-danube-thunder/`,
+        `${baseurl}/api/start-thunder/`,
         {
           agent_code: agent_id,
           schema_name: schema,
@@ -334,7 +334,7 @@ const CustomWidget = () => {
         await session.leaveCall();
         console.log("call left successfully second time");
         const response = await axios.post(
-          `${baseurl}/api/end-call-session-ultravox/`,
+          `${baseurl}/api/end-call-session-thunder/`,
           {
             call_session_id: callSessionIds,
             schema_name: schema,
