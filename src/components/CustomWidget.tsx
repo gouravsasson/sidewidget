@@ -823,7 +823,7 @@ const CustomWidget = () => {
                 color: widgetTheme?.bot_border_color,
               }}
             >
-              TALK TO ME
+              TALK TO {widgetTheme?.bot_name}
             </button>
           </div>
         </>
