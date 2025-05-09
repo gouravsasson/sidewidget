@@ -407,7 +407,7 @@ const CustomWidget = () => {
 
   const toggleExpand = () => {
     if (status === "disconnected") {
-      setSpeech("Connecting To John");
+      setSpeech(`Connecting To ${widgetTheme?.bot_name}`);
 
       handleMicClick();
     }
