@@ -816,7 +816,7 @@ const CustomWidget = () => {
             </button>
             <button
               onClick={toggleExpand}
-              className="inline-block w-[120px] px-4 py-1 bg-black text-[#FFD700] border-2 border-[#FFD700] rounded-full font-inter font-bold text-sm no-underline text-center transition-all duration-300 "
+              className="inline-block  px-4 py-1 bg-black text-[#FFD700] border-2 border-[#FFD700] rounded-full font-inter font-bold text-sm no-underline text-center transition-all duration-300 "
               style={{
                 backgroundColor: widgetTheme?.bot_bubble_color,
                 borderColor: widgetTheme?.bot_border_color,
