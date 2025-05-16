@@ -1,5 +1,14 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Mic, Send, X, Minimize2, Pause } from "lucide-react";
+import {
+  Mic,
+  Send,
+  X,
+  Minimize2,
+  Pause,
+  Loader2,
+  User,
+  Mail,
+} from "lucide-react";
 import { MicOff } from "lucide-react";
 import axios from "axios";
 import { UltravoxSession } from "ultravox-client";
@@ -7,6 +16,8 @@ import { useWidgetContext } from "../constexts/WidgetContext";
 import useSessionStore from "../store/session";
 import { useUltravoxStore } from "../store/ultrasession";
 import logo from "../assets/logo.png";
+import PhoneInput from "react-phone-input-2";
+import "react-phone-input-2/lib/style.css";
 
 export interface WidgetTheme {
   widget_theme: {
@@ -32,11 +43,15 @@ export interface WidgetTheme {
     bot_status_bar_text_color: string;
     bot_animation_color: string;
     bot_name: string;
+    bot_show_form: boolean;
   };
 }
 
 const CustomWidget = () => {
   const [widgetTheme, setWidgetTheme] = useState<WidgetTheme | null>(null);
+  const countryCode = localStorage.getItem("countryCode");
+
+  const continentcode = localStorage.getItem("continentcode");
 
   const [expanded, setExpanded] = useState(false);
   const [inputValue, setInputValue] = useState("");
@@ -59,6 +74,12 @@ const CustomWidget = () => {
   const hasClosed = useRef(false);
 
   const { callSessionIds, setCallSessionIds } = useSessionStore();
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+  });
+  const [phoneError, setPhoneError] = useState("");
 
   const {
     setSession,
@@ -553,6 +574,77 @@ const CustomWidget = () => {
     return styles;
   };
 
+  const startfromform = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    try {
+      if (status === "disconnected") {
+        const response = await axios.post(`${baseurl}/api/start-thunder/`, {
+          agent_code: agent_id,
+          schema_name: schema,
+          phone: "+" + countryCode + formData.phone,
+          name: formData.name,
+          email: formData.email,
+        });
+
+        const wssUrl = response.data.joinUrl;
+        const callId = response.data.callId;
+        localStorage.setItem("callId", callId);
+        localStorage.setItem("wssUrl", wssUrl);
+        setCallSessionIds(response.data.call_session_id);
+        if (storedIds) {
+          try {
+            const parsedIds = JSON.parse(storedIds);
+            // Ensure it's actually an array
+            if (Array.isArray(parsedIds)) {
+              existingCallSessionIds = parsedIds;
+            }
+          } catch (parseError) {
+            console.warn("Could not parse callSessionId:", parseError);
+            // Optional: clear invalid data
+            localStorage.removeItem("callSessionId");
+          }
+        }
+
+        // Append the new ID
+        existingCallSessionIds.push(callId);
+
+        // Store back in localStorage
+        localStorage.setItem(
+          "callSessionId",
+          JSON.stringify(existingCallSessionIds)
+        );
+
+        if (wssUrl) {
+          session.joinCall(`${wssUrl}`);
+          if (AutoStartref.current) {
+            console.log("unmuting speaker", session.isSpeakerMuted);
+            session.unmuteSpeaker();
+          }
+        }
+        toggleVoice(true);
+      } else {
+        const callSessionId = JSON.parse(localStorage.getItem("callSessionId"));
+        await session.leaveCall();
+        console.log("call left successfully second time");
+        const response = await axios.post(
+          `${baseurl}/api/end-call-session-thunder/`,
+          {
+            call_session_id: callSessionIds,
+            schema_name: schema,
+            prior_call_ids: callSessionId,
+          }
+        );
+
+        // console.log("Call left successfully");
+        setTranscripts(null);
+        toggleVoice(false);
+        localStorage.clear();
+      }
+    } catch (error) {
+      // console.error("Error in handleMicClick:", error);
+    }
+  };
+
   if (!onlyOnce.current || !widgetTheme) {
     return null; // Or return <div>Loading...</div>
   }
@@ -709,6 +801,99 @@ const CustomWidget = () => {
             >
               {speech}
             </p>
+
+            {widgetTheme?.bot_show_form && (
+              <form onSubmit={onSubmit}>
+                <div className="flex flex-col gap-4 m-4">
+                  {[
+                    {
+                      icon: <User className="h-5 w-5 text-gray-400" />,
+                      value: formData.name,
+                      type: "text",
+                      placeholder: "Your name",
+                      key: "name",
+                      component: "",
+                    },
+                    {
+                      icon: <Mail className="h-5 w-5 text-gray-400" />,
+                      value: formData.email,
+                      type: "email",
+                      placeholder: "Email address",
+                      key: "email",
+                      component: "",
+                    },
+                  ].map((field, index) => (
+                    <div className="relative" key={index}>
+                      <div className="absolute inset-y-0 left-2 flex items-center pointer-events-none">
+                        {field.icon}
+                      </div>
+                      <div className="flex items-center">
+                        {field.component}
+                        <input
+                          type={field.type}
+                          required
+                          value={field.value}
+                          maxLength={field.maxLength}
+                          onChange={(e) => {
+                            let value = e.target.value;
+                            if (field.key === "phone") {
+                              value = value.replace(/\D/g, ""); // remove non-digit characters
+                            }
+                            setFormData({ ...formData, [field.key]: value });
+                          }}
+                          className={`block w-full pl-12 pr-4 py-2 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-400 transition ${
+                            field.component && " rounded-l-none !pl-2 h-[40px]"
+                          }`}
+                          placeholder={field.placeholder}
+                        />
+                      </div>
+                      User
+                    </div>
+                  ))}
+                  <PhoneInput
+                    dropdownClass="bottom-10 z-50"
+                    dropdownStyle={{ zIndex: 1000 }}
+                    inputProps={{
+                      name: "phone",
+                      required: true,
+                    }}
+                    country={`${continentcode?.toLowerCase()}`}
+                    value={formData.phone}
+                    onChange={(phone) => {
+                      setFormData({ ...formData, phone });
+                      setPhoneError(""); // clear error as user types
+                    }}
+                    enableSearch={true}
+                  />
+
+                  {phoneError && (
+                    <div className="text-red-500 text-sm mt-1">
+                      {phoneError}
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    className="w-full bg-yellow-400 text-black font-semibold py-3 px-4 rounded-xl hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 transition-colors"
+                  >
+                    {state === "connecting" ? (
+                      <div className="flex items-center justify-center">
+                        <Loader2 className="w-5 h-5 animate-spin" /> Connecting
+                        to AI Assistant
+                      </div>
+                    ) : (
+                      "Connect to AI Assistant"
+                    )}
+                  </button>
+
+                  {error && (
+                    <div className="text-red-500 text-center text-sm mt-2">
+                      {error}
+                    </div>
+                  )}
+                </div>
+              </form>
+            )}
 
             {/* Transcription Box with enhanced styling */}
             {widgetTheme?.bot_show_transcript && (

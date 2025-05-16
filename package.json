@@ -20,6 +20,7 @@
     "path-browserify": "^1.0.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-phone-input-2": "^2.15.1",
     "tailwind-scrollbar-hide": "^2.0.0",
     "tailwindcss": "^4.0.1",
     "ultravox-client": "^0.3.4",

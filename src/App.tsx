@@ -174,6 +174,19 @@ function App() {
   // const schema = "6af30ad4-a50c-4acc-8996-d5f562b6987f";
 
   // Wait until widgetTheme is fetched before rendering
+  useEffect(() => {
+    const localCountryCode = localStorage.getItem("countryCode");
+    if (!localCountryCode) {
+      const fetchIp = async () => {
+        const res = await axios.get("https://ipapi.co/json/");
+        localStorage.setItem("countryCode", res.data.country_calling_code);
+        localStorage.setItem("countryName", res.data.country_name);
+        localStorage.setItem("continentcode", res.data.country);
+        localStorage.setItem("city", res.data.city);
+      };
+      fetchIp();
+    }
+  }, []);
 
   const widgetMap: Record<string, JSX.Element> = {
     autostart: <Autostart />,
