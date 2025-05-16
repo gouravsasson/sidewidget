@@ -427,6 +427,10 @@ const CustomWidget = () => {
   }, [isRecording]);
 
   const toggleExpand = () => {
+    if (widgetTheme?.bot_show_form) {
+      setExpanded(!expanded);
+      return;
+    }
     if (status === "disconnected") {
       setSpeech(`Connecting To ${widgetTheme?.bot_name}`);
 
@@ -581,7 +585,7 @@ const CustomWidget = () => {
         const response = await axios.post(`${baseurl}/api/start-thunder/`, {
           agent_code: agent_id,
           schema_name: schema,
-          phone: "+" + countryCode + formData.phone,
+          phone: countryCode + formData.phone,
           name: formData.name,
           email: formData.email,
         });
@@ -653,7 +657,9 @@ const CustomWidget = () => {
     <div style={getWidgetStyles()} className="flex flex-col items-end">
       {expanded ? (
         <div
-          className={`bg-gray-900/50 backdrop-blur-sm w-[309px] h-[521px] rounded-2xl shadow-2xl overflow-hidden border `}
+          className={`bg-gray-900/50 backdrop-blur-sm w-[309px]  rounded-2xl shadow-2xl overflow-hidden border ${
+            widgetTheme?.bot_show_form ? "h-[550px]" : "h-[521px]"
+          }`}
           style={{
             backgroundColor: widgetTheme?.bot_background_color,
             borderColor: widgetTheme?.bot_border_color,
@@ -802,8 +808,8 @@ const CustomWidget = () => {
               {speech}
             </p>
 
-            {widgetTheme?.bot_show_form && (
-              <form onSubmit={onSubmit}>
+            {widgetTheme?.bot_show_form ? (
+              <form onSubmit={startfromform}>
                 <div className="flex flex-col gap-4 m-4">
                   {[
                     {
@@ -847,7 +853,6 @@ const CustomWidget = () => {
                           placeholder={field.placeholder}
                         />
                       </div>
-                      User
                     </div>
                   ))}
                   <PhoneInput
@@ -876,7 +881,7 @@ const CustomWidget = () => {
                     type="submit"
                     className="w-full bg-yellow-400 text-black font-semibold py-3 px-4 rounded-xl hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 transition-colors"
                   >
-                    {state === "connecting" ? (
+                    {status === "connecting" ? (
                       <div className="flex items-center justify-center">
                         <Loader2 className="w-5 h-5 animate-spin" /> Connecting
                         to AI Assistant
@@ -886,83 +891,85 @@ const CustomWidget = () => {
                     )}
                   </button>
 
-                  {error && (
+                  {/* {error && (
                     <div className="text-red-500 text-center text-sm mt-2">
                       {error}
                     </div>
-                  )}
+                  )} */}
                 </div>
               </form>
-            )}
-
-            {/* Transcription Box with enhanced styling */}
-            {widgetTheme?.bot_show_transcript && (
-              <div className="relative p-4 w-full ">
-                <div className="absolute inset-0 "></div>
-                <div className="relative">
-                  <div className="flex justify-between items-center mb-2">
-                    {/* <div className="text-yellow-400 text-sm font-medium">
+            ) : (
+              <>
+                {/* Transcription Box with enhanced styling */}
+                {widgetTheme?.bot_show_transcript && (
+                  <div className="relative p-4 w-full ">
+                    <div className="absolute inset-0 "></div>
+                    <div className="relative">
+                      <div className="flex justify-between items-center mb-2">
+                        {/* <div className="text-yellow-400 text-sm font-medium">
                   Real-time transcription
                 </div> */}
-                    {isRecording && (
-                      <div className="flex items-center">
-                        <div className="w-2 h-2 bg-red-500 rounded-full mr-1 animate-pulse"></div>
-                        <span className="text-red-400 text-xs">LIVE</span>
+                        {isRecording && (
+                          <div className="flex items-center">
+                            <div className="w-2 h-2 bg-red-500 rounded-full mr-1 animate-pulse"></div>
+                            <span className="text-red-400 text-xs">LIVE</span>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                  <div
-                    ref={containerRef}
-                    className=" bg-white backdrop-blur-sm rounded-xl p-4 h-16 text-white shadow-inner border border-gray-800 overflow-y-auto scrollbar-hide ring-yellow-400/80"
-                  >
-                    <div className="relative">
-                      <span className="text-black">{transcripts}</span>
+                      <div
+                        ref={containerRef}
+                        className=" bg-white backdrop-blur-sm rounded-xl p-4 h-16 text-white shadow-inner border border-gray-800 overflow-y-auto scrollbar-hide ring-yellow-400/80"
+                      >
+                        <div className="relative">
+                          <span className="text-black">{transcripts}</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            )}
+                )}
 
-            {/* Input Area with glass effect */}
-            {widgetTheme?.bot_show_chat && (
-              <div className="relative p-3 ">
-                <div className="absolute inset-0"></div>
-                <div className="relative flex items-center space-x-2">
-                  <input
-                    type="text"
-                    disabled={
-                      status === "disconnected" || status === "connecting"
-                    }
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        handleSubmit(e.target.value);
-                      }
-                    }}
-                    placeholder="Type your message..."
-                    className="flex-1 bg-white text-black p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-400/80 placeholder-gray-500 border border-gray-700"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleSubmit}
-                    className="p-3  rounded-xl  transition-colors shadow-md"
-                    style={{
-                      backgroundColor: widgetTheme?.bot_button_color,
-                      borderColor: widgetTheme?.bot_border_color,
-                      color: widgetTheme?.bot_button_text_color,
-                    }}
-                  >
-                    <Send
-                      size={20}
-                      className="text-black"
-                      style={{
-                        color: widgetTheme?.bot_button_text_color,
-                      }}
-                    />
-                  </button>
-                </div>
-              </div>
+                {/* Input Area with glass effect */}
+                {widgetTheme?.bot_show_chat && (
+                  <div className="relative p-3 ">
+                    <div className="absolute inset-0"></div>
+                    <div className="relative flex items-center space-x-2">
+                      <input
+                        type="text"
+                        disabled={
+                          status === "disconnected" || status === "connecting"
+                        }
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            handleSubmit(e.target.value);
+                          }
+                        }}
+                        placeholder="Type your message..."
+                        className="flex-1 bg-white text-black p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-400/80 placeholder-gray-500 border border-gray-700"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleSubmit}
+                        className="p-3  rounded-xl  transition-colors shadow-md"
+                        style={{
+                          backgroundColor: widgetTheme?.bot_button_color,
+                          borderColor: widgetTheme?.bot_border_color,
+                          color: widgetTheme?.bot_button_text_color,
+                        }}
+                      >
+                        <Send
+                          size={20}
+                          className="text-black"
+                          style={{
+                            color: widgetTheme?.bot_button_text_color,
+                          }}
+                        />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
