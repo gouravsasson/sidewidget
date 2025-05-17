@@ -129,18 +129,20 @@ const CustomWidget = () => {
 
   useEffect(() => {
     if (status === "disconnected") {
-      setSpeech(`Talk To ${widgetTheme?.bot_name}`);
+      setSpeech(`Talk To ${widgetTheme?.bot_name || "AI Assistant"}`);
     } else if (status === "connecting") {
-      setSpeech(`Connecting To ${widgetTheme?.bot_name}`);
+      setSpeech(`Connecting To ${widgetTheme?.bot_name || "AI Assistant"}`);
     } else if (status === "speaking") {
-      setSpeech(`${widgetTheme?.bot_name} is Speaking`);
+      setSpeech(`${widgetTheme?.bot_name || "AI Assistant"} is Speaking`);
       setExpanded(true);
     } else if (status === "connected") {
-      setSpeech(`Connected To ${widgetTheme?.bot_name}`);
+      setSpeech(`Connected To ${widgetTheme?.bot_name || "AI Assistant"}`);
     } else if (status === "disconnecting") {
-      setSpeech(`Ending Conversation With ${widgetTheme?.bot_name}`);
+      setSpeech(
+        `Ending Conversation With ${widgetTheme?.bot_name || "AI Assistant"}`
+      );
     } else if (status === "listening") {
-      setSpeech(`${widgetTheme?.bot_name} is Listening`);
+      setSpeech(`${widgetTheme?.bot_name || "AI Assistant"} is Listening`);
     }
   }, [status]);
 
@@ -428,7 +430,7 @@ const CustomWidget = () => {
       return;
     }
     if (status === "disconnected") {
-      setSpeech(`Connecting To ${widgetTheme?.bot_name}`);
+      setSpeech(`Connecting To ${widgetTheme?.bot_name || "AI Assistant"}`);
 
       handleMicClick();
     }
@@ -676,7 +678,7 @@ const CustomWidget = () => {
                 </span>
               </div>
               <span className="text-white font-bold text-lg">
-                {widgetTheme?.bot_name || "Voice Assistant"}
+                {widgetTheme?.bot_name || "AI Assistant"}
               </span>
             </div>
             <div className="relative flex space-x-2">
@@ -1002,7 +1004,7 @@ const CustomWidget = () => {
                 color: widgetTheme?.bot_border_color,
               }}
             >
-              TALK TO {widgetTheme?.bot_name}
+              TALK TO {widgetTheme?.bot_name || "AI Assistant"}
             </button>
           </div>
         </>
