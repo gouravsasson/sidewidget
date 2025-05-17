@@ -90,7 +90,7 @@ const CustomWidget = () => {
     status,
     setStatus,
   } = useUltravoxStore();
-  const baseurl = "https://shop.snowie.ai";
+  const baseurl = "https://app.snowie.ai";
   const { agent_id, schema } = useWidgetContext();
 
   // const agent_id = "68ec3404-7c46-4028-b7f3-42bae5c4976f";
