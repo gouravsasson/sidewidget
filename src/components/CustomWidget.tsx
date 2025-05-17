@@ -144,7 +144,7 @@ const CustomWidget = () => {
     } else if (status === "listening") {
       setSpeech(`${widgetTheme?.bot_name || "AI Assistant"} is Listening`);
     }
-  }, [status]);
+  }, [status, widgetTheme?.bot_name]);
 
   useEffect(() => {
     if (widgetTheme?.bot_mute_on_tab_change) {
