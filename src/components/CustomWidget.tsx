@@ -90,20 +90,23 @@ const CustomWidget = () => {
     status,
     setStatus,
   } = useUltravoxStore();
-  const baseurl = "https://app.snowie.ai";
+  const baseurl = "https://shop.snowie.ai";
   const { agent_id, schema } = useWidgetContext();
-  console.log("agent_id", agent_id);
-  console.log("schema", schema);
 
   // const agent_id = "68ec3404-7c46-4028-b7f3-42bae5c4976f";
   // const schema = "6af30ad4-a50c-4acc-8996-d5f562b6987f";
   let existingCallSessionIds: string[] = [];
   const AutoStartref = useRef(false);
-  console.log("AutoStartref", AutoStartref.current);
   const storedIds = localStorage.getItem("callSessionId");
 
   const debugMessages = new Set(["debug"]);
   const onlyOnce = useRef(false);
+  const [showform, setShowform] = useState(false);
+  useEffect(() => {
+    if (widgetTheme?.bot_show_form) {
+      setShowform(true);
+    }
+  }, [widgetTheme?.bot_show_form]);
 
   useEffect(() => {
     if (onlyOnce.current) return;
@@ -114,7 +117,6 @@ const CustomWidget = () => {
           `${baseurl}/api/thunder-widget-settings/${schema}/${agent_id}/`
         );
         const data = response.data.response;
-        console.log(data);
         setWidgetTheme(data);
         onlyOnce.current = true;
       } catch (error) {
@@ -132,6 +134,7 @@ const CustomWidget = () => {
       setSpeech(`Connecting To ${widgetTheme?.bot_name}`);
     } else if (status === "speaking") {
       setSpeech(`${widgetTheme?.bot_name} is Speaking`);
+      setExpanded(true);
     } else if (status === "connected") {
       setSpeech(`Connected To ${widgetTheme?.bot_name}`);
     } else if (status === "disconnecting") {
@@ -206,11 +209,7 @@ const CustomWidget = () => {
 
   // disconnecting
   useEffect(() => {
-    console.log("status", status);
-
     if (status === "disconnecting" && !hasClosed.current) {
-      console.log("auto disconnect");
-
       // Only run cleanup if this isn't a page refresh
       const isPageRefresh = sessionStorage.getItem("isRefreshing") === "true";
 
@@ -234,6 +233,7 @@ const CustomWidget = () => {
           localStorage.clear();
           setTranscripts(null);
           toggleVoice(false);
+          widgetTheme?.bot_show_form ? setShowform(true) : setShowform(false);
         };
 
         handleClose();
@@ -244,7 +244,6 @@ const CustomWidget = () => {
   // autostart on page refresh
   useEffect(() => {
     const callId = localStorage.getItem("callId");
-    console.log(callId, status, hasReconnected.current);
     if (callId && status === "disconnected" && !hasReconnected.current) {
       setIsMuted(true);
       handleMicClickForReconnect(callId);
@@ -255,12 +254,17 @@ const CustomWidget = () => {
   }, [status]);
 
   const handleMicClickForReconnect = async (id) => {
+    console.log("handleMicClickForReconnect");
+
     try {
-      const response = await axios.post(`${baseurl}/api/start-thunder/`, {
-        agent_code: agent_id,
-        schema_name: schema,
-        prior_call_id: id,
-      });
+      const response = await axios.post(
+        `${baseurl}/api/start-thunder/`,
+        {
+          agent_code: agent_id,
+          schema_name: schema,
+          prior_call_id: id,
+        }
+      );
 
       const wssUrl = response.data.joinUrl;
       const callId = response.data.callId;
@@ -290,9 +294,10 @@ const CustomWidget = () => {
         "callSessionId",
         JSON.stringify(existingCallSessionIds)
       );
+      setShowform(false);
 
       if (wssUrl) {
-        await session.joinCall(`${wssUrl}`);
+        session.joinCall(`${wssUrl}`);
       }
     } catch (error) {
       console.error("Error in handleMicClick:", error);
@@ -301,18 +306,23 @@ const CustomWidget = () => {
 
   // Handle mic button click
   const handleMicClick = async () => {
+    console.log("running handleMicClick");
     try {
       if (status === "disconnected") {
-        const response = await axios.post(`${baseurl}/api/start-thunder/`, {
-          agent_code: agent_id,
-          schema_name: schema,
-        });
+        const response = await axios.post(
+          `${baseurl}/api/start-thunder/`,
+          {
+            agent_code: agent_id,
+            schema_name: schema,
+          }
+        );
 
         const wssUrl = response.data.joinUrl;
         const callId = response.data.callId;
         localStorage.setItem("callId", callId);
         localStorage.setItem("wssUrl", wssUrl);
         setCallSessionIds(response.data.call_session_id);
+        setShowform(false);
         if (storedIds) {
           try {
             const parsedIds = JSON.parse(storedIds);
@@ -339,7 +349,6 @@ const CustomWidget = () => {
         if (wssUrl) {
           session.joinCall(`${wssUrl}`);
           if (AutoStartref.current) {
-            console.log("unmuting speaker", session.isSpeakerMuted);
             session.unmuteSpeaker();
           }
         }
@@ -347,7 +356,6 @@ const CustomWidget = () => {
       } else {
         const callSessionId = JSON.parse(localStorage.getItem("callSessionId"));
         await session.leaveCall();
-        console.log("call left successfully second time");
         const response = await axios.post(
           `${baseurl}/api/end-call-session-thunder/`,
           {
@@ -356,11 +364,10 @@ const CustomWidget = () => {
             prior_call_ids: callSessionId,
           }
         );
-
-        // console.log("Call left successfully");
         setTranscripts(null);
         toggleVoice(false);
         localStorage.clear();
+        widgetTheme?.bot_show_form ? setShowform(true) : setShowform(false);
       }
     } catch (error) {
       // console.error("Error in handleMicClick:", error);
@@ -376,8 +383,6 @@ const CustomWidget = () => {
   }, [widgetTheme?.bot_auto_start]);
 
   session.addEventListener("transcripts", (event) => {
-    // console.log("Transcripts updated: ", session);
-
     const alltrans = session.transcripts;
 
     let Trans = "";
@@ -396,12 +401,9 @@ const CustomWidget = () => {
   // Listen for status changing events
   session.addEventListener("status", (event) => {
     setStatus(session.status);
-    // console.log("Session status changed: ", session.status);
   });
 
-  session.addEventListener("experimental_message", (msg) => {
-    console.log("Got a debug message: ", JSON.stringify(msg));
-  });
+  session.addEventListener("experimental_message", (msg) => {});
 
   // Animated pulse effects for recording state
   useEffect(() => {
@@ -455,11 +457,16 @@ const CustomWidget = () => {
   };
 
   const handleClose = async () => {
+    console.log("status", status);
     if (status !== "disconnected") {
+      localStorage.clear();
+
       hasClosed.current = true;
       const callSessionId = JSON.parse(localStorage.getItem("callSessionId"));
-      setExpanded(!expanded);
+      setExpanded(false);
       await session.leaveCall();
+      widgetTheme?.bot_show_form ? setShowform(true) : setShowform(false);
+
       const response = await axios.post(
         `${baseurl}/api/end-call-session-thunder/`,
         {
@@ -469,7 +476,6 @@ const CustomWidget = () => {
         }
       );
       hasClosed.current = false;
-      localStorage.clear();
 
       setTranscripts(null);
       toggleVoice(false);
@@ -513,19 +519,6 @@ const CustomWidget = () => {
       contentFactor = 0.8;
     }
 
-    // Apply size only when expanded
-    // if (expanded) {
-    //   const widthPercent = Math.min(widgetTheme?.bot_width, 100) / 100;
-    //   const heightPercent = Math.min(widgetTheme?.bot_height, 100) / 100;
-
-    //   const viewportWidth = window.innerWidth;
-    //   const viewportHeight = window.innerHeight;
-    //   let calculatedWidth = widthPercent * viewportWidth * contentFactor;
-    //   let calculatedHeight = heightPercent * viewportHeight * contentFactor;
-
-    //   calculatedWidth = Math.max(
-    //     minWidthPx,
-    //     Math.min(calculatedWidth, maxWidthPx)
     //   );
     //   calculatedHeight = Math.max(
     //     minHeightPx,
@@ -573,7 +566,7 @@ const CustomWidget = () => {
         styles.right = "20px";
     }
 
-    console.log(styles);
+    styles;
 
     return styles;
   };
@@ -582,19 +575,23 @@ const CustomWidget = () => {
     e.preventDefault();
     try {
       if (status === "disconnected") {
-        const response = await axios.post(`${baseurl}/api/start-thunder/`, {
-          agent_code: agent_id,
-          schema_name: schema,
-          phone: countryCode + formData.phone,
-          name: formData.name,
-          email: formData.email,
-        });
+        const response = await axios.post(
+          `${baseurl}/api/start-thunder/`,
+          {
+            agent_code: agent_id,
+            schema_name: schema,
+            phone: countryCode + formData.phone,
+            name: formData.name,
+            email: formData.email,
+          }
+        );
 
         const wssUrl = response.data.joinUrl;
         const callId = response.data.callId;
         localStorage.setItem("callId", callId);
         localStorage.setItem("wssUrl", wssUrl);
         setCallSessionIds(response.data.call_session_id);
+        setShowform(false);
         if (storedIds) {
           try {
             const parsedIds = JSON.parse(storedIds);
@@ -621,7 +618,6 @@ const CustomWidget = () => {
         if (wssUrl) {
           session.joinCall(`${wssUrl}`);
           if (AutoStartref.current) {
-            console.log("unmuting speaker", session.isSpeakerMuted);
             session.unmuteSpeaker();
           }
         }
@@ -629,7 +625,6 @@ const CustomWidget = () => {
       } else {
         const callSessionId = JSON.parse(localStorage.getItem("callSessionId"));
         await session.leaveCall();
-        console.log("call left successfully second time");
         const response = await axios.post(
           `${baseurl}/api/end-call-session-thunder/`,
           {
@@ -638,16 +633,229 @@ const CustomWidget = () => {
             prior_call_ids: callSessionId,
           }
         );
-
-        // console.log("Call left successfully");
         setTranscripts(null);
         toggleVoice(false);
         localStorage.clear();
+        widgetTheme?.bot_show_form ? setShowform(true) : setShowform(false);
       }
     } catch (error) {
       // console.error("Error in handleMicClick:", error);
     }
   };
+
+  // Define the type for parameters with optional properties
+  interface ProductParameters {
+    productId?: string;
+    query?: string;
+  }
+
+  interface CollectionParameters {
+    collectionId?: string;
+    query?: string;
+  }
+
+  // Function that implements the logic for the 'show_product' tool
+  const showProduct = async (
+    parameters: ProductParameters
+  ): Promise<string> => {
+    try {
+      const response = await axios.post(
+        `${baseurl}/api/show-product/`,
+        {
+          schema_name: schema,
+          call_session_id: callSessionIds,
+          query: parameters.query || "",
+          top_k: 1,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Cookie: "csrftoken=xjHalmQklLKzhpPd4nXCHyRofqj8RUFC",
+          },
+        }
+      );
+
+      const product = response.data.response;
+      const product_url = product.url;
+      const product_name = product.name;
+      const product_description = product.description;
+      if (product_url) {
+        localStorage.setItem("product_name", product_name);
+        localStorage.setItem("product_description", product_description);
+
+        window.location.assign(product_url); // Open the product URL in a new tab
+      }
+      return `Description: ${product.description}, Price: $${product.price}`;
+    } catch (error) {
+      console.error("Error in seeProduct:", error);
+      return "Error occurred while retrieving the product.";
+    }
+  };
+
+  // Function that implements the logic for the 'show_product' tool
+  const showCollection = async (
+    parameters: CollectionParameters
+  ): Promise<string> => {
+    try {
+      const response = await axios.post(
+        `${baseurl}/api/show-collection/`,
+        {
+          schema_name: schema,
+          call_session_id: callSessionIds,
+          collection_query: parameters.query || "",
+          top_k: 1,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Cookie: "csrftoken=xjHalmQklLKzhpPd4nXCHyRofqj8RUFC",
+          },
+        }
+      );
+
+      const collection = response.data.response;
+      const collection_url = collection.collection_url;
+      const collection_name = collection.matched_collection;
+      const collection_description = collection.description;
+      if (collection_url) {
+        localStorage.setItem("collection_name", collection_name);
+        localStorage.setItem("collection_description", collection_description);
+        window.location.assign(collection_url); // Open the product URL in a new tab
+      }
+      return `Description: ${collection.description}`;
+    } catch (error) {
+      console.error("Error in seeProduct:", error);
+      return "Error occurred while retrieving the product.";
+    }
+  };
+
+  // Function that implements the logic for the 'search_product' tool
+  const searchProduct = async (
+    parameters: ProductParameters
+  ): Promise<string> => {
+    try {
+      const response = await axios.post(
+        `${baseurl}/api/search-product/`,
+        {
+          query: parameters.query,
+          store_id: 1,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Cookie: "csrftoken=xjHalmQklLKzhpPd4nXCHyRofqj8RUFC",
+          },
+        }
+      );
+
+      const searchUrl = response.data.search_url;
+      if (searchUrl) {
+        window.location.assign(searchUrl); // Open the search URL in a new tab
+        return `Successfully opened the search URL`;
+      }
+    } catch (error) {
+      console.error("Error in searchProduct:", error);
+      return "Error occurred while searching for the product.";
+    }
+    return "No search URL found.";
+  };
+
+  function scrollUp(): string {
+    window.scrollBy({
+      top: -300, // Scrolls up by 300 pixels
+      behavior: "smooth",
+    });
+    return "Scrolled up "; // Return a string or appropriate type
+  }
+
+  function scrollDown(): string {
+    window.scrollBy({
+      top: 300, // Scrolls down by 300 pixels
+      behavior: "smooth",
+    });
+    return "Scrolled down"; // Return a string or appropriate type
+  }
+
+  function buyNow(): string {
+    // Find the button element by its class name
+    const button = document.querySelector(
+      ".shopify-payment-button__button--unbranded"
+    );
+
+    const product_url = window.location.href;
+    // Make an API call to mark the product as converted
+    axios
+      .post(`${baseurl}/api/mark-product-converted/`, {
+        product_url: product_url,
+        schema_name: schema,
+        call_session_id: callSessionIds,
+      })
+      .then((response) => {
+        console.log("Product marked as converted:", response.data);
+      })
+      .catch((error) => {
+        console.error("Error marking product as converted:", error);
+      });
+
+    // If the button exists, simulate a click
+    if (button) {
+      button.click();
+      return "Button clicked"; // Return a message when the button is clicked
+    } else {
+      return "Button not found"; // Return an error message if the button is not found
+    }
+  }
+
+  function addToCart(): string {
+    const product_url = window.location.href;
+
+    // Find the button element by its ID
+    const button = document.getElementById(
+      "ProductSubmitButton-template--24466834784574__main"
+    );
+
+    // Make an API call to mark the product as converted
+    axios
+      .post(`${baseurl}/api/mark-product-converted/`, {
+        product_url: product_url,
+        schema_name: schema,
+        call_session_id: callSessionIds,
+      })
+      .then((response) => {
+        console.log("Product marked as converted:", response.data);
+      })
+      .catch((error) => {
+        console.error("Error marking product as converted:", error);
+      });
+
+    // If the button exists, simulate a click
+    if (button) {
+      button.click();
+      return "Add to Cart button clicked"; // Return a message when the button is clicked
+    } else {
+      return "Add to Cart button not found"; // Return an error message if the button is not found
+    }
+  }
+
+  function openCart(): string {
+    window.location.assign(window.location.origin + "/cart");
+    return "Cart opened";
+  }
+  // Register the client-side tools
+  sessionRef.current.registerToolImplementation(
+    "search_product",
+    searchProduct
+  );
+  sessionRef.current.registerToolImplementation("show_product", showProduct);
+  sessionRef.current.registerToolImplementation(
+    "show_collection",
+    showCollection
+  );
+  sessionRef.current.registerToolImplementation("scroll_up", scrollUp);
+  sessionRef.current.registerToolImplementation("scroll_down", scrollDown);
+  sessionRef.current.registerToolImplementation("buy_now", buyNow);
+  sessionRef.current.registerToolImplementation("add_to_cart", addToCart);
+  sessionRef.current.registerToolImplementation("open_cart", openCart);
 
   if (!onlyOnce.current || !widgetTheme) {
     return null; // Or return <div>Loading...</div>
@@ -808,7 +1016,7 @@ const CustomWidget = () => {
               {speech}
             </p>
 
-            {widgetTheme?.bot_show_form ? (
+            {showform ? (
               <form onSubmit={startfromform}>
                 <div className="flex flex-col gap-4 m-4">
                   {[
