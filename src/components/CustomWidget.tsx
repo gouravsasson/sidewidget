@@ -217,6 +217,7 @@ const CustomWidget = () => {
         const callSessionId = JSON.parse(
           localStorage.getItem("callSessionId") || "[]"
         );
+        localStorage.clear();
 
         const handleClose = async () => {
           await session.leaveCall();
@@ -230,7 +231,6 @@ const CustomWidget = () => {
             }
           );
           hasClosed.current = false;
-          localStorage.clear();
           setTranscripts(null);
           toggleVoice(false);
           widgetTheme?.bot_show_form ? setShowform(true) : setShowform(false);
@@ -257,14 +257,11 @@ const CustomWidget = () => {
     console.log("handleMicClickForReconnect");
 
     try {
-      const response = await axios.post(
-        `${baseurl}/api/start-thunder/`,
-        {
-          agent_code: agent_id,
-          schema_name: schema,
-          prior_call_id: id,
-        }
-      );
+      const response = await axios.post(`${baseurl}/api/start-thunder/`, {
+        agent_code: agent_id,
+        schema_name: schema,
+        prior_call_id: id,
+      });
 
       const wssUrl = response.data.joinUrl;
       const callId = response.data.callId;
@@ -309,13 +306,10 @@ const CustomWidget = () => {
     console.log("running handleMicClick");
     try {
       if (status === "disconnected") {
-        const response = await axios.post(
-          `${baseurl}/api/start-thunder/`,
-          {
-            agent_code: agent_id,
-            schema_name: schema,
-          }
-        );
+        const response = await axios.post(`${baseurl}/api/start-thunder/`, {
+          agent_code: agent_id,
+          schema_name: schema,
+        });
 
         const wssUrl = response.data.joinUrl;
         const callId = response.data.callId;
@@ -575,16 +569,13 @@ const CustomWidget = () => {
     e.preventDefault();
     try {
       if (status === "disconnected") {
-        const response = await axios.post(
-          `${baseurl}/api/start-thunder/`,
-          {
-            agent_code: agent_id,
-            schema_name: schema,
-            phone: countryCode + formData.phone,
-            name: formData.name,
-            email: formData.email,
-          }
-        );
+        const response = await axios.post(`${baseurl}/api/start-thunder/`, {
+          agent_code: agent_id,
+          schema_name: schema,
+          phone: countryCode + formData.phone,
+          name: formData.name,
+          email: formData.email,
+        });
 
         const wssUrl = response.data.joinUrl;
         const callId = response.data.callId;
@@ -644,7 +635,7 @@ const CustomWidget = () => {
   };
 
   // Define the type for parameters with optional properties
-  
+
   if (!onlyOnce.current || !widgetTheme) {
     return null; // Or return <div>Loading...</div>
   }
