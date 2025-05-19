@@ -455,8 +455,6 @@ const CustomWidget = () => {
   const handleClose = async () => {
     console.log("status", status);
     if (status !== "disconnected") {
-      localStorage.clear();
-
       hasClosed.current = true;
       const callSessionId = JSON.parse(localStorage.getItem("callSessionId"));
       setExpanded(false);
@@ -475,6 +473,7 @@ const CustomWidget = () => {
 
       setTranscripts(null);
       toggleVoice(false);
+      localStorage.clear();
     } else {
       setExpanded(!expanded);
     }
