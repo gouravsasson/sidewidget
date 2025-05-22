@@ -639,7 +639,7 @@ const CustomWidget = () => {
     <div style={getWidgetStyles()} className="flex flex-col items-end">
       {expanded ? (
         <div
-          className={`bg-gray-900/50 backdrop-blur-sm w-[309px] p-4  rounded-2xl shadow-2xl overflow-hidden border ${
+          className={`bg-gray-900/50 backdrop-blur-sm w-[309px]  rounded-2xl shadow-2xl overflow-hidden border ${
             widgetTheme?.bot_show_form ? "" : "h-[521px]"
           }`}
           style={{
@@ -814,7 +814,12 @@ const CustomWidget = () => {
                   ))}
                   <button
                     type="submit"
-                    className="bg-yellow-400 text-black px-4 py-2 rounded-xl"
+                    className="px-4 py-2 rounded-xl"
+                    style={{
+                      backgroundColor: widgetTheme?.bot_button_color,
+                      borderColor: widgetTheme?.bot_border_color,
+                      color: widgetTheme?.bot_button_text_color,
+                    }}
                   >
                     Submit
                   </button>
