@@ -7,7 +7,7 @@ import { WidgetProvider } from "./constexts/WidgetContext.tsx";
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <WidgetProvider
-      agent_id="6fea6bfb-ebc8-48e0-b51c-506e46ac9d6c"
+      agent_id="de44294f-9d96-432a-b7f8-c8833473f64a"
       schema="6af30ad4-a50c-4acc-8996-d5f562b6987f"
       type="customwidget"
     >

@@ -44,11 +44,13 @@ export interface WidgetTheme {
     bot_animation_color: string;
     bot_name: string;
     bot_show_form: boolean;
+    custom_form_fields: [];
   };
 }
 
 const CustomWidget = () => {
   const [widgetTheme, setWidgetTheme] = useState<WidgetTheme | null>(null);
+  console.log("widgetTheme", widgetTheme?.custom_form_fields);
   const countryCode = localStorage.getItem("countryCode");
 
   const continentcode = localStorage.getItem("continentcode");
@@ -74,11 +76,8 @@ const CustomWidget = () => {
   const hasClosed = useRef(false);
 
   const { callSessionIds, setCallSessionIds } = useSessionStore();
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-  });
+  const [formData, setFormData] = useState({});
+  console.log("formData", formData);
   const [phoneError, setPhoneError] = useState("");
 
   const {
@@ -92,9 +91,6 @@ const CustomWidget = () => {
   } = useUltravoxStore();
   const baseurl = "https://app.snowie.ai";
   const { agent_id, schema } = useWidgetContext();
-
-  // const agent_id = "68ec3404-7c46-4028-b7f3-42bae5c4976f";
-  // const schema = "6af30ad4-a50c-4acc-8996-d5f562b6987f";
   let existingCallSessionIds: string[] = [];
   const AutoStartref = useRef(false);
   const storedIds = localStorage.getItem("callSessionId");
@@ -573,9 +569,7 @@ const CustomWidget = () => {
         const response = await axios.post(`${baseurl}/api/start-thunder/`, {
           agent_code: agent_id,
           schema_name: schema,
-          phone: countryCode + formData.phone,
-          name: formData.name,
-          email: formData.email,
+          custom_form_fields: formData,
         });
 
         const wssUrl = response.data.joinUrl;
@@ -645,8 +639,8 @@ const CustomWidget = () => {
     <div style={getWidgetStyles()} className="flex flex-col items-end">
       {expanded ? (
         <div
-          className={`bg-gray-900/50 backdrop-blur-sm w-[309px]  rounded-2xl shadow-2xl overflow-hidden border ${
-            widgetTheme?.bot_show_form ? "h-[550px]" : "h-[521px]"
+          className={`bg-gray-900/50 backdrop-blur-sm w-[309px] p-4  rounded-2xl shadow-2xl overflow-hidden border ${
+            widgetTheme?.bot_show_form ? "" : "h-[521px]"
           }`}
           style={{
             backgroundColor: widgetTheme?.bot_background_color,
@@ -719,39 +713,9 @@ const CustomWidget = () => {
           </div>
 
           {/* Microphone Button with enhanced visual effects */}
-          <div className="pt-10 flex flex-col items-center justify-center relative overflow-hidden w-full ">
-            {/* Background glow effects */}
-            {/* <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/10 to-transparent"></div> */}
-            {/* <div className="absolute w-full h-64 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-yellow-400/10 rounded-full blur-3xl"></div> */}
-            {/* <div className="absolute w-52 h-52  left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-yellow-400/20 rounded-full blur-xl animate-pulse"></div> */}
-            {/* <div className="absolute w-40 h-40  left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-yellow-400/25 rounded-full blur-md animate-pulse"></div> */}
-
-            {/* Decorative elements */}
-            {/* <div className="absolute w-full h-full">
-              <div className="absolute top-1/4 left-1/4 w-1 h-1 bg-yellow-300 rounded-full animate-ping"></div>
-              <div className="absolute top-3/4 left-1/3 w-1 h-1 bg-yellow-300 rounded-full animate-ping delay-300"></div>
-              <div className="absolute top-1/3 right-1/4 w-1 h-1 bg-yellow-300 rounded-full animate-ping delay-700"></div>
-              <div className="absolute bottom-1/4 right-1/3 w-1 h-1 bg-yellow-300 rounded-full animate-ping delay-500"></div>
-              <div className="absolute top-1/2 left-1/5 w-1 h-1 bg-yellow-300 rounded-full animate-ping delay-200"></div>
-            </div> */}
-
+          <div className="pt-10 flex flex-col items-center justify-center relative  w-full ">
             {/* Microphone button with pulse animations */}
             <div className="relative">
-              {/* {isRecording && pulseEffects.small && (
-                <div className="absolute inset-0 -m-3 bg-yellow-400 opacity-30 rounded-full animate-ping"></div>
-              )}
-              {isRecording && pulseEffects.medium && (
-                <div className="absolute inset-0 -m-6 bg-yellow-500 opacity-20 rounded-full animate-pulse"></div>
-              )}
-              {isRecording && pulseEffects.large && (
-                <div className="absolute inset-0 -m-12 bg-yellow-600 opacity-10 rounded-full animate-pulse"></div>
-              )}
-              {isGlowing && (
-                <div className="absolute inset-0 -m-5 bg-yellow-400 opacity-50 rounded-full animate-ping"></div>
-              )}
-              {isGlowing && (
-                <div className="absolute inset-0 -m-10 bg-yellow-400 opacity-30 rounded-full animate-pulse"></div>
-              )} */}
               <button
                 onClick={handleMicClick}
                 className={`relative z-10 bg-black rounded-full w-36 h-36 flex items-center justify-center border-2 
@@ -798,92 +762,62 @@ const CustomWidget = () => {
 
             {showform ? (
               <form onSubmit={startfromform}>
-                <div className="flex flex-col gap-4 m-4">
-                  {[
-                    {
-                      icon: <User className="h-5 w-5 text-gray-400" />,
-                      value: formData.name,
-                      type: "text",
-                      placeholder: "Your name",
-                      key: "name",
-                      component: "",
-                    },
-                    {
-                      icon: <Mail className="h-5 w-5 text-gray-400" />,
-                      value: formData.email,
-                      type: "email",
-                      placeholder: "Email address",
-                      key: "email",
-                      component: "",
-                    },
-                  ].map((field, index) => (
-                    <div className="relative" key={index}>
-                      <div className="absolute inset-y-0 left-2 flex items-center pointer-events-none">
-                        {field.icon}
-                      </div>
-                      <div className="flex items-center">
-                        {field.component}
+                <div className="flex flex-col p-2 ">
+                  {widgetTheme?.custom_form_fields.map((field, index) => (
+                    <div
+                      className="flex flex-col justify-between mb-4"
+                      key={field.id || field.key || index}
+                    >
+                      <label className="mb-1 font-medium text-gray-700">
+                        {field.label}
+                      </label>
+
+                      {field.type === "tel" ? (
+                        <PhoneInput
+                          dropdownClass="bottom-10 z-50"
+                          inputClass="w-full max-w-[250px] "
+                          dropdownStyle={{ zIndex: 1000 }}
+                          inputProps={{ name: field.key, required: true }}
+                          country={continentcode?.toLowerCase()}
+                          value={formData[field.label] || ""}
+                          onChange={(phone) => {
+                            setFormData({ ...formData, [field.label]: phone });
+                            setPhoneError("");
+                          }}
+                          enableSearch
+                        />
+                      ) : (
                         <input
-                          type={field.type}
+                          name={field.key}
+                          type={field.type || "text"}
                           required
-                          value={field.value}
+                          value={formData[field.label] || ""}
                           maxLength={field.maxLength}
                           onChange={(e) => {
                             let value = e.target.value;
-                            if (field.key === "phone") {
-                              value = value.replace(/\D/g, ""); // remove non-digit characters
-                            }
-                            setFormData({ ...formData, [field.key]: value });
+                            if (field.key === "phone")
+                              value = value.replace(/\D/g, "");
+                            setFormData({ ...formData, [field.label]: value });
                           }}
-                          className={`block w-full pl-12 pr-4 py-2 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-400 transition ${
+                          placeholder={field.placeholder}
+                          className={`pl-4 pr-4 py-2 max-w-[250px] bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-400 transition ${
                             field.component && " rounded-l-none !pl-2 h-[40px]"
                           }`}
-                          placeholder={field.placeholder}
                         />
-                      </div>
+                      )}
+                      {field.key === "phone" && phoneError && (
+                        <span className="text-red-500 text-sm mt-1">
+                          {phoneError}
+                        </span>
+                      )}
                     </div>
                   ))}
-                  <PhoneInput
-                    dropdownClass="bottom-10 z-50"
-                    dropdownStyle={{ zIndex: 1000 }}
-                    inputProps={{
-                      name: "phone",
-                      required: true,
-                    }}
-                    country={`${continentcode?.toLowerCase()}`}
-                    value={formData.phone}
-                    onChange={(phone) => {
-                      setFormData({ ...formData, phone });
-                      setPhoneError(""); // clear error as user types
-                    }}
-                    enableSearch={true}
-                  />
-
-                  {phoneError && (
-                    <div className="text-red-500 text-sm mt-1">
-                      {phoneError}
-                    </div>
-                  )}
-
                   <button
                     type="submit"
-                    className="w-full bg-yellow-400 text-black font-semibold py-3 px-4 rounded-xl hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 transition-colors"
+                    className="bg-yellow-400 text-black px-4 py-2 rounded-xl"
                   >
-                    {status === "connecting" ? (
-                      <div className="flex items-center justify-center">
-                        <Loader2 className="w-5 h-5 animate-spin" /> Connecting
-                        to AI Assistant
-                      </div>
-                    ) : (
-                      "Connect to AI Assistant"
-                    )}
+                    Submit
                   </button>
-
-                  {/* {error && (
-                    <div className="text-red-500 text-center text-sm mt-2">
-                      {error}
-                    </div>
-                  )} */}
                 </div>
               </form>
             ) : (
