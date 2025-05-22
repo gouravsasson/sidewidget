@@ -719,9 +719,7 @@ const CustomWidget = () => {
               <button
                 onClick={handleMicClick}
                 className={`relative z-10 bg-black rounded-full w-36 h-36 flex items-center justify-center border-2 
-                  // isGlowing
-                  //   ? "border-yellow-300 shadow-xl shadow-yellow-400/60"
-                  //   : "border-yellow-400 shadow-lg"
+                 
                 
                   ${
                     isRecording ? "scale-110" : "hover:scale-105"
@@ -762,7 +760,7 @@ const CustomWidget = () => {
 
             {showform ? (
               <form onSubmit={startfromform}>
-                <div className="flex flex-col p-2 ">
+                <div className="flex flex-col p-2 h-[250px] overflow-y-auto scrollbar-hide">
                   {widgetTheme?.custom_form_fields.map((field, index) => (
                     <div
                       className="flex flex-col justify-between mb-4"
