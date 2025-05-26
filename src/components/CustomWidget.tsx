@@ -125,9 +125,6 @@ const CustomWidget = () => {
     getWidgetTheme();
   }, []);
 
-
-
-
   useEffect(() => {
     if (status === "disconnected") {
       setSpeech(`Talk To ${widgetTheme?.bot_name || "AI Assistant"}`);
@@ -598,6 +595,11 @@ const CustomWidget = () => {
             // Optional: clear invalid data
             localStorage.removeItem("callSessionId");
           }
+        }
+        if (response.status !== 200) {
+          setFormError("contact support");
+          setLoading(false);
+          return;
         }
 
         // Append the new ID
