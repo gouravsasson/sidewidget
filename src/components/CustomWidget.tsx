@@ -576,6 +576,12 @@ const CustomWidget = () => {
           custom_form_fields: formData,
         });
 
+        if (response.status !== 201) {
+          setFormError("contact support");
+          setLoading(false);
+          return;
+        }
+
         const wssUrl = response.data.joinUrl;
         const callId = response.data.callId;
         localStorage.setItem("callId", callId);
@@ -596,11 +602,8 @@ const CustomWidget = () => {
             localStorage.removeItem("callSessionId");
           }
         }
-        if (response.status !== 200) {
-          setFormError("contact support");
-          setLoading(false);
-          return;
-        }
+        console.log("response", response);
+        
 
         // Append the new ID
         existingCallSessionIds.push(callId);
