@@ -124,6 +124,9 @@ const CustomWidget = () => {
     getWidgetTheme();
   }, []);
 
+
+  
+
   useEffect(() => {
     if (status === "disconnected") {
       setSpeech(`Talk To ${widgetTheme?.bot_name || "AI Assistant"}`);
