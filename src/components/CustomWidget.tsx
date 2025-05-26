@@ -491,18 +491,16 @@ const CustomWidget = () => {
   const getWidgetStyles = () => {
     const styles = {
       position: "fixed",
-      zIndex: 1000,
+      zIndex: 99999,
       display: "flex",
       flexDirection: "column",
     };
 
-    // Responsive size adjustments
     const maxWidthPx = 400;
     const maxHeightPx = 600;
     const minWidthPx = 250;
     const minHeightPx = 200;
 
-    // Adjust size based on content
     const hasTranscription = widgetTheme?.bot_show_transcript;
     const hasChat = widgetTheme?.bot_show_chat;
     let contentFactor = 1;
@@ -512,20 +510,6 @@ const CustomWidget = () => {
       contentFactor = 0.8;
     }
 
-    //   );
-    //   calculatedHeight = Math.max(
-    //     minHeightPx,
-    //     Math.min(calculatedHeight, maxHeightPx)
-    //   );
-
-    //   styles.width = `${calculatedWidth}px`;
-    //   styles.height = `${calculatedHeight}px`;
-    // } else {
-    //   styles.width = "64px";
-    //   styles.height = "64px";
-    // }
-
-    // Apply position
     switch (widgetTheme?.bot_position) {
       case "top-left":
         styles.top = "20px";
@@ -552,16 +536,13 @@ const CustomWidget = () => {
       case "bottom-right":
         styles.bottom = "24px";
         styles.right = "24px";
-
         break;
       default:
         styles.bottom = "20px";
         styles.right = "20px";
     }
 
-    styles;
-
-    return styles;
+    return styles; // ✅ this line was missing!
   };
 
   const startfromform = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -603,7 +584,6 @@ const CustomWidget = () => {
           }
         }
         console.log("response", response);
-        
 
         // Append the new ID
         existingCallSessionIds.push(callId);
@@ -651,10 +631,7 @@ const CustomWidget = () => {
   }
 
   return (
-    <div
-      style={{ ...getWidgetStyles(), zIndex: 9999 }}
-      className="flex flex-col items-end"
-    >
+    <div style={{ ...getWidgetStyles() }} className="flex flex-col items-end">
       {expanded ? (
         <div
           className={`bg-gray-900/50 backdrop-blur-sm w-[309px]  rounded-2xl shadow-2xl overflow-hidden border ${
