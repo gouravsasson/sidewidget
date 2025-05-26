@@ -80,6 +80,7 @@ const CustomWidget = () => {
   const [formData, setFormData] = useState({});
   console.log("formData", formData);
   const [phoneError, setPhoneError] = useState("");
+  const [formError, setFormError] = useState("");
 
   const {
     setSession,
@@ -633,6 +634,7 @@ const CustomWidget = () => {
       }
     } catch (error) {
       setLoading(false);
+      setFormError("contact support");
       // console.error("Error in handleMicClick:", error);
     }
   };
@@ -839,6 +841,11 @@ const CustomWidget = () => {
                       "Submit"
                     )}
                   </button>
+                  {formError && (
+                    <span className="text-red-500 text-sm mt-1">
+                      {formError}
+                    </span>
+                  )}
                 </div>
               </form>
             ) : (
