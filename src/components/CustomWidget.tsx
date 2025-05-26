@@ -71,6 +71,7 @@ const CustomWidget = () => {
     medium: false,
     large: false,
   });
+  const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const hasReconnected = useRef(false);
   const hasClosed = useRef(false);
@@ -563,7 +564,9 @@ const CustomWidget = () => {
   };
 
   const startfromform = async (e: React.FormEvent<HTMLFormElement>) => {
+    setLoading(true);
     e.preventDefault();
+
     try {
       if (status === "disconnected") {
         const response = await axios.post(`${baseurl}/api/start-thunder/`, {
@@ -578,6 +581,7 @@ const CustomWidget = () => {
         localStorage.setItem("wssUrl", wssUrl);
         setCallSessionIds(response.data.call_session_id);
         setShowform(false);
+        setLoading(false);
         if (storedIds) {
           try {
             const parsedIds = JSON.parse(storedIds);
@@ -625,6 +629,7 @@ const CustomWidget = () => {
         widgetTheme?.bot_show_form ? setShowform(true) : setShowform(false);
       }
     } catch (error) {
+      setLoading(false);
       // console.error("Error in handleMicClick:", error);
     }
   };
@@ -636,7 +641,10 @@ const CustomWidget = () => {
   }
 
   return (
-    <div style={getWidgetStyles()} className="flex flex-col items-end">
+    <div
+      style={{ ...getWidgetStyles(), zIndex: 1000 }}
+      className="flex flex-col items-end"
+    >
       {expanded ? (
         <div
           className={`bg-gray-900/50 backdrop-blur-sm w-[309px]  rounded-2xl shadow-2xl overflow-hidden border ${
@@ -812,14 +820,21 @@ const CustomWidget = () => {
                   ))}
                   <button
                     type="submit"
-                    className="px-4 py-2 rounded-xl"
+                    className="px-4 py-2 rounded-xl flex items-center justify-center"
                     style={{
                       backgroundColor: widgetTheme?.bot_button_color,
                       borderColor: widgetTheme?.bot_border_color,
                       color: widgetTheme?.bot_button_text_color,
                     }}
                   >
-                    Submit
+                    {loading ? (
+                      <>
+                        <Loader2 className="animate-spin" />
+                        <span className="ml-2">connecting...</span>
+                      </>
+                    ) : (
+                      "Submit"
+                    )}
                   </button>
                 </div>
               </form>
