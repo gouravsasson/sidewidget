@@ -125,7 +125,7 @@ const CustomWidget = () => {
   }, []);
 
 
-  
+
 
   useEffect(() => {
     if (status === "disconnected") {
@@ -645,7 +645,7 @@ const CustomWidget = () => {
 
   return (
     <div
-      style={{ ...getWidgetStyles(), zIndex: 1000 }}
+      style={{ ...getWidgetStyles(), zIndex: 9999 }}
       className="flex flex-col items-end"
     >
       {expanded ? (
