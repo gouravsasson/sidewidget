@@ -45,6 +45,7 @@ export interface WidgetTheme {
     bot_name: string;
     bot_show_form: boolean;
     custom_form_fields: [];
+    bot_tagline: string;
   };
 }
 
@@ -947,7 +948,8 @@ const CustomWidget = () => {
                 color: widgetTheme?.bot_border_color,
               }}
             >
-              TALK TO {widgetTheme?.bot_name || "AI Assistant"}
+              {widgetTheme?.bot_tagline ||
+                `TALK TO ${widgetTheme?.bot_name || "AI Assistant"}`}
             </button>
           </div>
         </>
