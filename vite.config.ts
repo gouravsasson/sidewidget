@@ -4,18 +4,22 @@ import { defineConfig } from "vite";
 import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
-  plugins: [react(),tailwindcss()],
+  plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  define: {
+    // Define process.env as an empty object to avoid needing window.process
+    "process.env": {},
+  },
   build: {
     lib: {
-      entry: path.resolve(__dirname, 'src/widget.tsx'), 
-      name: 'ReactWidget',
-      fileName: 'react-widget-uv',
-      formats: ['iife'], 
+      entry: path.resolve(__dirname, "src/widget.tsx"),
+      name: "ReactWidget",
+      fileName: "react-widget-uv",
+      formats: ["iife"],
     },
     rollupOptions: {
       // Remove external dependencies to bundle them
