@@ -46,6 +46,7 @@ export interface WidgetTheme {
     bot_animation_color: string;
     bot_name: string;
     bot_show_form: boolean;
+    bot_tagline: string;
   };
 }
 
@@ -573,7 +574,7 @@ const CustomWidget = () => {
     }
   };
 
- const getWidgetStyles = () => {
+  const getWidgetStyles = () => {
     const styles: React.CSSProperties = {
       position: "fixed",
       zIndex: 1000,
@@ -584,7 +585,8 @@ const CustomWidget = () => {
 
     if (expanded) {
       styles.width = "400px";
-      styles.height = widgetTheme?.bot_show_form && showform ? "550px" : "600px";
+      styles.height =
+        widgetTheme?.bot_show_form && showform ? "550px" : "600px";
     } else {
       styles.width = "160px";
       styles.height = "80px";
@@ -636,7 +638,12 @@ const CustomWidget = () => {
         />
       );
     }
-    return <Mic className={className} style={{ color: widgetTheme?.bot_icon_color }} />;
+    return (
+      <Mic
+        className={className}
+        style={{ color: widgetTheme?.bot_icon_color }}
+      />
+    );
   };
 
   if (!onlyOnce.current || !widgetTheme) {
@@ -648,7 +655,10 @@ const CustomWidget = () => {
       {expanded ? (
         <div
           className="bg-white rounded-3xl shadow-2xl overflow-hidden"
-          style={{ width: "400px", height: widgetTheme?.bot_show_form && showform ? "550px" : "600px" }}
+          style={{
+            width: "400px",
+            height: widgetTheme?.bot_show_form && showform ? "550px" : "600px",
+          }}
         >
           {/* Header */}
           <div
@@ -747,7 +757,10 @@ const CustomWidget = () => {
                           required
                           value={formData[field.key]}
                           onChange={(e) =>
-                            setFormData({ ...formData, [field.key]: e.target.value })
+                            setFormData({
+                              ...formData,
+                              [field.key]: e.target.value,
+                            })
                           }
                           className="w-full p-3 pl-10 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 text-gray-700"
                           placeholder={field.placeholder}
@@ -774,7 +787,9 @@ const CustomWidget = () => {
                     />
                   </div>
                   {phoneError && (
-                    <div className="text-red-500 text-sm mt-1">{phoneError}</div>
+                    <div className="text-red-500 text-sm mt-1">
+                      {phoneError}
+                    </div>
                   )}
                   <button
                     type="submit"
@@ -842,14 +857,18 @@ const CustomWidget = () => {
                         onChange={(e) => setMessage(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
                         placeholder="Type your message..."
-                        disabled={status === "disconnected" || status === "connecting"}
+                        disabled={
+                          status === "disconnected" || status === "connecting"
+                        }
                         className="flex-1 bg-white text-gray-700 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 placeholder-gray-400 border border-gray-200"
                       />
                       <button
                         type="button"
                         onClick={handleSubmit}
                         className="w-12 h-12 rounded-xl flex items-center justify-center transition-colors shadow-md"
-                        style={{ backgroundColor: widgetTheme?.bot_button_color }}
+                        style={{
+                          backgroundColor: widgetTheme?.bot_button_color,
+                        }}
                       >
                         <Send
                           className="w-5 h-5"
@@ -879,7 +898,8 @@ const CustomWidget = () => {
               color: widgetTheme?.bot_button_text_color,
             }}
           >
-            Talk to {widgetTheme?.bot_name || "AI Assistant"}
+            {widgetTheme?.bot_tagline ||
+              `TALK TO ${widgetTheme?.bot_name || "AI Assistant"}`}{" "}
           </div>
         </div>
       )}
