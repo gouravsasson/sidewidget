@@ -14,12 +14,12 @@ import {
 import { MicOff } from "lucide-react";
 import axios from "axios";
 import { UltravoxSession } from "ultravox-client";
-import { useWidgetContext } from "../contexts/WidgetContext";
 import useSessionStore from "../store/session";
 import { useUltravoxStore } from "../store/ultrasession";
 import logo from "../assets/logo.png";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
+import { useWidgetContext } from "../constexts/WidgetContext";
 
 export interface WidgetTheme {
   widget_theme: {
