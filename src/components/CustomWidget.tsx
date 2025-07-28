@@ -89,8 +89,9 @@ const CustomWidget = () => {
     setStatus,
   } = useUltravoxStore();
   const baseurl = "https://app.snowie.ai";
-  const agent_id = "15f96398-5954-402b-977e-be7f108b01e6";
-  const schema = "6af30ad4-a50c-4acc-8996-d5f562b6987f";
+  const {agent_id,schema}=useWidgetContext()
+  // const agent_id = "15f96398-5954-402b-977e-be7f108b01e6";
+  // const schema = "6af30ad4-a50c-4acc-8996-d5f562b6987f";
   let existingCallSessionIds: string[] = [];
   const AutoStartref = useRef(false);
   const storedIds = localStorage.getItem("callSessionId");
