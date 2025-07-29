@@ -14,12 +14,12 @@ import {
 import { MicOff } from "lucide-react";
 import axios from "axios";
 import { UltravoxSession } from "ultravox-client";
-import { useWidgetContext } from "../constexts/WidgetContext";
 import useSessionStore from "../store/session";
 import { useUltravoxStore } from "../store/ultrasession";
 import logo from "../assets/logo.png";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
+import { useWidgetContext } from "../constexts/WidgetContext";
 
 export interface WidgetTheme {
   widget_theme: {
@@ -53,13 +53,10 @@ export interface WidgetTheme {
 const CustomWidget = () => {
   const [widgetTheme, setWidgetTheme] = useState<WidgetTheme | null>(null);
   const countryCode = localStorage.getItem("countryCode");
-
   const continentcode = localStorage.getItem("continentcode");
-
   const [expanded, setExpanded] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [isRecording, setIsRecording] = useState(false);
-  // const [transcription, setTranscription] = useState("");
   const containerRef = useRef(null);
   const [isGlowing, setIsGlowing] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -75,7 +72,6 @@ const CustomWidget = () => {
   const [message, setMessage] = useState("");
   const hasReconnected = useRef(false);
   const hasClosed = useRef(false);
-
   const { callSessionIds, setCallSessionIds } = useSessionStore();
   const [formData, setFormData] = useState({
     name: "",
@@ -83,7 +79,6 @@ const CustomWidget = () => {
     phone: "",
   });
   const [phoneError, setPhoneError] = useState("");
-
   const {
     setSession,
     transcripts,
@@ -94,17 +89,16 @@ const CustomWidget = () => {
     setStatus,
   } = useUltravoxStore();
   const baseurl = "https://app.snowie.ai";
-  const { agent_id, schema } = useWidgetContext();
-
+  const {agent_id,schema}=useWidgetContext()
   // const agent_id = "15f96398-5954-402b-977e-be7f108b01e6";
   // const schema = "6af30ad4-a50c-4acc-8996-d5f562b6987f";
   let existingCallSessionIds: string[] = [];
   const AutoStartref = useRef(false);
   const storedIds = localStorage.getItem("callSessionId");
-
   const debugMessages = new Set(["debug"]);
   const onlyOnce = useRef(false);
   const [showform, setShowform] = useState(false);
+
   useEffect(() => {
     if (widgetTheme?.bot_show_form) {
       setShowform(true);
@@ -113,7 +107,6 @@ const CustomWidget = () => {
 
   useEffect(() => {
     if (onlyOnce.current) return;
-
     const getWidgetTheme = async () => {
       try {
         const response = await axios.get(
@@ -126,7 +119,6 @@ const CustomWidget = () => {
         console.error("Failed to fetch widget theme:", error);
       }
     };
-
     getWidgetTheme();
   }, []);
 
@@ -158,14 +150,9 @@ const CustomWidget = () => {
           session.unmuteSpeaker();
         }
       };
-
       document.addEventListener("visibilitychange", handleVisibilityChange);
-
       return () => {
-        document.removeEventListener(
-          "visibilitychange",
-          handleVisibilityChange
-        );
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
       };
     }
   }, [widgetTheme?.bot_mute_on_tab_change]);
@@ -175,10 +162,8 @@ const CustomWidget = () => {
     sessionRef.current = new UltravoxSession({
       experimentalMessages: debugMessages,
     });
-
     setSession(sessionRef.current);
   }
-
   const session = sessionRef.current;
 
   const handleSubmit = () => {
@@ -189,44 +174,29 @@ const CustomWidget = () => {
   };
 
   useEffect(() => {
-    // Set flag when page is about to refresh
     const handleBeforeUnload = () => {
       sessionStorage.setItem("isRefreshing", "true");
     };
-
-    // Clear flag when page loads (this will execute after refresh)
     const clearRefreshFlag = () => {
       sessionStorage.removeItem("isRefreshing");
     };
-
     window.addEventListener("beforeunload", handleBeforeUnload);
     window.addEventListener("load", clearRefreshFlag);
-
-    // Initial cleanup of any leftover flag
     clearRefreshFlag();
-
-    // Cleanup listeners
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
       window.removeEventListener("load", clearRefreshFlag);
     };
   }, []);
 
-  // disconnecting
   useEffect(() => {
     if (status === "disconnecting" && !hasClosed.current) {
-      // Only run cleanup if this isn't a page refresh
       const isPageRefresh = sessionStorage.getItem("isRefreshing") === "true";
-
       if (!isPageRefresh) {
-        const callSessionId = JSON.parse(
-          localStorage.getItem("callSessionId") || "[]"
-        );
+        const callSessionId = JSON.parse(localStorage.getItem("callSessionId") || "[]");
         localStorage.clear();
-
         const handleClose = async () => {
           await session.leaveCall();
-
           const response = await axios.post(
             `${baseurl}/api/end-call-session-thunder/`,
             {
@@ -240,13 +210,11 @@ const CustomWidget = () => {
           toggleVoice(false);
           widgetTheme?.bot_show_form ? setShowform(true) : setShowform(false);
         };
-
         handleClose();
       }
     }
   }, [status]);
 
-  // autostart on page refresh
   useEffect(() => {
     const callId = localStorage.getItem("callId");
     if (callId && status === "disconnected" && !hasReconnected.current) {
@@ -259,45 +227,30 @@ const CustomWidget = () => {
   }, [status]);
 
   const handleMicClickForReconnect = async (id) => {
-    console.log("handleMicClickForReconnect");
-
     try {
       const response = await axios.post(`${baseurl}/api/start-thunder/`, {
         agent_code: agent_id,
         schema_name: schema,
         prior_call_id: id,
       });
-
       const wssUrl = response.data.joinUrl;
       const callId = response.data.callId;
-
       localStorage.setItem("callId", callId);
-      // setCallId(callId);
       setCallSessionIds(response.data.call_session_id);
       if (storedIds) {
         try {
           const parsedIds = JSON.parse(storedIds);
-          // Ensure it's actually an array
           if (Array.isArray(parsedIds)) {
             existingCallSessionIds = parsedIds;
           }
         } catch (parseError) {
           console.warn("Could not parse callSessionId:", parseError);
-          // Optional: clear invalid data
           localStorage.removeItem("callSessionId");
         }
       }
-
-      // Append the new ID
       existingCallSessionIds.push(callId);
-
-      // Store back in localStorage
-      localStorage.setItem(
-        "callSessionId",
-        JSON.stringify(existingCallSessionIds)
-      );
+      localStorage.setItem("callSessionId", JSON.stringify(existingCallSessionIds));
       setShowform(false);
-
       if (wssUrl) {
         session.joinCall(`${wssUrl}`);
       }
@@ -306,16 +259,13 @@ const CustomWidget = () => {
     }
   };
 
-  // Handle mic button click
   const handleMicClick = async () => {
-    console.log("running handleMicClick");
     try {
       if (status === "disconnected") {
         const response = await axios.post(`${baseurl}/api/start-thunder/`, {
           agent_code: agent_id,
           schema_name: schema,
         });
-
         const wssUrl = response.data.joinUrl;
         const callId = response.data.callId;
         localStorage.setItem("callId", callId);
@@ -325,26 +275,16 @@ const CustomWidget = () => {
         if (storedIds) {
           try {
             const parsedIds = JSON.parse(storedIds);
-            // Ensure it's actually an array
             if (Array.isArray(parsedIds)) {
               existingCallSessionIds = parsedIds;
             }
           } catch (parseError) {
             console.warn("Could not parse callSessionId:", parseError);
-            // Optional: clear invalid data
             localStorage.removeItem("callSessionId");
           }
         }
-
-        // Append the new ID
         existingCallSessionIds.push(callId);
-
-        // Store back in localStorage
-        localStorage.setItem(
-          "callSessionId",
-          JSON.stringify(existingCallSessionIds)
-        );
-
+        localStorage.setItem("callSessionId", JSON.stringify(existingCallSessionIds));
         if (wssUrl) {
           session.joinCall(`${wssUrl}`);
           if (AutoStartref.current) {
@@ -369,7 +309,7 @@ const CustomWidget = () => {
         widgetTheme?.bot_show_form ? setShowform(true) : setShowform(false);
       }
     } catch (error) {
-      // console.error("Error in handleMicClick:", error);
+      console.error("Error in handleMicClick:", error);
     }
   };
 
@@ -383,42 +323,33 @@ const CustomWidget = () => {
 
   session.addEventListener("transcripts", (event) => {
     const alltrans = session.transcripts;
-
     let Trans = "";
-
     for (let index = 0; index < alltrans.length; index++) {
       const currentTranscript = alltrans[index];
-
       Trans = currentTranscript.text;
-
       if (currentTranscript) {
         setTranscripts(Trans);
       }
     }
   });
 
-  // Listen for status changing events
   session.addEventListener("status", (event) => {
     setStatus(session.status);
   });
 
   session.addEventListener("experimental_message", (msg) => {});
 
-  // Animated pulse effects for recording state
   useEffect(() => {
     if (isRecording) {
       const smallPulse = setInterval(() => {
         setPulseEffects((prev) => ({ ...prev, small: !prev.small }));
       }, 1000);
-
       const mediumPulse = setInterval(() => {
         setPulseEffects((prev) => ({ ...prev, medium: !prev.medium }));
       }, 1500);
-
       const largePulse = setInterval(() => {
         setPulseEffects((prev) => ({ ...prev, large: !prev.large }));
       }, 2000);
-
       return () => {
         clearInterval(smallPulse);
         clearInterval(mediumPulse);
@@ -434,16 +365,15 @@ const CustomWidget = () => {
     }
     if (status === "disconnected") {
       setSpeech(`Connecting To ${widgetTheme?.bot_name || "AI Assistant"}`);
-
       handleMicClick();
     }
     if (session.isSpeakerMuted) {
       setIsMuted(false);
       session.unmuteSpeaker();
     }
-
     setExpanded(!expanded);
   };
+
   const togglemute = () => {
     setExpanded(!expanded);
     if (widgetTheme?.bot_mute_on_minimize) {
@@ -456,14 +386,12 @@ const CustomWidget = () => {
   };
 
   const handleClose = async () => {
-    console.log("status", status);
     if (status !== "disconnected") {
       hasClosed.current = true;
       const callSessionId = JSON.parse(localStorage.getItem("callSessionId"));
       setExpanded(false);
       await session.leaveCall();
       widgetTheme?.bot_show_form ? setShowform(true) : setShowform(false);
-
       const response = await axios.post(
         `${baseurl}/api/end-call-session-thunder/`,
         {
@@ -473,7 +401,6 @@ const CustomWidget = () => {
         }
       );
       hasClosed.current = false;
-
       setTranscripts(null);
       toggleVoice(false);
       localStorage.clear();
@@ -505,6 +432,7 @@ const CustomWidget = () => {
     }
     setExpanded(false);
   };
+
   const startFromForm = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
@@ -516,7 +444,6 @@ const CustomWidget = () => {
           name: formData.name,
           email: formData.email,
         });
-
         const wssUrl = response.data.joinUrl;
         const callId = response.data.callId;
         localStorage.setItem("callId", callId);
@@ -526,26 +453,16 @@ const CustomWidget = () => {
         if (storedIds) {
           try {
             const parsedIds = JSON.parse(storedIds);
-            // Ensure it's actually an array
             if (Array.isArray(parsedIds)) {
               existingCallSessionIds = parsedIds;
             }
           } catch (parseError) {
             console.warn("Could not parse callSessionId:", parseError);
-            // Optional: clear invalid data
             localStorage.removeItem("callSessionId");
           }
         }
-
-        // Append the new ID
         existingCallSessionIds.push(callId);
-
-        // Store back in localStorage
-        localStorage.setItem(
-          "callSessionId",
-          JSON.stringify(existingCallSessionIds)
-        );
-
+        localStorage.setItem("callSessionId", JSON.stringify(existingCallSessionIds));
         if (wssUrl) {
           session.joinCall(`${wssUrl}`);
           if (AutoStartref.current) {
@@ -570,7 +487,7 @@ const CustomWidget = () => {
         widgetTheme?.bot_show_form ? setShowform(true) : setShowform(false);
       }
     } catch (error) {
-      // console.error("Error in handleMicClick:", error);
+      console.error("Error in startFromForm:", error);
     }
   };
 
@@ -625,6 +542,7 @@ const CustomWidget = () => {
 
     return styles;
   };
+
   const renderIcon = (className: string) => {
     if (widgetTheme?.bot_logo) {
       return (
@@ -650,17 +568,65 @@ const CustomWidget = () => {
 
   return (
     <div style={getWidgetStyles()} className="flex flex-col items-end">
+      <style>
+        {`
+          @media (max-width: 640px) {
+            .widget-container {
+              width: 90vw !important;
+              height: ${widgetTheme?.bot_show_form && showform ? "80vh" : "85vh"} !important;
+            }
+            .mic-button {
+              width: 30vw !important;
+              height: 30vw !important;
+            }
+            .status-bar {
+              font-size: 0.8rem !important;
+              padding: 0.5rem 1rem !important;
+            }
+            .form-container {
+              padding: 1rem !important;
+            }
+            .form-input {
+              padding: 0.5rem 2rem !important;
+              font-size: 0.9rem !important;
+            }
+            .form-button {
+              padding: 0.5rem !important;
+              font-size: 0.9rem !important;
+            }
+            .chat-input {
+              padding: 0.5rem !important;
+              font-size: 0.9rem !important;
+            }
+            .transcript-box {
+              height: 20vh !important;
+              font-size: 0.8rem !important;
+            }
+            .header {
+              padding: 0.5rem 1rem !important;
+            }
+            .header-button {
+              width: 2rem !important;
+              height: 2rem !important;
+            }
+            .icon {
+              width: 1.2rem !important;
+              height: 1.2rem !important;
+            }
+          }
+        `}
+      </style>
       {expanded ? (
         <div
-          className="bg-white rounded-3xl shadow-2xl overflow-hidden"
+          className="bg-white rounded-3xl shadow-2xl overflow-hidden widget-container"
           style={{
-            width: "400px",
-            height: widgetTheme?.bot_show_form && showform ? "550px" : "600px",
+            width: "min(90vw, 400px)",
+            height: widgetTheme?.bot_show_form && showform ? "min(90vh, 550px)" : "min(90vh, 600px)",
           }}
         >
           {/* Header */}
           <div
-            className="px-6 py-4 flex justify-between items-center"
+            className="px-6 py-4 flex justify-between items-center header"
             style={{ backgroundColor: widgetTheme?.bot_bubble_color }}
           >
             <div className="flex items-center space-x-3">
@@ -668,7 +634,7 @@ const CustomWidget = () => {
                 className="w-8 h-8 rounded-full flex items-center justify-center"
                 style={{ backgroundColor: widgetTheme?.bot_button_color }}
               >
-                {renderIcon("w-5 h-5")}
+                {renderIcon("w-5 h-5 icon")}
               </div>
               <span
                 className="font-semibold text-lg"
@@ -680,35 +646,35 @@ const CustomWidget = () => {
             <div className="flex items-center space-x-3">
               <button
                 onClick={toggleMute}
-                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-black/10 transition-colors"
+                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-black/10 transition-colors header-button"
               >
                 {isMuted ? (
                   <VolumeX
-                    className="w-5 h-5"
+                    className="w-5 h-5 icon"
                     style={{ color: widgetTheme?.bot_text_color }}
                   />
                 ) : (
                   <Volume2
-                    className="w-5 h-5"
+                    className="w-5 h-5 icon"
                     style={{ color: widgetTheme?.bot_text_color }}
                   />
                 )}
               </button>
               <button
                 onClick={toggleMute}
-                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-black/10 transition-colors"
+                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-black/10 transition-colors header-button"
               >
                 <Minimize2
-                  className="w-5 h-5"
+                  className="w-5 h-5 icon"
                   style={{ color: widgetTheme?.bot_text_color }}
                 />
               </button>
               <button
                 onClick={handleClose}
-                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-black/10 transition-colors"
+                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-black/10 transition-colors header-button"
               >
                 <X
-                  className="w-5 h-5"
+                  className="w-5 h-5 icon"
                   style={{ color: widgetTheme?.bot_text_color }}
                 />
               </button>
@@ -721,7 +687,7 @@ const CustomWidget = () => {
             style={{ height: "calc(100% - 80px)" }}
           >
             {widgetTheme?.bot_show_form && showform ? (
-              <div className="flex flex-col items-center justify-center h-full p-6">
+              <div className="flex flex-col items-center justify-center h-full p-6 form-container">
                 <h3 className="text-lg font-semibold mb-6 text-gray-800">
                   Enter Your Details
                 </h3>
@@ -731,14 +697,14 @@ const CustomWidget = () => {
                 >
                   {[
                     {
-                      icon: <User className="h-5 w-5 text-gray-400" />,
+                      icon: <User className="h-5 w-5 text-gray-400 icon" />,
                       value: formData.name,
                       type: "text",
                       placeholder: "Your name",
                       key: "name",
                     },
                     {
-                      icon: <Mail className="h-5 w-5 text-gray-400" />,
+                      icon: <Mail className="h-5 w-5 text-gray-400 icon" />,
                       value: formData.email,
                       type: "email",
                       placeholder: "Email address",
@@ -760,7 +726,7 @@ const CustomWidget = () => {
                               [field.key]: e.target.value,
                             })
                           }
-                          className="w-full p-3 pl-10 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 text-gray-700"
+                          className="w-full p-3 pl-10 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 text-gray-700 form-input"
                           placeholder={field.placeholder}
                         />
                       </div>
@@ -781,7 +747,7 @@ const CustomWidget = () => {
                         setPhoneError("");
                       }}
                       enableSearch={true}
-                      inputClass="w-full p-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 text-gray-700"
+                      inputClass="w-full p-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 text-gray-700 form-input"
                     />
                   </div>
                   {phoneError && (
@@ -791,12 +757,12 @@ const CustomWidget = () => {
                   )}
                   <button
                     type="submit"
-                    className="w-full p-3 rounded-xl text-white transition-colors hover:opacity-90"
+                    className="w-full p-3 rounded-xl text-white transition-colors hover:opacity-90 form-button"
                     style={{ backgroundColor: widgetTheme?.bot_button_color }}
                   >
                     {status === "connecting" ? (
                       <div className="flex items-center justify-center">
-                        <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                        <Loader2 className="w-5 h-5 animate-spin mr-2 icon" />
                         Connecting to AI Assistant
                       </div>
                     ) : (
@@ -812,14 +778,13 @@ const CustomWidget = () => {
                   <button
                     onClick={handleMicClick}
                     disabled={widgetTheme?.bot_show_form && showform}
-                    className="w-40 h-40 rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-lg mb-6"
+                    className="w-40 h-40 rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-lg mb-6 mic-button"
                     style={{ backgroundColor: widgetTheme?.bot_button_color }}
                   >
-                    {renderIcon("w-16 h-16")}
+                    {renderIcon("w-16 h-16 icon")}
                   </button>
-
                   <div
-                    className="px-6 py-2 rounded-full text-sm font-medium"
+                    className="px-6 py-2 rounded-full text-sm font-medium status-bar"
                     style={{
                       backgroundColor: widgetTheme?.bot_status_bar_color,
                       color: widgetTheme?.bot_status_bar_text_color,
@@ -834,7 +799,7 @@ const CustomWidget = () => {
                   <div className="px-6 py-4 flex-1">
                     <div
                       ref={containerRef}
-                      className="bg-white rounded-2xl p-4 h-32 text-gray-600 shadow-inner border overflow-y-auto text-sm"
+                      className="bg-white rounded-2xl p-4 h-32 text-gray-600 shadow-inner border overflow-y-auto text-sm transcript-box"
                       style={{
                         fontStyle: transcripts ? "normal" : "italic",
                         color: transcripts ? "#374151" : "#9CA3AF",
@@ -858,7 +823,7 @@ const CustomWidget = () => {
                         disabled={
                           status === "disconnected" || status === "connecting"
                         }
-                        className="flex-1 bg-white text-gray-700 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 placeholder-gray-400 border border-gray-200"
+                        className="flex-1 bg-white text-gray-700 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 placeholder-gray-400 border border-gray-200 chat-input"
                       />
                       <button
                         type="button"
@@ -869,7 +834,7 @@ const CustomWidget = () => {
                         }}
                       >
                         <Send
-                          className="w-5 h-5"
+                          className="w-5 h-5 icon"
                           style={{ color: widgetTheme?.bot_button_text_color }}
                         />
                       </button>
@@ -884,20 +849,20 @@ const CustomWidget = () => {
         <div className="flex flex-col items-center gap-3">
           <button
             onClick={toggleExpand}
-            className="w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all hover:scale-110"
+            className="w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all hover:scale-110 "
             style={{ backgroundColor: widgetTheme?.bot_button_color }}
           >
             {renderIcon("w-6 h-6")}
           </button>
           <div
-            className="px-4 py-2 rounded-full text-sm font-medium shadow-lg text-center"
+            className="px-4 py-2 rounded-full text-sm font-medium shadow-lg text-center status-bar"
             style={{
               backgroundColor: widgetTheme?.bot_button_color,
               color: widgetTheme?.bot_button_text_color,
             }}
           >
             {widgetTheme?.bot_tagline ||
-              `TALK TO ${widgetTheme?.bot_name || "AI Assistant"}`}{" "}
+              `TALK TO ${widgetTheme?.bot_name || "AI Assistant"}`}
           </div>
         </div>
       )}
