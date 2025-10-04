@@ -89,7 +89,7 @@ const CustomWidget = () => {
     setStatus,
   } = useUltravoxStore();
   const baseurl = "https://app.snowie.ai";
-  const {agent_id,schema}=useWidgetContext()
+  const { agent_id, schema } = useWidgetContext();
   // const agent_id = "15f96398-5954-402b-977e-be7f108b01e6";
   // const schema = "6af30ad4-a50c-4acc-8996-d5f562b6987f";
   let existingCallSessionIds: string[] = [];
@@ -152,7 +152,10 @@ const CustomWidget = () => {
       };
       document.addEventListener("visibilitychange", handleVisibilityChange);
       return () => {
-        document.removeEventListener("visibilitychange", handleVisibilityChange);
+        document.removeEventListener(
+          "visibilitychange",
+          handleVisibilityChange
+        );
       };
     }
   }, [widgetTheme?.bot_mute_on_tab_change]);
@@ -193,7 +196,9 @@ const CustomWidget = () => {
     if (status === "disconnecting" && !hasClosed.current) {
       const isPageRefresh = sessionStorage.getItem("isRefreshing") === "true";
       if (!isPageRefresh) {
-        const callSessionId = JSON.parse(localStorage.getItem("callSessionId") || "[]");
+        const callSessionId = JSON.parse(
+          localStorage.getItem("callSessionId") || "[]"
+        );
         localStorage.clear();
         const handleClose = async () => {
           await session.leaveCall();
@@ -249,7 +254,10 @@ const CustomWidget = () => {
         }
       }
       existingCallSessionIds.push(callId);
-      localStorage.setItem("callSessionId", JSON.stringify(existingCallSessionIds));
+      localStorage.setItem(
+        "callSessionId",
+        JSON.stringify(existingCallSessionIds)
+      );
       setShowform(false);
       if (wssUrl) {
         session.joinCall(`${wssUrl}`);
@@ -284,7 +292,10 @@ const CustomWidget = () => {
           }
         }
         existingCallSessionIds.push(callId);
-        localStorage.setItem("callSessionId", JSON.stringify(existingCallSessionIds));
+        localStorage.setItem(
+          "callSessionId",
+          JSON.stringify(existingCallSessionIds)
+        );
         if (wssUrl) {
           session.joinCall(`${wssUrl}`);
           if (AutoStartref.current) {
@@ -462,7 +473,10 @@ const CustomWidget = () => {
           }
         }
         existingCallSessionIds.push(callId);
-        localStorage.setItem("callSessionId", JSON.stringify(existingCallSessionIds));
+        localStorage.setItem(
+          "callSessionId",
+          JSON.stringify(existingCallSessionIds)
+        );
         if (wssUrl) {
           session.joinCall(`${wssUrl}`);
           if (AutoStartref.current) {
@@ -502,7 +516,10 @@ const CustomWidget = () => {
 
     if (expanded) {
       styles.width = "min(90vw, 400px)"; // Responsive width
-      styles.height = widgetTheme?.bot_show_form && showform ? "min(90vh, 550px)" : "min(90vh, 600px)"; // Responsive height
+      styles.height =
+        widgetTheme?.bot_show_form && showform
+          ? "min(90vh, 550px)"
+          : "min(90vh, 600px)"; // Responsive height
     } else {
       styles.width = "min(40vw, 160px)"; // Smaller width on mobile
       styles.height = "min(20vh, 80px)"; // Smaller height on mobile
@@ -550,7 +567,12 @@ const CustomWidget = () => {
           src={widgetTheme.bot_logo}
           alt="Custom Icon"
           className={className}
-          style={{ objectFit: "contain" }}
+          style={{
+            objectFit: "cover",
+            width: "100%",
+            height: "100%",
+            borderRadius: "50%",
+          }}
         />
       );
     }
@@ -573,7 +595,9 @@ const CustomWidget = () => {
           @media (max-width: 640px) {
             .widget-container {
               width: 90vw !important;
-              height: ${widgetTheme?.bot_show_form && showform ? "80vh" : "85vh"} !important;
+              height: ${
+                widgetTheme?.bot_show_form && showform ? "80vh" : "85vh"
+              } !important;
             }
             .mic-button {
               width: 30vw !important;
@@ -621,7 +645,10 @@ const CustomWidget = () => {
           className="bg-white rounded-3xl shadow-2xl overflow-hidden widget-container"
           style={{
             width: "min(90vw, 400px)",
-            height: widgetTheme?.bot_show_form && showform ? "min(90vh, 550px)" : "min(90vh, 600px)",
+            height:
+              widgetTheme?.bot_show_form && showform
+                ? "min(90vh, 550px)"
+                : "min(90vh, 600px)",
           }}
         >
           {/* Header */}
@@ -631,10 +658,10 @@ const CustomWidget = () => {
           >
             <div className="flex items-center space-x-3">
               <div
-                className="w-8 h-8 rounded-full flex items-center justify-center"
+                className="w-8 h-8 rounded-full flex items-center justify-center overflow-hidden"
                 style={{ backgroundColor: widgetTheme?.bot_button_color }}
               >
-                {renderIcon("w-5 h-5 icon")}
+                {renderIcon("w-full h-full icon")}
               </div>
               <span
                 className="font-semibold text-lg"
@@ -778,10 +805,10 @@ const CustomWidget = () => {
                   <button
                     onClick={handleMicClick}
                     disabled={widgetTheme?.bot_show_form && showform}
-                    className="w-40 h-40 rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-lg mb-6 mic-button"
+                    className="w-40 h-40 rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-lg mb-6 mic-button overflow-hidden"
                     style={{ backgroundColor: widgetTheme?.bot_button_color }}
                   >
-                    {renderIcon("w-16 h-16 icon")}
+                    {renderIcon("w-full h-full icon")}
                   </button>
                   <div
                     className="px-6 py-2 rounded-full text-sm font-medium status-bar"
@@ -849,10 +876,10 @@ const CustomWidget = () => {
         <div className="flex flex-col items-center gap-3">
           <button
             onClick={toggleExpand}
-            className="w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all hover:scale-110 "
+            className="w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all hover:scale-110 overflow-hidden"
             style={{ backgroundColor: widgetTheme?.bot_button_color }}
           >
-            {renderIcon("w-6 h-6")}
+            {renderIcon("w-full h-full")}
           </button>
           <div
             className="px-4 py-2 rounded-full text-sm font-medium shadow-lg text-center status-bar"
