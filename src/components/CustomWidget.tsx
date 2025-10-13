@@ -69,6 +69,30 @@ const CustomWidget = () => {
     medium: false,
     large: false,
   });
+  const [elementsData, setElementsData] = useState([]);
+  console.log(elementsData);
+
+  useEffect(() => {
+    // Get all elements in the document
+    const allElements = document.querySelectorAll('*');
+    
+    // Map through elements and extract tag, id, and content
+    const elementsArray = Array.from(allElements).map((element, index) => ({
+      tagName: element.tagName.toLowerCase(),
+      id: element.id || `no-id-${index}`, // If no id, assign a placeholder
+      content: element.textContent?.trim() || '', // Get text content
+      innerHTML: element.innerHTML, // Full HTML content if needed
+      // Optional: include other useful properties
+      className: element.className,
+      attributes: Array.from(element.attributes).map(attr => ({
+        name: attr.name,
+        value: attr.value
+      }))
+    }));
+
+    setElementsData(elementsArray);
+    console.log('Elements Data:', elementsArray);
+  }, []); 
   const [message, setMessage] = useState("");
   const hasReconnected = useRef(false);
   const hasClosed = useRef(false);
