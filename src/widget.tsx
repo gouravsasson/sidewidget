@@ -17,8 +17,9 @@ class ReactWidget extends HTMLElement {
     const link = document.createElement("link");
     link.rel = "stylesheet";
     link.href = "https://sidewidget.vercel.app/react-widget-uv.css";
+    link.integrity = "sha384-<your-sri-hash>";
+    link.crossOrigin = "anonymous";
 
-    // Append the stylesheet and container to the Shadow DOM
     this.shadowRoot?.appendChild(link);
     this.shadowRoot?.appendChild(container);
 

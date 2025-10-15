@@ -1,0 +1,35 @@
+Pz8/Pz8OPz9lP00/WhYUfz8vDz4/Pz8/Ez8/Yz8/TTt0Pz8/Pz9vP3USdmlmUj8/DQo=   (iife.js)
+Pz8/Pz8/FT9LP1I/Pz8jGz8/Gj9BPz9zJxU/ZlQ/ET8/XGNqP1I/Pz8/aD96Px4dDQo=   (css)
+
+
+<meta
+  http-equiv="Content-Security-Policy"
+  content="default-src 'self'; script-src 'self' https://sidewidget.vercel.app 'sha384-<your-sri-hash>'; style-src 'self' https://sidewidget.vercel.app 'sha384-<your-sri-hash>'; connect-src 'self' https://app.snowie.ai;"
+/>
+
+
+
+
+<meta
+  http-equiv="Content-Security-Policy"
+  content="default-src 'self'; script-src 'self' https://sidewidget.vercel.app 'sha384-Pz8/Pz8OPz9lP00/WhYUfz8vDz4/Pz8/Ez8/Yz8/TTt0Pz8/Pz9vP3USdmlmUj8/DQo='; style-src 'self' https://sidewidget.vercel.app 'sha384-Pz8/Pz8/FT9LP1I/Pz8jGz8/Gj9BPz9zJxU/ZlQ/ET8/XGNqP1I/Pz8/aD96Px4dDQo='; connect-src 'self' https://app.snowie.ai;"
+/>
+<link
+  rel="stylesheet"
+  href="https://sidewidget.vercel.app/react-widget-uv.css"
+  integrity="sha384-Pz8/Pz8/FT9LP1I/Pz8jGz8/Gj9BPz9zJxU/ZlQ/ET8/XGNqP1I/Pz8/aD96Px4dDQo="
+  crossorigin="anonymous"
+/>
+<script>
+  window.process = { env: {} };
+</script>
+<script
+  src="https://sidewidget.vercel.app/react-widget-uv.iife.js"
+  integrity="sha384-Pz8/Pz8OPz9lP00/WhYUfz8vDz4/Pz8/Ez8/Yz8/TTt0Pz8/Pz9vP3USdmlmUj8/DQo="
+  crossorigin="anonymous"
+></script>
+<react-widget-uv
+  agent_id="f5609580-7a79-4e6a-a790-d828aedb3e3f"
+  schema="6af30ad4-a50c-4acc-8996-d5f562b6987f"
+  type="customwidget"
+></react-widget-uv>

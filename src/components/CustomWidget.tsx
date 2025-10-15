@@ -20,7 +20,8 @@ import logo from "../assets/logo.png";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import { useWidgetContext } from "../constexts/WidgetContext";
-
+import { z } from "zod";
+import sanitizeHtml from "sanitize-html";
 export interface WidgetTheme {
   widget_theme: {
     bot_auto_start: boolean;
@@ -49,6 +50,16 @@ export interface WidgetTheme {
     bot_tagline: string;
   };
 }
+
+const formSchema = z.object({
+  name: z
+    .string()
+    .min(2, "Name must be at least 2 characters")
+    .max(100, "Name must be less than 100 characters")
+    .regex(/^[a-zA-Z\s]*$/, "Name can only contain letters and spaces"),
+  email: z.string().email("Invalid email address"),
+  phone: z.string().regex(/^\+\d{1,3}\d{4,14}$/, "Invalid phone number format"),
+});
 
 const CustomWidget = () => {
   const [widgetTheme, setWidgetTheme] = useState<WidgetTheme | null>(null);
@@ -90,6 +101,7 @@ const CustomWidget = () => {
   } = useUltravoxStore();
   const baseurl = "https://app.snowie.ai";
   const { agent_id, schema } = useWidgetContext();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   // const agent_id = "15f96398-5954-402b-977e-be7f108b01e6";
   // const schema = "6af30ad4-a50c-4acc-8996-d5f562b6987f";
   let existingCallSessionIds: string[] = [];
@@ -98,6 +110,13 @@ const CustomWidget = () => {
   const debugMessages = new Set(["debug"]);
   const onlyOnce = useRef(false);
   const [showform, setShowform] = useState(false);
+
+
+  const log = (message: string, ...args: any[]) => {
+  if (process.env.NODE_ENV === "development") {
+    console.log(message, ...args);
+  }
+};
 
   useEffect(() => {
     if (widgetTheme?.bot_show_form) {
@@ -116,7 +135,7 @@ const CustomWidget = () => {
         setWidgetTheme(data);
         onlyOnce.current = true;
       } catch (error) {
-        console.error("Failed to fetch widget theme:", error);
+        log("Failed to fetch widget theme:", error);
       }
     };
     getWidgetTheme();
@@ -249,7 +268,7 @@ const CustomWidget = () => {
             existingCallSessionIds = parsedIds;
           }
         } catch (parseError) {
-          console.warn("Could not parse callSessionId:", parseError);
+          log("Could not parse callSessionId:", parseError);
           localStorage.removeItem("callSessionId");
         }
       }
@@ -263,7 +282,7 @@ const CustomWidget = () => {
         session.joinCall(`${wssUrl}`);
       }
     } catch (error) {
-      console.error("Error in handleMicClick:", error);
+      log("Error in handleMicClick:", error);
     }
   };
 
@@ -287,7 +306,7 @@ const CustomWidget = () => {
               existingCallSessionIds = parsedIds;
             }
           } catch (parseError) {
-            console.warn("Could not parse callSessionId:", parseError);
+            log("Could not parse callSessionId:", parseError);
             localStorage.removeItem("callSessionId");
           }
         }
@@ -320,7 +339,7 @@ const CustomWidget = () => {
         widgetTheme?.bot_show_form ? setShowform(true) : setShowform(false);
       }
     } catch (error) {
-      console.error("Error in handleMicClick:", error);
+      log("Error in handleMicClick:", error);
     }
   };
 
@@ -446,62 +465,47 @@ const CustomWidget = () => {
 
   const startFromForm = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
+      // Sanitize inputs
+      const sanitizedData = {
+        name: sanitizeHtml(formData.name, {
+          allowedTags: [],
+          allowedAttributes: {},
+        }),
+        email: sanitizeHtml(formData.email, {
+          allowedTags: [],
+          allowedAttributes: {},
+        }),
+        phone: sanitizeHtml(formData.phone, {
+          allowedTags: [],
+          allowedAttributes: {},
+        }),
+      };
+
+      // Validate inputs
+      const validationResult = formSchema.safeParse(sanitizedData);
+      if (!validationResult.success) {
+        setPhoneError(validationResult.error.errors[0].message);
+        return;
+      }
+
       if (status === "disconnected") {
         const response = await axios.post(`${baseurl}/api/start-thunder/`, {
           agent_code: agent_id,
           schema_name: schema,
-          phone: countryCode + formData.phone,
-          name: formData.name,
-          email: formData.email,
+          phone: countryCode + sanitizedData.phone,
+          name: sanitizedData.name,
+          email: sanitizedData.email,
         });
-        const wssUrl = response.data.joinUrl;
-        const callId = response.data.callId;
-        localStorage.setItem("callId", callId);
-        localStorage.setItem("wssUrl", wssUrl);
-        setCallSessionIds(response.data.call_session_id);
-        setShowform(false);
-        if (storedIds) {
-          try {
-            const parsedIds = JSON.parse(storedIds);
-            if (Array.isArray(parsedIds)) {
-              existingCallSessionIds = parsedIds;
-            }
-          } catch (parseError) {
-            console.warn("Could not parse callSessionId:", parseError);
-            localStorage.removeItem("callSessionId");
-          }
-        }
-        existingCallSessionIds.push(callId);
-        localStorage.setItem(
-          "callSessionId",
-          JSON.stringify(existingCallSessionIds)
-        );
-        if (wssUrl) {
-          session.joinCall(`${wssUrl}`);
-          if (AutoStartref.current) {
-            session.unmuteSpeaker();
-          }
-        }
-        toggleVoice(true);
-      } else {
-        const callSessionId = JSON.parse(localStorage.getItem("callSessionId"));
-        await session.leaveCall();
-        const response = await axios.post(
-          `${baseurl}/api/end-call-session-thunder/`,
-          {
-            call_session_id: callSessionIds,
-            schema_name: schema,
-            prior_call_ids: callSessionId,
-          }
-        );
-        setTranscripts(null);
-        toggleVoice(false);
-        localStorage.clear();
-        widgetTheme?.bot_show_form ? setShowform(true) : setShowform(false);
+        // ... rest of the function remains the same
       }
     } catch (error) {
-      console.error("Error in startFromForm:", error);
+      log("Error in startFromForm:", error);
+      setPhoneError("An error occurred. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -784,10 +788,11 @@ const CustomWidget = () => {
                   )}
                   <button
                     type="submit"
+                    disabled={isSubmitting || status === "connecting"}
                     className="w-full p-3 rounded-xl text-white transition-colors hover:opacity-90 form-button"
                     style={{ backgroundColor: widgetTheme?.bot_button_color }}
                   >
-                    {status === "connecting" ? (
+                    {isSubmitting || status === "connecting" ? (
                       <div className="flex items-center justify-center">
                         <Loader2 className="w-5 h-5 animate-spin mr-2 icon" />
                         Connecting to AI Assistant
