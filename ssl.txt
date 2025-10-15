@@ -1,7 +1,6 @@
 Pz8/Pz8OPz9lP00/WhYUfz8vDz4/Pz8/Ez8/Yz8/TTt0Pz8/Pz9vP3USdmlmUj8/DQo=   (iife.js)
 Pz8/Pz8/FT9LP1I/Pz8jGz8/Gj9BPz9zJxU/ZlQ/ET8/XGNqP1I/Pz8/aD96Px4dDQo=   (css)
-
-
+QD8\Pz8\eD9EAT8UPxo\ESUfPz8vIj9oNHchU14\Pz8\Pz8\Pz0\GDVbPyhpPz88DQo=    (widgetiife)
 <meta
   http-equiv="Content-Security-Policy"
   content="default-src 'self'; script-src 'self' https://sidewidget.vercel.app 'sha384-<your-sri-hash>'; style-src 'self' https://sidewidget.vercel.app 'sha384-<your-sri-hash>'; connect-src 'self' https://app.snowie.ai;"
