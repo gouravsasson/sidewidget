@@ -1,16 +1,18 @@
 {
-  "headers": [
+  "routes": [
     {
-      "source": "/react-widget-uv.iife.js",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
-      ]
+      "src": "/react-widget-uv.iife.js",
+      "dest": "/react-widget-uv.iife.js",
+      "headers": {
+        "Cache-Control": "public, max-age=0, must-revalidate"
+      }
     },
     {
-      "source": "/react-widget-uv.css",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
-      ]
+      "src": "/react-widget-uv.css",
+      "dest": "/react-widget-uv.css",
+      "headers": {
+        "Cache-Control": "public, max-age=0, must-revalidate"
+      }
     }
   ]
 }
