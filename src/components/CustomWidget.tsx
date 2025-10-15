@@ -80,6 +80,9 @@ const CustomWidget = () => {
     medium: false,
     large: false,
   });
+  const [elementsData, setElementsData] = useState([]);
+  console.log(elementsData);
+
   const [message, setMessage] = useState("");
   const hasReconnected = useRef(false);
   const hasClosed = useRef(false);
@@ -587,6 +590,42 @@ const CustomWidget = () => {
       />
     );
   };
+
+  const extractAllElements = async (): Promise<string> => {
+    try {
+      const allElements = document.querySelectorAll("*");
+      return Array.from(allElements)
+        .map((element, index) => ({
+          tagName: element.tagName.toLowerCase(),
+          id: element.id || `no-id-${index}`,
+          content: element.textContent?.trim() || "",
+          innerHTML: element.innerHTML,
+          className: element.className,
+          attributes: Array.from(element.attributes).map((attr) => ({
+            name: attr.name,
+            value: attr.value,
+          })),
+        }))
+        .join("\n");
+    } catch (error) {
+      console.error("Error extracting all elements:", error);
+      return "Error extracting all elements";
+    }
+  };
+
+  const getWebContent = async (parameters: any): Promise<string> => {
+    console.log(parameters);
+    return "Collection opened";
+  };
+
+  sessionRef.current.registerToolImplementation(
+    "ExtractWebContent",
+    extractAllElements
+  );
+  sessionRef.current.registerToolImplementation(
+    "GetWebContent",
+    getWebContent
+  );
 
   if (!onlyOnce.current || !widgetTheme) {
     return <div className="text-white text-center">Loading...</div>;
