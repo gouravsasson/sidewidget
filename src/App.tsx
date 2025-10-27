@@ -160,6 +160,7 @@ import Forkartik from "./components/Forkartik";
 import Autostart from "./components/Autostart";
 import CustomWidget from "./components/CustomWidget";
 import { WidgetTheme } from "./components/CustomWidget";
+import TestWidget from "./components/TestWidget";
 
 function App() {
   const [showPopup, setShowPopup] = useState(false);
@@ -192,6 +193,7 @@ function App() {
     autostart: <Autostart />,
     normal: <Forkartik />,
     customwidget: <CustomWidget />,
+    test: <TestWidget/>
   };
 
   return widgetMap[type] || null;
