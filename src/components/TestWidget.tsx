@@ -90,8 +90,8 @@ const TestWidget = () => {
   } = useUltravoxStore();
   const baseurl = "https://test.snowie.ai";
   const { agent_id, schema } = useWidgetContext();
-  // const agent_id = "15f96398-5954-402b-977e-be7f108b01e6";
-  // const schema = "6af30ad4-a50c-4acc-8996-d5f562b6987f";
+  // const agent_id = "f1b87ef8-8c52-4c40-96f5-62280b7c8aea";
+  // const schema = "9cd3db15-5dbe-4199-aa8c-80c5701857f7";
   let existingCallSessionIds: string[] = [];
   const AutoStartref = useRef(false);
   const storedIds = localStorage.getItem("callSessionId");
@@ -165,6 +165,27 @@ const TestWidget = () => {
     sessionRef.current = new UltravoxSession({
       experimentalMessages: debugMessages,
     });
+
+    sessionRef.current.registerToolImplementation("getPageDetail", () => {
+      console.log(
+        "%c[getPageDetail Tool Invoked]",
+        "color: #ff9800; font-weight: bold;"
+      );
+
+      // Log DOM extraction start
+      console.log("Extracting full DOM...");
+
+      const html = document.documentElement.outerHTML;
+
+      console.log("DOM extracted. Length:", html.length);
+      console.log("DOM Preview:", html.slice(0, 500), "...");
+
+      return {
+        result: html,
+        responseType: "tool-response",
+      };
+    });
+
     setSession(sessionRef.current);
   }
   const session = sessionRef.current;
