@@ -165,6 +165,28 @@ const CustomWidget = () => {
     sessionRef.current = new UltravoxSession({
       experimentalMessages: debugMessages,
     });
+
+
+    sessionRef.current.registerToolImplementation("getPageDetail", () => {
+      console.log(
+        "%c[getPageDetail Tool Invoked]",
+        "color: #ff9800; font-weight: bold;"
+      );
+
+      console.log("Extracting full DOM...");
+
+      const html = document.documentElement.outerHTML;
+
+      console.log("DOM extracted. Length:", html.length);
+      console.log("DOM Preview:", html.slice(0, 500), "...");
+
+      return {
+        result: html,
+        responseType: "tool-response",
+      };
+    });
+
+
     setSession(sessionRef.current);
   }
   const session = sessionRef.current;
