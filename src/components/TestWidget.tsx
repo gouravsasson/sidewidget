@@ -166,7 +166,7 @@ const TestWidget = () => {
       experimentalMessages: debugMessages,
     });
 
-    sessionRef.current.registerToolImplementation("getPageDetail", () => {
+    sessionRef.current.registerToolImplementation("getPageDetails", () => {
       console.log(
         "%c[getPageDetail Tool Invoked]",
         "color: #ff9800; font-weight: bold;"
