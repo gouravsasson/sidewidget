@@ -180,10 +180,27 @@ const TestWidget = () => {
       console.log("DOM extracted. Length:", html.length);
       console.log("DOM Preview:", html.slice(0, 500), "...");
 
-      return {
-        result: html,
-        responseType: "tool-response",
-      };
+     // 1. Get visible text from the body
+const rawText = document.body.innerText || "";
+
+// 2. Normalize spacing
+const cleanedText = rawText
+  .replace(/\s{2,}/g, " ")   // collapse multiple spaces
+  .replace(/\n{2,}/g, "\n")  // collapse multiple blank lines
+  .trim();
+
+// 3. Split into readable paragraphs
+const paragraphs = cleanedText
+  .split("\n")
+  .map(p => p.trim())
+  .filter(Boolean);
+
+// 4. Return structured content
+return {
+  result: paragraphs.join("\n\n"),  // Nice readable format
+  responseType: "tool-response",
+};
+
     });
 
     setSession(sessionRef.current);
