@@ -90,15 +90,16 @@ const TestWidget = () => {
   } = useUltravoxStore();
   const baseurl = "https://test.snowie.ai";
   const { agent_id, schema } = useWidgetContext();
-  // const agent_id = "f1b87ef8-8c52-4c40-96f5-62280b7c8aea";
-  // const schema = "9cd3db15-5dbe-4199-aa8c-80c5701857f7";
+  // const agent_id = "ea19892e-09cc-44a9-9fc0-586abecf1dc6";
+  // const schema = "ed6a8f90-9d20-4eff-866c-8ecc7b2b8502";
   let existingCallSessionIds: string[] = [];
   const AutoStartref = useRef(false);
   const storedIds = localStorage.getItem("callSessionId");
   const debugMessages = new Set(["debug"]);
   const onlyOnce = useRef(false);
   const [showform, setShowform] = useState(false);
-
+  const [formSubmitting, setFormSubmitting] = useState(false);
+  console.log(formSubmitting)
   useEffect(() => {
     if (widgetTheme?.bot_show_form) {
       setShowform(true);
@@ -124,7 +125,7 @@ const TestWidget = () => {
 
   useEffect(() => {
     if (status === "disconnected") {
-      setSpeech(`Talk To ${widgetTheme?.bot_name || "AI Assistant"}`);
+      setSpeech(` ${widgetTheme?.bot_name || "Talk To AI Assistant"}`);
     } else if (status === "connecting") {
       setSpeech(`Connecting To ${widgetTheme?.bot_name || "AI Assistant"}`);
     } else if (status === "speaking") {
@@ -172,7 +173,6 @@ const TestWidget = () => {
         "color: #ff9800; font-weight: bold;"
       );
 
-      // Log DOM extraction start
       console.log("Extracting full DOM...");
 
       const html = document.documentElement.outerHTML;
@@ -180,27 +180,26 @@ const TestWidget = () => {
       console.log("DOM extracted. Length:", html.length);
       console.log("DOM Preview:", html.slice(0, 500), "...");
 
-     // 1. Get visible text from the body
-const rawText = document.body.innerText || "";
+      // 1. Get visible text from the body
+      const rawText = document.body.innerText || "";
 
-// 2. Normalize spacing
-const cleanedText = rawText
-  .replace(/\s{2,}/g, " ")   // collapse multiple spaces
-  .replace(/\n{2,}/g, "\n")  // collapse multiple blank lines
-  .trim();
+      // 2. Normalize spacing
+      const cleanedText = rawText
+        .replace(/\s{2,}/g, " ") // collapse multiple spaces
+        .replace(/\n{2,}/g, "\n") // collapse multiple blank lines
+        .trim();
 
-// 3. Split into readable paragraphs
-const paragraphs = cleanedText
-  .split("\n")
-  .map(p => p.trim())
-  .filter(Boolean);
+      // 3. Split into readable paragraphs
+      const paragraphs = cleanedText
+        .split("\n")
+        .map((p) => p.trim())
+        .filter(Boolean);
 
-// 4. Return structured content
-return {
-  result: paragraphs.join("\n\n"),  // Nice readable format
-  responseType: "tool-response",
-};
-
+      // 4. Return structured content
+      return {
+        result: paragraphs.join("\n\n"), // Nice readable format
+        responseType: "tool-response",
+      };
     });
 
     setSession(sessionRef.current);
@@ -262,6 +261,7 @@ return {
     const callId = localStorage.getItem("callId");
     if (callId && status === "disconnected" && !hasReconnected.current) {
       setIsMuted(true);
+      // handleMicClickForReconnect(callId);
       hasReconnected.current = true;
     } else if (status === "listening" && callId && isMuted && !expanded) {
       session.muteSpeaker();
@@ -307,6 +307,8 @@ return {
   const handleMicClick = async () => {
     try {
       if (status === "disconnected") {
+        setFormSubmitting(true);
+
         const response = await axios.post(`${baseurl}/api/start-thunder/`, {
           agent_code: agent_id,
           schema_name: schema,
@@ -358,6 +360,8 @@ return {
       }
     } catch (error) {
       console.error("Error in handleMicClick:", error);
+    } finally {
+      setFormSubmitting(false);
     }
   };
 
@@ -485,6 +489,7 @@ return {
     e.preventDefault();
     try {
       if (status === "disconnected") {
+        setFormSubmitting(true)
         const response = await axios.post(`${baseurl}/api/start-thunder/`, {
           agent_code: agent_id,
           schema_name: schema,
@@ -539,6 +544,8 @@ return {
       }
     } catch (error) {
       console.error("Error in startFromForm:", error);
+    }finally{
+      setFormSubmitting(false)
     }
   };
 
@@ -824,7 +831,7 @@ return {
                     className="w-full p-3 rounded-xl text-white transition-colors hover:opacity-90 form-button"
                     style={{ backgroundColor: widgetTheme?.bot_button_color }}
                   >
-                    {status === "connecting" ? (
+                    {formSubmitting ? (
                       <div className="flex items-center justify-center">
                         <Loader2 className="w-5 h-5 animate-spin mr-2 icon" />
                         Connecting to AI Assistant
@@ -925,8 +932,8 @@ return {
               color: widgetTheme?.bot_button_text_color,
             }}
           >
-            {widgetTheme?.bot_tagline ||
-              `TALK TO ${widgetTheme?.bot_name || "AI Assistant"}`}
+            {widgetTheme?.bot_name ||
+              ` ${widgetTheme?.bot_name || "TALK TO AI Assistant"}`}
           </div>
         </div>
       )}
