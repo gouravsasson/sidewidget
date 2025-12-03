@@ -262,7 +262,6 @@ return {
     const callId = localStorage.getItem("callId");
     if (callId && status === "disconnected" && !hasReconnected.current) {
       setIsMuted(true);
-      handleMicClickForReconnect(callId);
       hasReconnected.current = true;
     } else if (status === "listening" && callId && isMuted && !expanded) {
       session.muteSpeaker();
