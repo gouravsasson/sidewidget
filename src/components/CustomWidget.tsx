@@ -90,15 +90,16 @@ const CustomWidget = () => {
   } = useUltravoxStore();
   const baseurl = "https://app.snowie.ai";
   const { agent_id, schema } = useWidgetContext();
-  // const agent_id = "15f96398-5954-402b-977e-be7f108b01e6";
-  // const schema = "6af30ad4-a50c-4acc-8996-d5f562b6987f";
+  // const agent_id = "ea19892e-09cc-44a9-9fc0-586abecf1dc6";
+  // const schema = "ed6a8f90-9d20-4eff-866c-8ecc7b2b8502";
   let existingCallSessionIds: string[] = [];
   const AutoStartref = useRef(false);
   const storedIds = localStorage.getItem("callSessionId");
   const debugMessages = new Set(["debug"]);
   const onlyOnce = useRef(false);
   const [showform, setShowform] = useState(false);
-
+  const [formSubmitting, setFormSubmitting] = useState(false);
+  console.log(formSubmitting)
   useEffect(() => {
     if (widgetTheme?.bot_show_form) {
       setShowform(true);
@@ -124,7 +125,7 @@ const CustomWidget = () => {
 
   useEffect(() => {
     if (status === "disconnected") {
-      setSpeech(`Talk To ${widgetTheme?.bot_name || "AI Assistant"}`);
+      setSpeech(` ${widgetTheme?.bot_name || "Talk To AI Assistant"}`);
     } else if (status === "connecting") {
       setSpeech(`Connecting To ${widgetTheme?.bot_name || "AI Assistant"}`);
     } else if (status === "speaking") {
@@ -166,7 +167,6 @@ const CustomWidget = () => {
       experimentalMessages: debugMessages,
     });
 
-
     sessionRef.current.registerToolImplementation("getPageDetails", () => {
       console.log(
         "%c[getPageDetail Tool Invoked]",
@@ -180,29 +180,27 @@ const CustomWidget = () => {
       console.log("DOM extracted. Length:", html.length);
       console.log("DOM Preview:", html.slice(0, 500), "...");
 
-     // 1. Get visible text from the body
-const rawText = document.body.innerText || "";
+      // 1. Get visible text from the body
+      const rawText = document.body.innerText || "";
 
-// 2. Normalize spacing
-const cleanedText = rawText
-  .replace(/\s{2,}/g, " ")   // collapse multiple spaces
-  .replace(/\n{2,}/g, "\n")  // collapse multiple blank lines
-  .trim();
+      // 2. Normalize spacing
+      const cleanedText = rawText
+        .replace(/\s{2,}/g, " ") // collapse multiple spaces
+        .replace(/\n{2,}/g, "\n") // collapse multiple blank lines
+        .trim();
 
-// 3. Split into readable paragraphs
-const paragraphs = cleanedText
-  .split("\n")
-  .map(p => p.trim())
-  .filter(Boolean);
+      // 3. Split into readable paragraphs
+      const paragraphs = cleanedText
+        .split("\n")
+        .map((p) => p.trim())
+        .filter(Boolean);
 
-// 4. Return structured content
-return {
-  result: paragraphs.join("\n\n"),  // Nice readable format
-  responseType: "tool-response",
-};
-
+      // 4. Return structured content
+      return {
+        result: paragraphs.join("\n\n"), // Nice readable format
+        responseType: "tool-response",
+      };
     });
-
 
     setSession(sessionRef.current);
   }
@@ -309,6 +307,8 @@ return {
   const handleMicClick = async () => {
     try {
       if (status === "disconnected") {
+        setFormSubmitting(true);
+
         const response = await axios.post(`${baseurl}/api/start-thunder/`, {
           agent_code: agent_id,
           schema_name: schema,
@@ -360,6 +360,8 @@ return {
       }
     } catch (error) {
       console.error("Error in handleMicClick:", error);
+    } finally {
+      setFormSubmitting(false);
     }
   };
 
@@ -487,6 +489,7 @@ return {
     e.preventDefault();
     try {
       if (status === "disconnected") {
+        setFormSubmitting(true)
         const response = await axios.post(`${baseurl}/api/start-thunder/`, {
           agent_code: agent_id,
           schema_name: schema,
@@ -541,6 +544,8 @@ return {
       }
     } catch (error) {
       console.error("Error in startFromForm:", error);
+    }finally{
+      setFormSubmitting(false)
     }
   };
 
@@ -826,7 +831,7 @@ return {
                     className="w-full p-3 rounded-xl text-white transition-colors hover:opacity-90 form-button"
                     style={{ backgroundColor: widgetTheme?.bot_button_color }}
                   >
-                    {status === "connecting" ? (
+                    {formSubmitting ? (
                       <div className="flex items-center justify-center">
                         <Loader2 className="w-5 h-5 animate-spin mr-2 icon" />
                         Connecting to AI Assistant
@@ -927,8 +932,8 @@ return {
               color: widgetTheme?.bot_button_text_color,
             }}
           >
-            {widgetTheme?.bot_tagline ||
-              `TALK TO ${widgetTheme?.bot_name || "AI Assistant"}`}
+            {widgetTheme?.bot_name ||
+              ` ${widgetTheme?.bot_name || "TALK TO AI Assistant"}`}
           </div>
         </div>
       )}
