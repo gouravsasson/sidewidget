@@ -9,6 +9,7 @@ import Autostart from "./components/Autostart";
 import CustomWidget from "./components/CustomWidget";
 import { WidgetTheme } from "./components/CustomWidget";
 import TestWidget from "./components/TestWidget";
+import German from "./components/German";
 
 function App() {
   const [showPopup, setShowPopup] = useState(false);
@@ -33,6 +34,7 @@ function App() {
     normal: <Forkartik />,
     customwidget: <CustomWidget />,
     test: <TestWidget />,
+    german:<German/>
   };
 
   return (
