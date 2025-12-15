@@ -125,7 +125,7 @@ const CustomWidget = () => {
 
   useEffect(() => {
     if (status === "disconnected") {
-      setSpeech(` ${widgetTheme?.bot_name || "Talk To AI Assistant"}`);
+      setSpeech(` ${widgetTheme?.bot_tagline || "Talk To AI Assistant"}`);
     } else if (status === "connecting") {
       setSpeech(`Connecting To ${widgetTheme?.bot_name || "AI Assistant"}`);
     } else if (status === "speaking") {
