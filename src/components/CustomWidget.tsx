@@ -10,6 +10,7 @@ import {
   Mail,
   VolumeX,
   Volume2,
+  Phone,
 } from "lucide-react";
 import { MicOff } from "lucide-react";
 import axios from "axios";
@@ -47,6 +48,14 @@ export interface WidgetTheme {
     bot_name: string;
     bot_show_form: boolean;
     bot_tagline: string;
+    is_glowing: boolean;
+    is_transparent: boolean; // ← new field
+    custom_form_fields: Array<{
+      id: number;
+      type: "text" | "email" | "tel" | "number" | "textarea";
+      label: string;
+      isDefault: boolean;
+    }>;
   };
 }
 
@@ -73,11 +82,7 @@ const CustomWidget = () => {
   const hasReconnected = useRef(false);
   const hasClosed = useRef(false);
   const { callSessionIds, setCallSessionIds } = useSessionStore();
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-  });
+  const [formData, setFormData] = useState<Record<string, string>>({});
   const [phoneError, setPhoneError] = useState("");
   const {
     setSession,
@@ -88,10 +93,10 @@ const CustomWidget = () => {
     status,
     setStatus,
   } = useUltravoxStore();
-  const baseurl = "https://app.snowie.ai";
-  const { agent_id, schema } = useWidgetContext();
-  // const agent_id = "ea19892e-09cc-44a9-9fc0-586abecf1dc6";
-  // const schema = "ed6a8f90-9d20-4eff-866c-8ecc7b2b8502";
+  const baseurl = "https://test.snowie.ai";
+  // const { agent_id, schema } = useWidgetContext();
+  const agent_id = "be2af828-47d6-4f0e-bbae-08aaff1d6908";
+  const schema = "9cd3db15-5dbe-4199-aa8c-80c5701857f7";
   let existingCallSessionIds: string[] = [];
   const AutoStartref = useRef(false);
   const storedIds = localStorage.getItem("callSessionId");
@@ -99,7 +104,18 @@ const CustomWidget = () => {
   const onlyOnce = useRef(false);
   const [showform, setShowform] = useState(false);
   const [formSubmitting, setFormSubmitting] = useState(false);
-  console.log(formSubmitting)
+  console.log(formSubmitting);
+
+  useEffect(() => {
+    if (widgetTheme?.custom_form_fields) {
+      const initialData: Record<string, string> = {};
+      widgetTheme.custom_form_fields.forEach((field) => {
+        initialData[field.label.toLowerCase()] = "";
+      });
+      setFormData(initialData);
+    }
+  }, [widgetTheme?.custom_form_fields]);
+
   useEffect(() => {
     if (widgetTheme?.bot_show_form) {
       setShowform(true);
@@ -489,14 +505,20 @@ const CustomWidget = () => {
     e.preventDefault();
     try {
       if (status === "disconnected") {
-        setFormSubmitting(true)
-        const response = await axios.post(`${baseurl}/api/start-thunder/`, {
+        setFormSubmitting(true);
+        const payload: any = {
           agent_code: agent_id,
           schema_name: schema,
-          phone: countryCode + formData.phone,
-          name: formData.name,
-          email: formData.email,
+        };
+
+        // Add all custom fields to payload
+        Object.entries(formData).forEach(([key, value]) => {
+          payload[key] = value;
         });
+        const response = await axios.post(
+          `${baseurl}/api/start-thunder/`,
+          payload
+        );
         const wssUrl = response.data.joinUrl;
         const callId = response.data.callId;
         localStorage.setItem("callId", callId);
@@ -544,8 +566,8 @@ const CustomWidget = () => {
       }
     } catch (error) {
       console.error("Error in startFromForm:", error);
-    }finally{
-      setFormSubmitting(false)
+    } finally {
+      setFormSubmitting(false);
     }
   };
 
@@ -604,6 +626,12 @@ const CustomWidget = () => {
     return styles;
   };
 
+  const getFieldIcon = (type: string, label: string) => {
+    if (type === "email") return <Mail className="h-5 w-5 text-gray-400" />;
+    if (type === "tel") return <Phone className="h-5 w-5 text-gray-400" />;
+    return <User className="h-5 w-5 text-gray-400" />;
+  };
+
   const renderIcon = (className: string) => {
     if (widgetTheme?.bot_logo) {
       return (
@@ -631,6 +659,8 @@ const CustomWidget = () => {
   if (!onlyOnce.current || !widgetTheme) {
     return <div className="text-white text-center">Loading...</div>;
   }
+
+  const isTransparent = widgetTheme?.is_transparent;
 
   return (
     <div style={getWidgetStyles()} className="flex flex-col items-end">
@@ -682,19 +712,102 @@ const CustomWidget = () => {
               height: 1.2rem !important;
             }
           }
+            @keyframes glowPulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7);
+      }
+      70% {
+        box-shadow: 0 0 0 20px rgba(37, 99, 235, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
+      }
+    }
+
+    .glow-pulsate {
+      animation: glowPulse 2s infinite;
+    }
+
+    /* Multiple ring pulse effect (like the reference code) - optional enhancement */
+    .pulse-ring {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 100px;
+      height: 100px;
+      background: rgba(37, 99, 235, 0.3);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      animation: pulseRing 2s infinite;
+      pointer-events: none;
+    }
+
+    .pulse-ring:nth-child(2) { animation-delay: 0.5s; }
+    .pulse-ring:nth-child(3) { animation-delay: 1s; }
+
+    @keyframes pulseRing {
+      0% {
+        transform: translate(-50%, -50%) scale(0.8);
+        opacity: 1;
+      }
+      100% {
+        transform: translate(-50%, -50%) scale(1.8);
+        opacity: 0;
+      }
+    }
+
+    .transparent-background {
+          background: ${
+            widgetTheme.bot_background_color
+          }15 !important; 
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border: 1px solid ${widgetTheme.bot_border_color}30;
+        }
+
+        .transparent-widget .header,
+        .transparent-widget .mic-button,
+        .transparent-widget .status-bar,
+        .transparent-widget .transcript-box,
+        .transparent-widget .chat-input,
+        .transparent-widget input,
+        .transparent-widget button,
+        .transparent-widget .form-container,
+        .transparent-widget form {
+          background: inherit !important;
+          opacity: 1 !important;
+          color: inherit !important;
+        }
+
+        .transparent-widget .transcript-box,
+        .transparent-widget input,
+        .transparent-widget .chat-input {
+          background: white !important;
+          color: #374151 !important;
+        }    
         `}
       </style>
       {expanded ? (
         <div
-          className="bg-white rounded-3xl shadow-2xl overflow-hidden widget-container"
+          className={`rounded-3xl shadow-2xl overflow-hidden widget-container ${
+            isTransparent ? "transparent-background" : ""
+          }`}
           style={{
             width: "min(90vw, 400px)",
             height:
               widgetTheme?.bot_show_form && showform
                 ? "min(90vh, 550px)"
                 : "min(90vh, 600px)",
+            // Apply bot_background_color as base, only override if transparent
+            backgroundColor: isTransparent
+              ? "transparent"
+              : widgetTheme?.bot_background_color || "#ffffff",
+            border: isTransparent
+              ? `1px solid ${widgetTheme?.bot_border_color}30`
+              : "none",
           }}
         >
+          {" "}
           {/* Header */}
           <div
             className="px-6 py-4 flex justify-between items-center header"
@@ -751,11 +864,15 @@ const CustomWidget = () => {
               </button>
             </div>
           </div>
-
           {/* Main Content */}
           <div
-            className="flex flex-col h-full bg-gray-50"
-            style={{ height: "calc(100% - 80px)" }}
+            className="flex flex-col h-full"
+            style={{
+              height: "calc(100% - 80px)",
+              backgroundColor: isTransparent
+                ? "transparent"
+                : widgetTheme?.bot_background_color || "#f3f4f6",
+            }}
           >
             {widgetTheme?.bot_show_form && showform ? (
               <div className="flex flex-col items-center justify-center h-full p-6 form-container">
@@ -766,66 +883,50 @@ const CustomWidget = () => {
                   onSubmit={startFromForm}
                   className="w-full max-w-sm space-y-4"
                 >
-                  {[
-                    {
-                      icon: <User className="h-5 w-5 text-gray-400 icon" />,
-                      value: formData.name,
-                      type: "text",
-                      placeholder: "Your name",
-                      key: "name",
-                    },
-                    {
-                      icon: <Mail className="h-5 w-5 text-gray-400 icon" />,
-                      value: formData.email,
-                      type: "email",
-                      placeholder: "Email address",
-                      key: "email",
-                    },
-                  ].map((field, index) => (
-                    <div key={index} className="w-full">
+                  {widgetTheme.custom_form_fields.map((field) => (
+                    <div key={field.id} className="w-full">
+                      <label
+                        className="block text-sm font-medium mb-1"
+                        style={{ color: widgetTheme.bot_text_color }}
+                      >
+                        {field.label}
+                      </label>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-2 flex items-center pointer-events-none">
-                          {field.icon}
+                          {getFieldIcon(field.type, field.label)}
                         </div>
-                        <input
-                          type={field.type}
-                          required
-                          value={formData[field.key]}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              [field.key]: e.target.value,
-                            })
-                          }
-                          className="w-full p-3 pl-10 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 text-gray-700 form-input"
-                          placeholder={field.placeholder}
-                        />
+
+                        {field.type === "tel" ? (
+                          <PhoneInput
+                            country={continentcode?.toLowerCase()}
+                            value={formData[field.label.toLowerCase()] || ""}
+                            onChange={(phone) =>
+                              setFormData({
+                                ...formData,
+                                [field.label.toLowerCase()]: phone,
+                              })
+                            }
+                            inputProps={{ required: true }}
+                            inputClass="w-full p-3 pl-10 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 text-gray-700"
+                          />
+                        ) : (
+                          <input
+                            type={field.type}
+                            required
+                            value={formData[field.label.toLowerCase()] || ""}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                [field.label.toLowerCase()]: e.target.value,
+                              })
+                            }
+                            className="w-full p-3 pl-10 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 text-gray-700"
+                            placeholder={`Enter your ${field.label.toLowerCase()}`}
+                          />
+                        )}
                       </div>
                     </div>
                   ))}
-                  <div className="w-full">
-                    <PhoneInput
-                      dropdownClass="bottom-10 z-50"
-                      dropdownStyle={{ zIndex: 1000 }}
-                      inputProps={{
-                        name: "phone",
-                        required: true,
-                      }}
-                      country={continentcode?.toLowerCase()}
-                      value={formData.phone}
-                      onChange={(phone) => {
-                        setFormData({ ...formData, phone });
-                        setPhoneError("");
-                      }}
-                      enableSearch={true}
-                      inputClass="w-full p-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 text-gray-700 form-input"
-                    />
-                  </div>
-                  {phoneError && (
-                    <div className="text-red-500 text-sm mt-1">
-                      {phoneError}
-                    </div>
-                  )}
                   <button
                     type="submit"
                     className="w-full p-3 rounded-xl text-white transition-colors hover:opacity-90 form-button"
@@ -918,22 +1019,50 @@ const CustomWidget = () => {
         </div>
       ) : (
         <div className="flex flex-col items-center gap-3">
+          {widgetTheme?.is_glowing && (
+            <>
+              <div
+                className="pulse-ring"
+                style={{ width: "120px", height: "120px" }}
+              ></div>
+              <div
+                className="pulse-ring"
+                style={{ width: "120px", height: "120px" }}
+              ></div>
+              <div
+                className="pulse-ring"
+                style={{ width: "120px", height: "120px" }}
+              ></div>
+            </>
+          )}
           <button
             onClick={toggleExpand}
-            className="w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all hover:scale-110 overflow-hidden"
-            style={{ backgroundColor: widgetTheme?.bot_button_color }}
+            className={`w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all hover:scale-110 overflow-hidden relative
+        ${widgetTheme?.is_glowing ? "glow-pulsate" : ""}`}
+            style={{
+              backgroundColor: widgetTheme?.bot_button_color,
+              boxShadow: widgetTheme?.is_glowing
+                ? "0 0 30px rgba(37, 99, 235, 0.8)"
+                : undefined,
+            }}
           >
-            {renderIcon("w-full h-full")}
+            <div className="relative w-full h-full">
+              {renderIcon("w-full h-full")}
+            </div>
           </button>
           <div
-            className="px-4 py-2 rounded-full text-sm font-medium shadow-lg text-center status-bar"
+            className="px-4 py-2 rounded-full shadow-lg flex items-center justify-center max-w-xs"
             style={{
               backgroundColor: widgetTheme?.bot_button_color,
               color: widgetTheme?.bot_button_text_color,
             }}
           >
-            {widgetTheme?.bot_name ||
-              ` ${widgetTheme?.bot_name || "TALK TO AI Assistant"}`}
+            <p
+              className="text-sm font-medium text-center truncate px-1"
+              title={widgetTheme?.bot_name || "AI Assistant"} // Shows full name on hover
+            >
+              {widgetTheme?.bot_name || "Talk to AI Assistant"}
+            </p>
           </div>
         </div>
       )}
