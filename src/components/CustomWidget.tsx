@@ -656,6 +656,9 @@ const CustomWidget = () => {
     );
   };
 
+  const capitalize = (s: string) =>
+    s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+
   if (!onlyOnce.current || !widgetTheme) {
     return <div className="text-white text-center">Loading...</div>;
   }
@@ -757,9 +760,7 @@ const CustomWidget = () => {
     }
 
     .transparent-background {
-          background: ${
-            widgetTheme.bot_background_color
-          }15 !important; 
+          background: ${widgetTheme.bot_background_color}15 !important; 
           backdrop-filter: blur(12px);
           -webkit-backdrop-filter: blur(12px);
           border: 1px solid ${widgetTheme.bot_border_color}30;
@@ -889,7 +890,7 @@ const CustomWidget = () => {
                         className="block text-sm font-medium mb-1"
                         style={{ color: widgetTheme.bot_text_color }}
                       >
-                        {field.label}
+                        {capitalize(field.label)}
                       </label>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-2 flex items-center pointer-events-none">
