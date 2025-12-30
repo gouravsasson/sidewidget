@@ -1062,7 +1062,7 @@ const CustomWidget = () => {
               className="text-sm font-medium text-center truncate px-1"
               title={widgetTheme?.bot_name || "AI Assistant"} // Shows full name on hover
             >
-              {widgetTheme?.bot_name || "Talk to AI Assistant"}
+              {`Talk to ${widgetTheme?.bot_name}` || "Talk to AI Assistant"}
             </p>
           </div>
         </div>
