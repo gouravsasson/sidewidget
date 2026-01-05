@@ -42,7 +42,7 @@ function App() {
     customwidget: <CustomWidget />,
     // test: <Test />,
     german: <German />,
-    grok: <LiveKitRoom token="" serverUrl="" room={room} connect={false}>
+    thunderemotion: <LiveKitRoom token="" serverUrl="" room={room} connect={false}>
       <RetellaiAgent />
     </LiveKitRoom>
   };
