@@ -15,6 +15,7 @@
     "@livekit/components-styles": "^1.1.4",
     "@tailwindcss/vite": "^4.0.1",
     "axios": "^1.7.9",
+    "eventemitter3": "^5.0.1",
     "livekit-client": "^2.9.1",
     "lucide-react": "^0.474.0",
     "path-browserify": "^1.0.1",
