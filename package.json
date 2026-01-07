@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@heygen/streaming-avatar": "^2.0.9",
-    "@livekit/components-react": "^2.8.1",
+    "@livekit/components-react": "^2.9.17",
     "@livekit/components-styles": "^1.1.4",
     "@tailwindcss/vite": "^4.0.1",
     "axios": "^1.7.9",
