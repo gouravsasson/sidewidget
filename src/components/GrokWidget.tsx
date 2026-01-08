@@ -31,11 +31,50 @@ import {
 } from "livekit-client";
 import axios from "axios";
 
+export interface WidgetTheme {
+    widget_theme: {
+        bot_auto_start: boolean;
+        bot_position: string;
+        bot_logo: string | null;
+        svg_logo: string | null;
+        bot_height: string;
+        bot_width: string;
+        bot_show_transcript: boolean;
+        bot_show_chat: boolean;
+        bot_mute_on_tab_change: boolean;
+        bot_mute_on_minimize: boolean;
+        bot_bubble_color: string;
+        bot_background_color: string;
+        bot_icon_color: string;
+        bot_text_color: string;
+        bot_border_color: string;
+        bot_button_color: string;
+        bot_button_text_color: string;
+        bot_button_hover_color: string;
+        bot_status_bar_color: string;
+        bot_status_bar_text_color: string;
+        bot_animation_color: string;
+        bot_name: string;
+        bot_show_form: boolean;
+        bot_tagline: string;
+        is_glowing: boolean;
+        is_transparent: boolean;
+        custom_form_fields: Array<{
+            id: number;
+            type: "text" | "email" | "tel" | "number" | "textarea";
+            label: string;
+            isDefault: boolean;
+        }>;
+    };
+}
+
 // Main Component
 const RetellaiAgent = () => {
     const decoder = new TextDecoder();
     const containerRef = useRef(null);
     const { agent_id, schema } = useWidgetContext();
+    const [widgetTheme, setWidgetTheme] = useState<WidgetTheme | null>(null);
+    const onlyOnce = useRef(false);
     const [expanded, setExpanded] = useState(false);
     const [isRecording, setIsRecording] = useState(false);
     const [isGlowing, setIsGlowing] = useState(false);
@@ -67,6 +106,25 @@ const RetellaiAgent = () => {
     };
 
     const baseUrl = "https://test.snowie.ai/api/create-room/";
+    const settingsBaseUrl = "https://app.snowie.ai";
+
+    // Fetch widget theme settings
+    useEffect(() => {
+        if (onlyOnce.current) return;
+        const getWidgetTheme = async () => {
+            try {
+                const response = await axios.get(
+                    `${settingsBaseUrl}/api/thunder-widget-settings/${schema}/${agent_id}/?type=thunder_emotion`
+                );
+                const data = response.data.response;
+                setWidgetTheme(data);
+                onlyOnce.current = true;
+            } catch (error) {
+                console.error("Failed to fetch widget theme:", error);
+            }
+        };
+        getWidgetTheme();
+    }, []);
 
     // Setup transcript listener
     useEffect(() => {

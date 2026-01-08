@@ -127,7 +127,7 @@ const CustomWidget = () => {
     const getWidgetTheme = async () => {
       try {
         const response = await axios.get(
-          `${baseurl}/api/thunder-widget-settings/${schema}/${agent_id}/`
+          `${baseurl}/api/thunder-widget-settings/${schema}/${agent_id}/?type=thunder`
         );
         const data = response.data.response;
         setWidgetTheme(data);
@@ -405,7 +405,7 @@ const CustomWidget = () => {
     setStatus(session.status);
   });
 
-  session.addEventListener("experimental_message", (msg) => {});
+  session.addEventListener("experimental_message", (msg) => { });
 
   useEffect(() => {
     if (isRecording) {
@@ -672,9 +672,8 @@ const CustomWidget = () => {
           @media (max-width: 640px) {
             .widget-container {
               width: 90vw !important;
-              height: ${
-                widgetTheme?.bot_show_form && showform ? "80vh" : "85vh"
-              } !important;
+              height: ${widgetTheme?.bot_show_form && showform ? "80vh" : "85vh"
+          } !important;
             }
             .mic-button {
               width: 30vw !important;
@@ -790,9 +789,8 @@ const CustomWidget = () => {
       </style>
       {expanded ? (
         <div
-          className={`rounded-3xl shadow-2xl overflow-hidden widget-container ${
-            isTransparent ? "transparent-background" : ""
-          }`}
+          className={`rounded-3xl shadow-2xl overflow-hidden widget-container ${isTransparent ? "transparent-background" : ""
+            }`}
           style={{
             width: "min(90vw, 400px)",
             height:
