@@ -106,7 +106,7 @@ const RetellaiAgent = () => {
     };
 
     const baseUrl = "https://test.snowie.ai/api/create-room/";
-    const settingsBaseUrl = "https://app.snowie.ai";
+    const settingsBaseUrl = "https://test.snowie.ai";
 
     // Fetch widget theme settings
     useEffect(() => {
