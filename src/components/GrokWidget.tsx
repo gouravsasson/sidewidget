@@ -1,10 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import EventEmitter from "eventemitter3";
 import { useWidgetContext } from "../constexts/WidgetContext";
-import {
-    Send,
-    Loader2,
-} from "lucide-react";
+import { Send, Loader2 } from "lucide-react";
 import logo from "../assets/logo.png";
 import {
     RoomAudioRenderer,
