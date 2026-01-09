@@ -114,7 +114,7 @@ const RetellaiAgent = () => {
                 />
             );
         }
-        return <Mic className={className} style={{ color: widgetTheme?.bot_icon_color }} />;
+        return <Mic className={className} style={{ color: widgetTheme?.bot_icon_color || "#ffffff" }} />;
     };
 
     // Fetch widget theme settings
@@ -410,14 +410,6 @@ const RetellaiAgent = () => {
             alignItems: "flex-end",
         };
 
-        if (expanded) {
-            baseStyles.width = "min(90vw, 400px)";
-            baseStyles.height = "min(90vh, 600px)";
-        } else {
-            baseStyles.width = "auto";
-            baseStyles.height = "auto";
-        }
-
         switch (widgetTheme?.bot_position) {
             case "top-left":
                 baseStyles.top = "2vh";
@@ -463,88 +455,77 @@ const RetellaiAgent = () => {
                 .glow-pulsate { animation: glowPulse 2s infinite; }
                 
                 .transcript-box {
-                    background: white !important;
+                    background: #f9fafb !important;
                     color: #374151 !important;
+                    border: 1px solid #e5e7eb !important;
                 }
                 
                 .chat-input {
                     background: white !important;
                     color: #374151 !important;
+                    border: 1px solid #e5e7eb !important;
                 }
             `}</style>
 
             {expanded ? (
                 <div 
-                    className="w-[400px] h-[600px] rounded-2xl shadow-2xl overflow-hidden border"
+                    className="w-[400px] h-[600px] rounded-2xl shadow-xl overflow-hidden border border-gray-200"
                     style={{
-                        backgroundColor: widgetTheme?.is_transparent
-                            ? `${widgetTheme?.bot_background_color}15`
-                            : widgetTheme?.bot_background_color || "#1f2937",
-                        borderColor: widgetTheme?.bot_border_color || "#374151",
-                        backdropFilter: widgetTheme?.is_transparent ? "blur(12px)" : "none",
+                        backgroundColor: "#ffffff", // White background
                     }}
                 >
-                    {/* Header - Matches the design */}
+                    {/* Header - Blue header like in the design */}
                     <div 
                         className="px-6 py-4 flex justify-between items-center"
-                        style={{ backgroundColor: widgetTheme?.bot_bubble_color || "#1e40af" }}
+                        style={{ 
+                            backgroundColor: widgetTheme?.bot_bubble_color || "#2563eb",
+                            color: "#ffffff"
+                        }}
                     >
                         <div className="flex items-center space-x-3">
                             <div 
                                 className="w-8 h-8 rounded-full flex items-center justify-center overflow-hidden"
-                                style={{ backgroundColor: widgetTheme?.bot_button_color || "#3b82f6" }}
+                                style={{ backgroundColor: "#ffffff" }}
                             >
                                 {renderIcon("w-full h-full")}
                             </div>
-                            <span 
-                                className="font-semibold text-lg"
-                                style={{ color: widgetTheme?.bot_text_color || "#ffffff" }}
-                            >
+                            <span className="font-semibold text-lg">
                                 {widgetTheme?.bot_name || 'AI Assistant'}
                             </span>
                         </div>
                         <div className="flex items-center space-x-2">
                             <button 
                                 onClick={togglemute} 
-                                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-black/10 transition-colors"
-                                style={{ color: widgetTheme?.bot_text_color || "#ffffff" }}
+                                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors"
                             >
                                 {muted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
                             </button>
                             <button 
                                 onClick={() => setExpanded(false)} 
-                                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-black/10 transition-colors"
-                                style={{ color: widgetTheme?.bot_text_color || "#ffffff" }}
+                                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors"
                             >
                                 <Minimize2 className="w-5 h-5" />
                             </button>
                             <button 
                                 onClick={handleClose} 
-                                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-black/10 transition-colors"
-                                style={{ color: widgetTheme?.bot_text_color || "#ffffff" }}
+                                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors"
                             >
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
                     </div>
 
-                    {/* Main Content */}
-                    <div className="flex flex-col h-full">
+                    {/* Main Content - White background */}
+                    <div className="flex flex-col h-full bg-white">
                         {widgetTheme?.bot_show_form && showform ? (
-                            <div className="flex-1 p-6 flex flex-col items-center justify-center">
-                                <h3 
-                                    className="text-lg font-semibold mb-6"
-                                    style={{ color: widgetTheme?.bot_text_color }}
-                                >
+                            <div className="flex-1 p-6 flex flex-col items-center justify-center bg-white">
+                                <h3 className="text-lg font-semibold mb-6 text-gray-800">
                                     Enter Your Details
                                 </h3>
                                 <form onSubmit={startFromForm} className="w-full space-y-4">
                                     {widgetTheme.custom_form_fields.map((field) => (
                                         <div key={field.id} className="w-full">
-                                            <label 
-                                                className="block text-sm font-medium mb-1"
-                                                style={{ color: widgetTheme?.bot_text_color }}
-                                            >
+                                            <label className="block text-sm font-medium mb-1 text-gray-700">
                                                 {capitalize(field.label)}
                                             </label>
                                             <div className="relative">
@@ -558,7 +539,7 @@ const RetellaiAgent = () => {
                                                         onChange={(phone) => setFormData({ ...formData, [field.label.toLowerCase()]: phone })}
                                                         inputProps={{ required: true }}
                                                         containerClass="w-full"
-                                                        inputClass="w-full p-3 pl-12 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
+                                                        inputClass="w-full p-3 pl-12 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 bg-white"
                                                         buttonClass="border-r border-gray-300"
                                                     />
                                                 ) : (
@@ -567,7 +548,7 @@ const RetellaiAgent = () => {
                                                         required 
                                                         value={formData[field.label.toLowerCase()] || ''} 
                                                         onChange={(e) => setFormData({ ...formData, [field.label.toLowerCase()]: e.target.value })} 
-                                                        className="w-full p-3 pl-12 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
+                                                        className="w-full p-3 pl-12 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 bg-white"
                                                         placeholder={`Enter your ${field.label.toLowerCase()}`}
                                                     />
                                                 )}
@@ -577,7 +558,7 @@ const RetellaiAgent = () => {
                                     <button 
                                         type="submit" 
                                         className="w-full p-3 rounded-lg text-white transition-colors hover:opacity-90"
-                                        style={{ backgroundColor: widgetTheme?.bot_button_color || "#3b82f6" }}
+                                        style={{ backgroundColor: widgetTheme?.bot_button_color || "#2563eb" }}
                                         disabled={formSubmitting}
                                     >
                                         {formSubmitting ? (
@@ -592,63 +573,62 @@ const RetellaiAgent = () => {
                         ) : (
                             <>
                                 {/* Mic Button Section */}
-                                <div className="flex-1 flex flex-col items-center justify-center p-6">
+                                <div className="flex-1 flex flex-col items-center justify-center p-6 bg-white">
                                     <button 
                                         onClick={handleMicClick}
                                         className={`w-40 h-40 rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-lg mb-6 overflow-hidden ${
                                             isRecording ? 'ring-4 ring-red-500' : ''
                                         }`}
                                         style={{ 
-                                            backgroundColor: widgetTheme?.bot_button_color || "#3b82f6",
-                                            boxShadow: isRecording ? `0 0 30px ${widgetTheme?.bot_animation_color || '#ef4444'}80` : undefined
+                                            backgroundColor: widgetTheme?.bot_button_color || "#2563eb",
+                                            boxShadow: isRecording ? `0 0 30px ${widgetTheme?.bot_animation_color || '#ef4444'}80` : '0 4px 20px rgba(37, 99, 235, 0.3)'
                                         }}
                                     >
-                                        {renderIcon("w-20 h-20")}
+                                        {renderIcon("w-16 h-16 text-white")}
                                     </button>
                                     
-                                    {/* Status Bar */}
+                                    {/* Status Bar - Like in the design */}
                                     <div 
-                                        className="px-6 py-3 rounded-full text-sm font-medium"
+                                        className="px-6 py-3 rounded-full text-sm font-medium mb-4"
                                         style={{ 
-                                            backgroundColor: widgetTheme?.bot_status_bar_color || "#374151",
-                                            color: widgetTheme?.bot_status_bar_text_color || "#ffffff"
+                                            backgroundColor: widgetTheme?.bot_status_bar_color || "#f3f4f6",
+                                            color: widgetTheme?.bot_status_bar_text_color || "#374151"
                                         }}
                                     >
                                         {speech}
                                     </div>
                                     
-                                    {/* Live Indicator */}
+                                    {/* Live Indicator - Like in the design */}
                                     {isRecording && (
-                                        <div className="mt-4 flex items-center">
-                                            <div className="w-2 h-2 bg-red-500 rounded-full mr-2 animate-pulse"></div>
-                                            <span className="text-red-400 text-sm">LIVE</span>
+                                        <div className="flex items-center mb-6">
+                                            <div className="w-3 h-3 bg-red-500 rounded-full mr-2 animate-pulse"></div>
+                                            <span className="text-red-600 font-medium text-sm">LIVE</span>
                                         </div>
                                     )}
-                                </div>
 
-                                {/* Transcript Section */}
-                                {widgetTheme?.bot_show_transcript && (
-                                    <div className="p-4">
+                                    {/* Transcript Section - Always visible when expanded */}
+                                    <div className="w-full px-4 mb-4">
+                                        <div className="text-sm font-medium text-gray-700 mb-2">Conversation</div>
                                         <div 
                                             ref={containerRef}
-                                            className="bg-white rounded-xl p-4 h-32 text-gray-600 shadow-inner border overflow-y-auto text-sm"
+                                            className="transcript-box rounded-lg p-4 h-32 overflow-y-auto text-sm"
                                         >
                                             {transcriptionSegments.length > 0 ? (
                                                 transcriptionSegments.map((segment: any, index: number) => (
-                                                    <div key={`seg-${index}`} className="text-sm mb-1">
-                                                        {segment.text}
+                                                    <div key={`seg-${index}`} className="text-sm mb-2">
+                                                        <span className="font-medium">AI:</span> {segment.text}
                                                     </div>
                                                 ))
+                                            ) : transcripts ? (
+                                                <div className="text-gray-600">{transcripts}</div>
                                             ) : (
-                                                transcripts || 'Your conversation will appear here...'
+                                                <div className="text-gray-400 italic">Your conversation will appear here...</div>
                                             )}
                                         </div>
                                     </div>
-                                )}
 
-                                {/* Chat Input */}
-                                {widgetTheme?.bot_show_chat && (
-                                    <div className="p-4 border-t">
+                                    {/* Chat Input - Always visible when expanded */}
+                                    <div className="w-full px-4">
                                         <div className="flex gap-2">
                                             <input
                                                 type="text"
@@ -657,39 +637,39 @@ const RetellaiAgent = () => {
                                                 onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
                                                 placeholder="Type your message..."
                                                 disabled={status !== 'connected'}
-                                                className="flex-1 bg-white text-gray-700 p-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
+                                                className="chat-input flex-1 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
                                             />
                                             <button 
                                                 onClick={handleSendChat} 
                                                 disabled={status !== 'connected' || isSendingChat} 
                                                 className="w-12 h-12 rounded-lg flex items-center justify-center transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-                                                style={{ backgroundColor: widgetTheme?.bot_button_color || "#3b82f6" }}
+                                                style={{ backgroundColor: widgetTheme?.bot_button_color || "#2563eb" }}
                                             >
                                                 {isSendingChat ? (
                                                     <Loader2 className="w-4 h-4 animate-spin text-white" />
                                                 ) : (
-                                                    <Send className="w-5 h-5" style={{ color: widgetTheme?.bot_button_text_color || "#ffffff" }} />
+                                                    <Send className="w-5 h-5 text-white" />
                                                 )}
                                             </button>
                                         </div>
                                     </div>
-                                )}
+                                </div>
                             </>
                         )}
                     </div>
                 </div>
             ) : (
-                /* Collapsed State - Matches the design */
+                /* Collapsed State */
                 <div className="flex flex-col items-center gap-2">
                     <button
                         onClick={toggleExpand}
                         className="rounded-full w-16 h-16 flex items-center justify-center shadow-lg border-2 transition-all hover:scale-105 hover:shadow-xl"
                         style={{
-                            backgroundColor: widgetTheme?.bot_button_color || "#1f2937",
-                            borderColor: widgetTheme?.bot_animation_color || "#FBBF24",
+                            backgroundColor: widgetTheme?.bot_button_color || "#2563eb",
+                            borderColor: widgetTheme?.bot_animation_color || "#2563eb",
                             boxShadow: widgetTheme?.is_glowing
-                                ? `0 0 20px ${widgetTheme?.bot_animation_color || '#FBBF24'}80`
-                                : undefined,
+                                ? `0 0 20px ${widgetTheme?.bot_animation_color || '#2563eb'}80`
+                                : '0 4px 12px rgba(37, 99, 235, 0.3)',
                         }}
                     >
                         <div className="relative">
@@ -697,29 +677,27 @@ const RetellaiAgent = () => {
                                 <>
                                     <div
                                         className="absolute inset-0 -m-2 rounded-full animate-ping"
-                                        style={{ backgroundColor: `${widgetTheme?.bot_animation_color || '#FBBF24'}40` }}
+                                        style={{ backgroundColor: `${widgetTheme?.bot_animation_color || '#2563eb'}40` }}
                                     ></div>
                                     <div
                                         className="absolute inset-0 -m-3 rounded-full animate-pulse"
-                                        style={{ backgroundColor: `${widgetTheme?.bot_animation_color || '#FBBF24'}20` }}
+                                        style={{ backgroundColor: `${widgetTheme?.bot_animation_color || '#2563eb'}20` }}
                                     ></div>
                                 </>
                             )}
-                            <span className="text-white font-bold text-2xl relative z-10">
+                            <span className="text-white relative z-10">
                                 <Mic className="w-6 h-6" />
                             </span>
                         </div>
                     </button>
                     <button
                         onClick={toggleExpand}
-                        className="px-4 py-2 rounded-full font-semibold text-sm transition-all hover:scale-105"
+                        className="px-4 py-2 rounded-full font-semibold text-sm transition-all hover:scale-105 bg-white shadow-md border border-gray-200"
                         style={{
-                            backgroundColor: widgetTheme?.bot_button_color || "#000000",
-                            color: widgetTheme?.bot_button_text_color || "#FFD700",
-                            border: `2px solid ${widgetTheme?.bot_animation_color || '#FFD700'}`,
+                            color: widgetTheme?.bot_button_color || "#2563eb",
                         }}
                     >
-                        {`Talk to ${widgetTheme?.bot_name || "AI Assistant"}`.toUpperCase()}
+                        {`Talk to ${widgetTheme?.bot_name || "AI Assistant"}`}
                     </button>
                 </div>
             )}
