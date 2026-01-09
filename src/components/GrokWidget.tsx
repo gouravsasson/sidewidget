@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import EventEmitter from "eventemitter3";
 import { useWidgetContext } from "../constexts/WidgetContext";
-import { Send, Loader2, X, Minimize2, Volume2, VolumeX } from "lucide-react";
+import { Mic, Send, Loader2, X, Minimize2, Volume2, VolumeX } from "lucide-react";
 import logo from "../assets/logo.png";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
@@ -64,9 +64,21 @@ const RetellaiAgent = () => {
     const onlyOnce = useRef(false);
     const [expanded, setExpanded] = useState(false);
     const [isRecording, setIsRecording] = useState(false);
-    const [isGlowing, setIsGlowing] = useState(false);
     const room = useRoomContext();
     const status = useConnectionState(room);
+
+    const [speech, setSpeech] = useState("");
+    useEffect(() => {
+        if (status === "disconnected") {
+            setSpeech(widgetTheme?.bot_tagline || "Talk To AI Assistant");
+        } else if (status === "connecting") {
+            setSpeech(`Connecting To ${widgetTheme?.bot_name || "AI Assistant"}`);
+        } else if (status === "connected") {
+            setSpeech(`Connected To ${widgetTheme?.bot_name || "AI Assistant"}`);
+        } else {
+            setSpeech("");
+        }
+    }, [status, widgetTheme?.bot_name, widgetTheme?.bot_tagline]);
     const serverUrl = "wss://abcd-sw47y5hk.livekit.cloud";
     const audioTrackRef = useRef<MediaStreamTrack | null>(null);
     const [muted, setMuted] = useState(false);
@@ -90,6 +102,20 @@ const RetellaiAgent = () => {
         if (type === "email") return <svg className="h-5 w-5 text-gray-400" />;
         if (type === "tel") return <svg className="h-5 w-5 text-gray-400" />;
         return <svg className="h-5 w-5 text-gray-400" />;
+    };
+
+    const renderIcon = (className: string) => {
+        if (widgetTheme?.bot_logo) {
+            return (
+                <img
+                    src={widgetTheme.bot_logo}
+                    alt="Custom Icon"
+                    className={className}
+                    style={{ objectFit: "cover", width: "100%", height: "100%", borderRadius: "50%" }}
+                />
+            );
+        }
+        return <Mic className={className} style={{ color: widgetTheme?.bot_icon_color }} />;
     };
 
     useEffect(() => {
@@ -246,7 +272,7 @@ const RetellaiAgent = () => {
                     audioTrackRef.current.enabled = true;
                     setMuted(false);
                     setIsRecording(true);
-                    setIsGlowing(true);
+
                 }
             } else {
                 // Not connected yet, start the call
@@ -263,7 +289,6 @@ const RetellaiAgent = () => {
                 audioTrackRef.current.enabled = false;
                 setMuted(true);
                 setIsRecording(false);
-                setIsGlowing(false);
             }
         } catch (err) {
             console.error("Error stopping recording:", err);
@@ -313,7 +338,6 @@ const RetellaiAgent = () => {
 
             // Reset states
             setIsRecording(false);
-            setIsGlowing(false);
             setMuted(false);
             setTranscripts("");
             setExpanded(false);
@@ -353,7 +377,7 @@ const RetellaiAgent = () => {
             audioTrackRef.current = audioTrack;
             setMuted(false);
             setIsRecording(true);
-            setIsGlowing(true);
+
             localStorage.setItem("formshow", "false");
             setTranscripts("");
         } catch (err) {
@@ -546,50 +570,32 @@ const RetellaiAgent = () => {
                                         <X className="w-4 h-4" style={{ color: widgetTheme?.bot_text_color }} />
                                     </button>
 
-                                    <div className="relative group">
-                                        <button
-                                            onClick={handleMicClick}
-                                            className={`relative z-10 bg-black/80 rounded-full w-36 h-36 flex items-center justify-center border-2
-                          ${isGlowing
-                                                    ? "border-yellow-300 shadow-[0_0_30px_10px_rgba(250,204,21,0.3)]"
-                                                    : "border-yellow-400 shadow-lg"
-                                                } transition-all duration-500 ${isRecording ? "scale-110" : "hover:scale-105"
-                                                } backdrop-blur-sm
-                          group-hover:shadow-[0_0_50px_15px_rgba(250,204,21,0.2)]`}
-                                            style={{
-                                                backgroundColor: widgetTheme?.bot_button_color || "#1f2937",
-                                                borderColor: widgetTheme?.bot_animation_color || "#FBBF24",
-                                            }}
-                                        >
-                                            <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-yellow-900/20 rounded-full"></div>
-                                            <div className="absolute inset-0 bg-gradient-to-tr from-yellow-400/5 via-transparent to-transparent rounded-full"></div>
-
-                                            <div className="relative">
-                                                <img
-                                                    src={widgetTheme?.bot_logo || logo}
-                                                    alt=""
-                                                    className={`w-16 h-16 text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.5)]
-                              ${isRecording ? "animate-[pulse_1.5s_ease-in-out_infinite]" : ""}
-                              transition-transform duration-300 group-hover:scale-110`}
-                                                />
-
-                                                {isRecording && (
-                                                    <div className="absolute -inset-4">
-                                                        <div className="absolute inset-0 border-2 border-yellow-400/50 rounded-full animate-[ripple_2s_ease-out_infinite]"></div>
-                                                        <div className="absolute inset-0 border-2 border-yellow-400/30 rounded-full animate-[ripple_2s_ease-out_infinite_0.5s]"></div>
-                                                    </div>
-                                                )}
+                                    {/* Header */}
+                                    <div className="px-6 py-4 flex justify-between items-center header" style={{ backgroundColor: widgetTheme?.bot_bubble_color }}>
+                                        <div className="flex items-center space-x-3">
+                                            <div className="w-8 h-8 rounded-full flex items-center justify-center overflow-hidden" style={{ backgroundColor: widgetTheme?.bot_button_color }}>
+                                                {renderIcon("w-full h-full icon")}
                                             </div>
-                                        </button>
-
-                                        <div className="absolute top-2 left-2 flex items-center space-x-2">
+                                            <span className="font-semibold text-lg" style={{ color: widgetTheme?.bot_text_color }}>{widgetTheme?.bot_name || 'AI Assistant'}</span>
+                                        </div>
+                                        <div className="flex items-center space-x-3">
                                             <button onClick={togglemute} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-black/10 transition-colors header-button">
-                                                {muted ? <VolumeX className="w-4 h-4" style={{ color: widgetTheme?.bot_text_color }} /> : <Volume2 className="w-4 h-4" style={{ color: widgetTheme?.bot_text_color }} />}
+                                                {muted ? <VolumeX className="w-5 h-5 icon" style={{ color: widgetTheme?.bot_text_color }} /> : <Volume2 className="w-5 h-5 icon" style={{ color: widgetTheme?.bot_text_color }} />}
                                             </button>
                                             <button onClick={() => setExpanded(!expanded)} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-black/10 transition-colors header-button">
-                                                <Minimize2 className="w-4 h-4" style={{ color: widgetTheme?.bot_text_color }} />
+                                                <Minimize2 className="w-5 h-5 icon" style={{ color: widgetTheme?.bot_text_color }} />
+                                            </button>
+                                            <button onClick={handleClose} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-black/10 transition-colors header-button">
+                                                <X className="w-5 h-5 icon" style={{ color: widgetTheme?.bot_text_color }} />
                                             </button>
                                         </div>
+                                    </div>
+
+                                    <div className="flex flex-col items-center justify-center py-8">
+                                        <button onClick={handleMicClick} className={`w-40 h-40 rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-lg mb-6 mic-button overflow-hidden`} style={{ backgroundColor: widgetTheme?.bot_button_color }}>
+                                            {renderIcon("w-full h-full")}
+                                        </button>
+                                        <div className="px-6 py-2 rounded-full text-sm font-medium status-bar" style={{ backgroundColor: widgetTheme?.bot_status_bar_color, color: widgetTheme?.bot_status_bar_text_color }}>{speech}</div>
                                     </div>
                                 </div>
                             </div>
