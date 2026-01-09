@@ -203,6 +203,13 @@ const RetellaiAgent = () => {
         }
     }, []);
 
+    // Clear transcripts when disconnected (don't persist)
+    useEffect(() => {
+        if (status === "disconnected") {
+            setTranscripts("");
+        }
+    }, [status]);
+
     const startRecording = async () => {
         try {
             // Check if already connected
@@ -346,29 +353,6 @@ const RetellaiAgent = () => {
             container.scrollTop = container.scrollHeight;
         }
     }, [transcripts, transcriptionSegments, chatMessages]);
-
-    // Pulse effects for recording animation
-    useEffect(() => {
-        if (isRecording) {
-            const smallPulse = setInterval(() => {
-                setPulseEffects((prev) => ({ ...prev, small: !prev.small }));
-            }, 1000);
-
-            const mediumPulse = setInterval(() => {
-                setPulseEffects((prev) => ({ ...prev, medium: !prev.medium }));
-            }, 1500);
-
-            const largePulse = setInterval(() => {
-                setPulseEffects((prev) => ({ ...prev, large: !prev.large }));
-            }, 2000);
-
-            return () => {
-                clearInterval(smallPulse);
-                clearInterval(mediumPulse);
-                clearInterval(largePulse);
-            };
-        }
-    }, [isRecording]);
 
     // Loading state check
     if (!onlyOnce.current || !widgetTheme) {
