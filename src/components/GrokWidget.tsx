@@ -91,6 +91,7 @@ const RetellaiAgent = () => {
     const [formData, setFormData] = useState<Record<string, string>>({});
     const [showform, setShowform] = useState(false);
     const [formSubmitting, setFormSubmitting] = useState(false);
+    const [currentTranscripts, setCurrentTranscripts] = useState<string[]>([]);
 
     const baseUrl = "https://test.snowie.ai/api/create-room/";
     const settingsBaseUrl = "https://test.snowie.ai";
@@ -206,6 +207,10 @@ const RetellaiAgent = () => {
 
                     if (currentTranscript) {
                         setTranscripts(Trans);
+                        // Add to current transcripts if not already there
+                        if (Trans && !currentTranscripts.includes(Trans)) {
+                            setCurrentTranscripts(prev => [...prev, Trans]);
+                        }
                     }
                 }
             }
@@ -218,6 +223,14 @@ const RetellaiAgent = () => {
             transcriptEmitter.removeAllListeners("dataReceived");
         };
     }, [room]);
+
+    // Clear current transcripts when disconnected
+    useEffect(() => {
+        if (status === "disconnected") {
+            setCurrentTranscripts([]);
+            setTranscripts("");
+        }
+    }, [status]);
 
     // Request microphone permissions early
     useEffect(() => {
@@ -237,20 +250,13 @@ const RetellaiAgent = () => {
         }
     }, []);
 
-    // Clear transcripts when disconnected
-    useEffect(() => {
-        if (status === "disconnected") {
-            setTranscripts("");
-        }
-    }, [status]);
-
     // Auto-scroll transcript
     useEffect(() => {
         const container = containerRef.current;
         if (container) {
             container.scrollTop = container.scrollHeight;
         }
-    }, [transcripts, transcriptionSegments, chatMessages]);
+    }, [currentTranscripts, chatMessages]);
 
     const startRecording = async () => {
         try {
@@ -321,6 +327,7 @@ const RetellaiAgent = () => {
             setIsRecording(false);
             setMuted(false);
             setTranscripts("");
+            setCurrentTranscripts([]);
             setExpanded(false);
         } catch (err) {
             console.error("Error closing:", err);
@@ -356,6 +363,7 @@ const RetellaiAgent = () => {
             setIsRecording(true);
             localStorage.setItem("formshow", "false");
             setTranscripts("");
+            setCurrentTranscripts([]);
         } catch (err) {
             console.error("Form error:", err);
             alert("Failed to start call. Please check your microphone and try again.");
@@ -452,7 +460,10 @@ const RetellaiAgent = () => {
                     70% { box-shadow: 0 0 0 20px rgba(37, 99, 235, 0); }
                     100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
                 }
-                .glow-pulsate { animation: glowPulse 2s infinite; }
+                
+                .widget-container {
+                    max-height: 80vh;
+                }
                 
                 .transcript-box {
                     background: #f9fafb !important;
@@ -469,56 +480,60 @@ const RetellaiAgent = () => {
 
             {expanded ? (
                 <div 
-                    className="w-[400px] h-[600px] rounded-2xl shadow-xl overflow-hidden border border-gray-200"
+                    className="w-[400px] rounded-2xl shadow-xl overflow-hidden border border-gray-200 bg-white widget-container"
                     style={{
-                        backgroundColor: "#ffffff", // White background
+                        maxHeight: '80vh',
+                        height: 'auto',
                     }}
                 >
-                    {/* Header - Blue header like in the design */}
+                    {/* Header - Fixed height, won't get cut */}
                     <div 
-                        className="px-6 py-4 flex justify-between items-center"
+                        className="px-4 py-3 flex justify-between items-center flex-shrink-0"
                         style={{ 
                             backgroundColor: widgetTheme?.bot_bubble_color || "#2563eb",
                             color: "#ffffff"
                         }}
                     >
-                        <div className="flex items-center space-x-3">
+                        <div className="flex items-center space-x-3 min-w-0">
                             <div 
-                                className="w-8 h-8 rounded-full flex items-center justify-center overflow-hidden"
+                                className="w-8 h-8 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0"
                                 style={{ backgroundColor: "#ffffff" }}
                             >
                                 {renderIcon("w-full h-full")}
                             </div>
-                            <span className="font-semibold text-lg">
+                            <span className="font-semibold text-lg truncate">
                                 {widgetTheme?.bot_name || 'AI Assistant'}
                             </span>
                         </div>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-1 flex-shrink-0">
                             <button 
                                 onClick={togglemute} 
                                 className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors"
+                                title={muted ? "Unmute" : "Mute"}
                             >
-                                {muted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                                {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
                             </button>
                             <button 
                                 onClick={() => setExpanded(false)} 
                                 className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors"
+                                title="Minimize"
                             >
-                                <Minimize2 className="w-5 h-5" />
+                                <Minimize2 className="w-4 h-4" />
                             </button>
                             <button 
                                 onClick={handleClose} 
                                 className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors"
+                                title="Close"
                             >
-                                <X className="w-5 h-5" />
+                                <X className="w-4 h-4" />
                             </button>
                         </div>
                     </div>
 
-                    {/* Main Content - White background */}
-                    <div className="flex flex-col h-full bg-white">
+                    {/* Main Content - Flexible height */}
+                    <div className="flex flex-col h-full bg-white" style={{ height: 'calc(100% - 52px)' }}>
                         {widgetTheme?.bot_show_form && showform ? (
-                            <div className="flex-1 p-6 flex flex-col items-center justify-center bg-white">
+                            <div className="flex-1 p-6 flex flex-col items-center justify-center bg-white overflow-y-auto">
                                 <h3 className="text-lg font-semibold mb-6 text-gray-800">
                                     Enter Your Details
                                 </h3>
@@ -571,12 +586,12 @@ const RetellaiAgent = () => {
                                 </form>
                             </div>
                         ) : (
-                            <>
-                                {/* Mic Button Section */}
-                                <div className="flex-1 flex flex-col items-center justify-center p-6 bg-white">
+                            <div className="flex flex-col h-full overflow-hidden">
+                                {/* Mic Button and Status Section - Fixed height */}
+                                <div className="flex flex-col items-center justify-center p-4 bg-white flex-shrink-0">
                                     <button 
                                         onClick={handleMicClick}
-                                        className={`w-40 h-40 rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-lg mb-6 overflow-hidden ${
+                                        className={`w-32 h-32 rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-lg mb-4 overflow-hidden ${
                                             isRecording ? 'ring-4 ring-red-500' : ''
                                         }`}
                                         style={{ 
@@ -584,77 +599,83 @@ const RetellaiAgent = () => {
                                             boxShadow: isRecording ? `0 0 30px ${widgetTheme?.bot_animation_color || '#ef4444'}80` : '0 4px 20px rgba(37, 99, 235, 0.3)'
                                         }}
                                     >
-                                        {renderIcon("w-16 h-16 text-white")}
+                                        {renderIcon("w-12 h-12 text-white")}
                                     </button>
                                     
-                                    {/* Status Bar - Like in the design */}
-                                    <div 
-                                        className="px-6 py-3 rounded-full text-sm font-medium mb-4"
-                                        style={{ 
-                                            backgroundColor: widgetTheme?.bot_status_bar_color || "#f3f4f6",
-                                            color: widgetTheme?.bot_status_bar_text_color || "#374151"
-                                        }}
-                                    >
-                                        {speech}
-                                    </div>
-                                    
-                                    {/* Live Indicator - Like in the design */}
-                                    {isRecording && (
-                                        <div className="flex items-center mb-6">
-                                            <div className="w-3 h-3 bg-red-500 rounded-full mr-2 animate-pulse"></div>
-                                            <span className="text-red-600 font-medium text-sm">LIVE</span>
+                                    <div className="flex items-center mb-3">
+                                        <div 
+                                            className="px-4 py-2 rounded-full text-sm font-medium mr-3"
+                                            style={{ 
+                                                backgroundColor: widgetTheme?.bot_status_bar_color || "#f3f4f6",
+                                                color: widgetTheme?.bot_status_bar_text_color || "#374151"
+                                            }}
+                                        >
+                                            {speech}
                                         </div>
-                                    )}
+                                        
+                                        {isRecording && (
+                                            <div className="flex items-center">
+                                                <div className="w-3 h-3 bg-red-500 rounded-full mr-2 animate-pulse"></div>
+                                                <span className="text-red-600 font-medium text-sm">LIVE</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
 
-                                    {/* Transcript Section - Always visible when expanded */}
-                                    <div className="w-full px-4 mb-4">
-                                        <div className="text-sm font-medium text-gray-700 mb-2">Conversation</div>
+                                {/* Transcript Section - Flexible height, scrollable */}
+                                <div className="flex-1 overflow-hidden border-t border-gray-200">
+                                    <div className="h-full flex flex-col">
+                                        <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
+                                            <div className="text-sm font-medium text-gray-700">Conversation</div>
+                                        </div>
                                         <div 
                                             ref={containerRef}
-                                            className="transcript-box rounded-lg p-4 h-32 overflow-y-auto text-sm"
+                                            className="flex-1 p-4 overflow-y-auto"
+                                            style={{ maxHeight: '200px', minHeight: '150px' }}
                                         >
-                                            {transcriptionSegments.length > 0 ? (
-                                                transcriptionSegments.map((segment: any, index: number) => (
-                                                    <div key={`seg-${index}`} className="text-sm mb-2">
-                                                        <span className="font-medium">AI:</span> {segment.text}
+                                            {currentTranscripts.length > 0 ? (
+                                                currentTranscripts.map((transcript, index) => (
+                                                    <div key={index} className="text-sm mb-3">
+                                                        <div className="font-medium text-blue-600 mb-1">AI:</div>
+                                                        <div className="text-gray-700 pl-4">{transcript}</div>
                                                     </div>
                                                 ))
-                                            ) : transcripts ? (
-                                                <div className="text-gray-600">{transcripts}</div>
                                             ) : (
-                                                <div className="text-gray-400 italic">Your conversation will appear here...</div>
+                                                <div className="text-gray-400 italic text-center py-8">
+                                                    Your conversation will appear here...
+                                                </div>
                                             )}
                                         </div>
                                     </div>
+                                </div>
 
-                                    {/* Chat Input - Always visible when expanded */}
-                                    <div className="w-full px-4">
-                                        <div className="flex gap-2">
-                                            <input
-                                                type="text"
-                                                value={chatInput}
-                                                onChange={(e) => setChatInput(e.target.value)}
-                                                onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
-                                                placeholder="Type your message..."
-                                                disabled={status !== 'connected'}
-                                                className="chat-input flex-1 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
-                                            />
-                                            <button 
-                                                onClick={handleSendChat} 
-                                                disabled={status !== 'connected' || isSendingChat} 
-                                                className="w-12 h-12 rounded-lg flex items-center justify-center transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-                                                style={{ backgroundColor: widgetTheme?.bot_button_color || "#2563eb" }}
-                                            >
-                                                {isSendingChat ? (
-                                                    <Loader2 className="w-4 h-4 animate-spin text-white" />
-                                                ) : (
-                                                    <Send className="w-5 h-5 text-white" />
-                                                )}
-                                            </button>
-                                        </div>
+                                {/* Chat Input - Fixed height, won't get cut */}
+                                <div className="p-4 border-t border-gray-200 bg-white flex-shrink-0">
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={chatInput}
+                                            onChange={(e) => setChatInput(e.target.value)}
+                                            onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
+                                            placeholder="Type your message..."
+                                            disabled={status !== 'connected'}
+                                            className="chat-input flex-1 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 text-sm"
+                                        />
+                                        <button 
+                                            onClick={handleSendChat} 
+                                            disabled={status !== 'connected' || isSendingChat} 
+                                            className="w-12 h-12 rounded-lg flex items-center justify-center transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                                            style={{ backgroundColor: widgetTheme?.bot_button_color || "#2563eb" }}
+                                        >
+                                            {isSendingChat ? (
+                                                <Loader2 className="w-4 h-4 animate-spin text-white" />
+                                            ) : (
+                                                <Send className="w-5 h-5 text-white" />
+                                            )}
+                                        </button>
                                     </div>
                                 </div>
-                            </>
+                            </div>
                         )}
                     </div>
                 </div>
