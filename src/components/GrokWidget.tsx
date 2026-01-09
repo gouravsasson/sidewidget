@@ -574,7 +574,8 @@ const RetellaiAgent = () => {
                         ) : (
                             <>
                                 {/* Mic Button Section */}
-                                <div className="flex-1 flex flex-col items-center justify-center p-6 bg-white">
+                                <div className="flex-1 flex flex-col items-center p-6 bg-white overflow-y-auto">
+
                                     <button 
                                         onClick={handleMicClick}
                                         className={`w-40 h-40 rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-lg mb-6 overflow-hidden ${
