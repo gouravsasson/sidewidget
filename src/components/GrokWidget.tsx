@@ -516,7 +516,8 @@ const RetellaiAgent = () => {
                     </div>
 
                     {/* Main Content - White background */}
-                    <div className="flex flex-col h-full bg-white">
+                   <div className="flex flex-col bg-white h-[calc(100%-64px)] overflow-hidden">
+
                         {widgetTheme?.bot_show_form && showform ? (
                             <div className="flex-1 p-6 flex flex-col items-center justify-center bg-white">
                                 <h3 className="text-lg font-semibold mb-6 text-gray-800">
