@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import EventEmitter from "eventemitter3";
 import { useWidgetContext } from "../constexts/WidgetContext";
-import { Send, Loader2 } from "lucide-react";
+import { Send, Loader2, X, Minimize2, Volume2, VolumeX } from "lucide-react";
 import logo from "../assets/logo.png";
+import PhoneInput from "react-phone-input-2";
+import "react-phone-input-2/lib/style.css";
 import {
     RoomAudioRenderer,
     useConnectionState,
@@ -77,6 +79,34 @@ const RetellaiAgent = () => {
     // LiveKit Chat hook
     const { chatMessages, send, isSending: isSendingChat } = useChat();
     const [chatInput, setChatInput] = useState("");
+
+    // Form & UI state (to match CustomWidget design)
+    const [formData, setFormData] = useState<Record<string, string>>({});
+    const [showform, setShowform] = useState(false);
+    const [formSubmitting, setFormSubmitting] = useState(false);
+
+    const capitalize = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+    const getFieldIcon = (type: string) => {
+        if (type === "email") return <svg className="h-5 w-5 text-gray-400" />;
+        if (type === "tel") return <svg className="h-5 w-5 text-gray-400" />;
+        return <svg className="h-5 w-5 text-gray-400" />;
+    };
+
+    useEffect(() => {
+        if (widgetTheme?.custom_form_fields) {
+            const initialData: Record<string, string> = {};
+            widgetTheme.custom_form_fields.forEach((field) => {
+                initialData[field.label.toLowerCase()] = "";
+            });
+            setFormData(initialData);
+        }
+    }, [widgetTheme?.custom_form_fields]);
+
+    useEffect(() => {
+        if (widgetTheme?.bot_show_form) {
+            setShowform(true);
+        }
+    }, [widgetTheme?.bot_show_form]);
 
     const handleSendChat = () => {
         if (chatInput.trim() && !isSendingChat) {
@@ -260,6 +290,16 @@ const RetellaiAgent = () => {
         isRecording ? stopRecording() : startRecording();
     };
 
+    const togglemute = () => {
+        setExpanded(!expanded);
+        if (audioTrackRef.current) {
+            audioTrackRef.current.enabled = !audioTrackRef.current.enabled;
+            setMuted(!muted);
+        } else {
+            setMuted(!muted);
+        }
+    };
+
     const handleClose = async () => {
         try {
             // Stop the audio track before disconnecting
@@ -282,22 +322,9 @@ const RetellaiAgent = () => {
         }
     };
 
-    const handleSubmit = async () => {
-        const microphonePermission = localStorage.getItem("microphonePermission");
-        console.log("microphonePermission", microphonePermission);
-
-        if (microphonePermission === "denied") {
-            alert("Microphone permission is required. Please enable it in your browser settings.");
-            return;
-        }
-
+    const doStart = async (payload: Record<string, any>) => {
         try {
-            const res = await axios.post(`${baseUrl}`, {
-                "agent_code": agent_id,
-                "schema_name": schema
-            });
-            console.log("Create room response:", res.data);
-
+            const res = await axios.post(`${baseUrl}`, payload);
             const decryptedPayload = res.data.response;
             const accessToken = decryptedPayload.token;
 
@@ -310,22 +337,16 @@ const RetellaiAgent = () => {
                     echoCancellation: true,
                     noiseSuppression: true,
                     autoGainControl: true,
-                }
+                },
             });
 
             const [audioTrack] = stream.getAudioTracks();
 
-            // Verify the track is enabled and has proper settings
-            console.log("Audio track settings:", audioTrack.getSettings());
-            console.log("Audio track state:", audioTrack.readyState);
-            console.log("Audio track enabled:", audioTrack.enabled);
-
-            // Ensure track is enabled
             audioTrack.enabled = true;
 
             // Publish the track
             await room.localParticipant.publishTrack(audioTrack, {
-                name: 'microphone',
+                name: "microphone",
                 source: Track.Source.Microphone,
             });
 
@@ -335,11 +356,43 @@ const RetellaiAgent = () => {
             setIsGlowing(true);
             localStorage.setItem("formshow", "false");
             setTranscripts("");
-
-            console.log("Audio track published successfully");
         } catch (err) {
             console.error("Form error:", err);
             alert("Failed to start call. Please check your microphone and try again.");
+        }
+    };
+
+    const handleSubmit = async () => {
+        const microphonePermission = localStorage.getItem("microphonePermission");
+        if (microphonePermission === "denied") {
+            alert("Microphone permission is required. Please enable it in your browser settings.");
+            return;
+        }
+
+        await doStart({ agent_code: agent_id, schema_name: schema });
+    };
+
+    const startFromForm = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        try {
+            if (status === "disconnected") {
+                setFormSubmitting(true);
+                const payload: Record<string, any> = {
+                    agent_code: agent_id,
+                    schema_name: schema,
+                };
+                Object.entries(formData).forEach(([key, value]) => {
+                    payload[key] = value;
+                });
+                await doStart(payload);
+            } else {
+                // If already connected, stop the call similar to handleClose
+                await handleClose();
+            }
+        } catch (err) {
+            console.error("Error in startFromForm:", err);
+        } finally {
+            setFormSubmitting(false);
         }
     };
 
@@ -413,6 +466,31 @@ const RetellaiAgent = () => {
                 })(),
             }}
         >
+            <style>{`
+              @keyframes glowPulse {
+                0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7); }
+                70% { box-shadow: 0 0 0 20px rgba(37, 99, 235, 0); }
+                100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+              }
+              .glow-pulsate { animation: glowPulse 2s infinite; }
+              .pulse-ring { position: absolute; top: 50%; left: 50%; width: 100px; height: 100px; background: rgba(37, 99, 235, 0.3); border-radius: 50%; transform: translate(-50%, -50%); animation: pulseRing 2s infinite; pointer-events: none; }
+              @keyframes pulseRing { 0% { transform: translate(-50%, -50%) scale(0.8); opacity:1 } 100% { transform: translate(-50%, -50%) scale(1.8); opacity:0 } }
+
+              @media (max-width: 640px) {
+                .widget-container { width: 90vw !important; height: 80vh !important; }
+                .mic-button { width: 30vw !important; height: 30vw !important; }
+                .status-bar { font-size: 0.8rem !important; padding: 0.5rem 1rem !important; }
+                .form-input { padding: 0.5rem 2rem !important; font-size: 0.9rem !important; }
+              }
+
+              .transparent-background { background: ${widgetTheme?.bot_background_color}15 !important; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid ${widgetTheme?.bot_border_color}30; }
+
+              .transparent-widget .header, .transparent-widget .mic-button, .transparent-widget .status-bar, .transparent-widget .transcript-box, .transparent-widget .chat-input, .transparent-widget input, .transparent-widget button, .transparent-widget .form-container, .transparent-widget form { background: inherit !important; opacity: 1 !important; color: inherit !important; }
+
+              .transparent-widget .transcript-box, .transparent-widget input, .transparent-widget .chat-input { background: white !important; color: #374151 !important; }
+
+            `}</style>
+
             {expanded ? (
                 <div className="bg-gray-900/50 backdrop-blur-sm w-[309px] rounded-2xl shadow-2xl overflow-hidden border"
                     style={{
@@ -423,54 +501,99 @@ const RetellaiAgent = () => {
                         backdropFilter: widgetTheme?.is_transparent ? "blur(12px)" : "none",
                     }}>
                     <div className="pt-10 flex flex-col items-center justify-center relative h-full w-full">
-                        <div className="black/30 w-full h-full flex items-center justify-center">
-                            <div className="relative flex flex-col items-center justify-center h-full w-full">
-                                <button
-                                    onClick={handleClose}
-                                    className="absolute top-2 right-2 text-gray-400 hover:text-gray-200 px-3 py-1 rounded bg-gray-800/50 hover:bg-gray-700/50 transition-colors"
-                                    style={{ color: widgetTheme?.bot_text_color }}
-                                >
-                                    close
-                                </button>
-
-                                <div className="relative group">
-                                    <button
-                                        onClick={handleMicClick}
-                                        className={`relative z-10 bg-black/80 rounded-full w-36 h-36 flex items-center justify-center border-2
-                      ${isGlowing
-                                                ? "border-yellow-300 shadow-[0_0_30px_10px_rgba(250,204,21,0.3)]"
-                                                : "border-yellow-400 shadow-lg"
-                                            } transition-all duration-500 ${isRecording ? "scale-110" : "hover:scale-105"
-                                            } backdrop-blur-sm
-                      group-hover:shadow-[0_0_50px_15px_rgba(250,204,21,0.2)]`}
-                                        style={{
-                                            backgroundColor: widgetTheme?.bot_button_color || "#1f2937",
-                                            borderColor: widgetTheme?.bot_animation_color || "#FBBF24",
-                                        }}
-                                    >
-                                        <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-yellow-900/20 rounded-full"></div>
-                                        <div className="absolute inset-0 bg-gradient-to-tr from-yellow-400/5 via-transparent to-transparent rounded-full"></div>
-
-                                        <div className="relative">
-                                            <img
-                                                src={widgetTheme?.bot_logo || logo}
-                                                alt=""
-                                                className={`w-16 h-16 text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.5)]
-                          ${isRecording ? "animate-[pulse_1.5s_ease-in-out_infinite]" : ""}
-                          transition-transform duration-300 group-hover:scale-110`}
-                                            />
-
-                                            {isRecording && (
-                                                <div className="absolute -inset-4">
-                                                    <div className="absolute inset-0 border-2 border-yellow-400/50 rounded-full animate-[ripple_2s_ease-out_infinite]"></div>
-                                                    <div className="absolute inset-0 border-2 border-yellow-400/30 rounded-full animate-[ripple_2s_ease-out_infinite_0.5s]"></div>
+                        {widgetTheme?.bot_show_form && showform ? (
+                            <div className="flex flex-col items-center justify-center h-full p-6 form-container">
+                                <h3 className="text-lg font-semibold mb-6" style={{ color: widgetTheme?.bot_text_color }}>Enter Your Details</h3>
+                                <form onSubmit={startFromForm} className="w-full max-w-sm space-y-4">
+                                    {widgetTheme.custom_form_fields.map((field) => (
+                                        <div key={field.id} className="w-full">
+                                            <label className="block text-sm font-medium mb-1" style={{ color: widgetTheme?.bot_text_color }}>{capitalize(field.label)}</label>
+                                            <div className="relative">
+                                                <div className="absolute inset-y-0 left-2 flex items-center pointer-events-none">
+                                                    {getFieldIcon(field.type)}
                                                 </div>
-                                            )}
+                                                {field.type === 'tel' ? (
+                                                    <PhoneInput
+                                                        country={localStorage.getItem('continentcode')?.toLowerCase()}
+                                                        value={formData[field.label.toLowerCase()] || ''}
+                                                        onChange={(phone) => setFormData({ ...formData, [field.label.toLowerCase()]: phone })}
+                                                        inputProps={{ required: true }}
+                                                        inputClass="w-full p-3 pl-10 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 text-gray-700"
+                                                    />
+                                                ) : (
+                                                    <input type={field.type} required value={formData[field.label.toLowerCase()] || ''} onChange={(e) => setFormData({ ...formData, [field.label.toLowerCase()]: e.target.value })} className="w-full p-3 pl-10 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 text-gray-700" placeholder={`Enter your ${field.label.toLowerCase()}`} />
+                                                )}
+                                            </div>
                                         </div>
+                                    ))}
+                                    <button type="submit" className="w-full p-3 rounded-xl text-white transition-colors hover:opacity-90 form-button" style={{ backgroundColor: widgetTheme?.bot_button_color }}>
+                                        {formSubmitting ? (
+                                            <div className="flex items-center justify-center"><Loader2 className="w-5 h-5 animate-spin mr-2 icon" />Connecting to AI Assistant</div>
+                                        ) : (
+                                            'Submit'
+                                        )}
                                     </button>
+                                </form>
+                            </div>
+                        ) : (
+                            <div className="black/30 w-full h-full flex items-center justify-center">
+                                <div className="relative flex flex-col items-center justify-center h-full w-full">
+                                    <button
+                                        onClick={handleClose}
+                                        className="absolute top-2 right-2 text-gray-400 hover:text-gray-200 px-3 py-1 rounded bg-gray-800/50 hover:bg-gray-700/50 transition-colors"
+                                        style={{ color: widgetTheme?.bot_text_color }}
+                                    >
+                                        <X className="w-4 h-4" style={{ color: widgetTheme?.bot_text_color }} />
+                                    </button>
+
+                                    <div className="relative group">
+                                        <button
+                                            onClick={handleMicClick}
+                                            className={`relative z-10 bg-black/80 rounded-full w-36 h-36 flex items-center justify-center border-2
+                          ${isGlowing
+                                                    ? "border-yellow-300 shadow-[0_0_30px_10px_rgba(250,204,21,0.3)]"
+                                                    : "border-yellow-400 shadow-lg"
+                                                } transition-all duration-500 ${isRecording ? "scale-110" : "hover:scale-105"
+                                                } backdrop-blur-sm
+                          group-hover:shadow-[0_0_50px_15px_rgba(250,204,21,0.2)]`}
+                                            style={{
+                                                backgroundColor: widgetTheme?.bot_button_color || "#1f2937",
+                                                borderColor: widgetTheme?.bot_animation_color || "#FBBF24",
+                                            }}
+                                        >
+                                            <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-yellow-900/20 rounded-full"></div>
+                                            <div className="absolute inset-0 bg-gradient-to-tr from-yellow-400/5 via-transparent to-transparent rounded-full"></div>
+
+                                            <div className="relative">
+                                                <img
+                                                    src={widgetTheme?.bot_logo || logo}
+                                                    alt=""
+                                                    className={`w-16 h-16 text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.5)]
+                              ${isRecording ? "animate-[pulse_1.5s_ease-in-out_infinite]" : ""}
+                              transition-transform duration-300 group-hover:scale-110`}
+                                                />
+
+                                                {isRecording && (
+                                                    <div className="absolute -inset-4">
+                                                        <div className="absolute inset-0 border-2 border-yellow-400/50 rounded-full animate-[ripple_2s_ease-out_infinite]"></div>
+                                                        <div className="absolute inset-0 border-2 border-yellow-400/30 rounded-full animate-[ripple_2s_ease-out_infinite_0.5s]"></div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </button>
+
+                                        <div className="absolute top-2 left-2 flex items-center space-x-2">
+                                            <button onClick={togglemute} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-black/10 transition-colors header-button">
+                                                {muted ? <VolumeX className="w-4 h-4" style={{ color: widgetTheme?.bot_text_color }} /> : <Volume2 className="w-4 h-4" style={{ color: widgetTheme?.bot_text_color }} />}
+                                            </button>
+                                            <button onClick={() => setExpanded(!expanded)} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-black/10 transition-colors header-button">
+                                                <Minimize2 className="w-4 h-4" style={{ color: widgetTheme?.bot_text_color }} />
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
 
                         <div className="relative p-4 w-full">
                             <div className="absolute inset-0"></div>
@@ -483,90 +606,35 @@ const RetellaiAgent = () => {
                                         </div>
                                     )}
                                 </div>
-                                <div
-                                    ref={containerRef}
-                                    className="bg-white backdrop-blur-sm rounded-xl p-4 h-32 text-white shadow-inner border border-gray-800 overflow-y-auto scrollbar-hide ring-yellow-400/80 flex flex-col gap-2"
-                                    style={{
-                                        backgroundColor: "#ffffff",
-                                        color: widgetTheme?.bot_text_color || "#1f2937",
-                                        borderColor: widgetTheme?.bot_border_color || "#e5e7eb",
-                                    }}
-                                >
-                                    {/* Transcription History */}
-                                    {transcriptionSegments.length > 0 && transcriptionSegments.map((segment: any, index: number) => {
-                                        const isLocal = segment.participant?.isLocal ||
-                                            segment.participantInfo?.isLocal ||
-                                            (transcriptionSegments.length > 1 && index === transcriptionSegments.length - 1);
-                                        return (
-                                            <div key={`trans-${index}`} className="flex flex-col">
-                                                <span className={`text-[11px] leading-tight ${isLocal ? "text-blue-400" : "text-yellow-400"}`}>
-                                                    {segment.text}
-                                                </span>
-                                            </div>
-                                        );
-                                    })}
 
-                                    {/* Chat History */}
-                                    {chatMessages.length > 0 && chatMessages.map((msg: any, index: number) => {
-                                        const isLocal = msg.from?.isLocal;
-                                        return (
-                                            <div key={`chat-${index}`} className="flex flex-col items-end">
-                                                <div className={`px-2 py-1 rounded-lg text-[11px] max-w-[80%] ${isLocal ? "bg-blue-600/30 text-blue-100" : "bg-yellow-600/30 text-yellow-100"}`}>
-                                                    {msg.message}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
+                                {widgetTheme?.bot_show_transcript ? (
+                                    <div ref={containerRef} className="bg-white rounded-2xl p-4 h-32 text-gray-600 shadow-inner border overflow-y-auto text-sm transcript-box" style={{ fontStyle: transcripts ? 'normal' : 'italic', color: transcripts ? '#374151' : '#9CA3AF' }}>
+                                        {transcriptionSegments.length > 0 ? (
+                                            transcriptionSegments.map((segment: any, index: number) => (
+                                                <div key={`seg-${index}`} className="text-sm mb-1" style={{ color: widgetTheme?.bot_text_color }}>{segment.text}</div>
+                                            ))
+                                        ) : (
+                                            transcripts || 'Your conversation will appear here...'
+                                        )}
+                                    </div>
+                                ) : null}
 
-                                    {/* Legacy transcript display */}
-                                    {transcripts && transcriptionSegments.length === 0 && chatMessages.length === 0 && (
-                                        <div className="relative">
-                                            <span style={{ color: widgetTheme?.bot_text_color || "#1f2937" }}>{transcripts}</span>
-                                        </div>
-                                    )}
-
-                                    {!transcripts && transcriptionSegments.length === 0 && chatMessages.length === 0 && (
-                                        <div className="text-black/50 italic text-[11px]">
-                                            {isRecording ? "Listening..." : "Waiting for conversation..."}
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Message Input Form */}
                                 {widgetTheme?.bot_show_chat && (
                                     <div className="flex gap-2 mt-3">
                                         <input
                                             type="text"
-                                            disabled={status !== "connected"}
                                             value={chatInput}
                                             onChange={(e) => setChatInput(e.target.value)}
-                                            onKeyDown={(e) => {
-                                                if (e.key === "Enter") {
-                                                    handleSendChat();
-                                                }
-                                            }}
+                                            onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
                                             placeholder="Type your message..."
-                                            className="flex-1 px-3 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-white text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent disabled:opacity-50"
-                                            style={{
-                                                backgroundColor: "#ffffff",
-                                                color: widgetTheme?.bot_text_color || "#1f2937",
-                                                borderColor: widgetTheme?.bot_border_color || "#e5e7eb",
-                                            }}
+                                            disabled={status !== 'connected'}
+                                            className="flex-1 bg-white text-gray-700 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 placeholder-gray-400 border border-gray-200 chat-input"
                                         />
-                                        <button
-                                            type="button"
-                                            onClick={handleSendChat}
-                                            disabled={status !== "connected" || isSendingChat}
-                                            className="px-3 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                            style={{
-                                                backgroundColor: widgetTheme?.bot_button_color || "#FBBF24",
-                                                color: widgetTheme?.bot_button_text_color || "#ffffff",
-                                            }}
-                                        >
+                                        <button type="button" onClick={handleSendChat} disabled={status !== 'connected' || isSendingChat} className="w-12 h-12 rounded-xl flex items-center justify-center transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed" style={{ backgroundColor: widgetTheme?.bot_button_color }}>
                                             {isSendingChat ? (
                                                 <Loader2 className="w-4 h-4 animate-spin" />
                                             ) : (
-                                                <Send className="w-4 h-4" />
+                                                <Send className="w-5 h-5 icon" style={{ color: widgetTheme?.bot_button_text_color }} />
                                             )}
                                         </button>
                                     </div>
