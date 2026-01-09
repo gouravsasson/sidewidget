@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import EventEmitter from "eventemitter3";
 import { useWidgetContext } from "../constexts/WidgetContext";
 import { Mic, Send, Loader2, X, Minimize2, Volume2, VolumeX } from "lucide-react";
-import logo from "../assets/logo.png";
+
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import {
@@ -562,13 +562,7 @@ const RetellaiAgent = () => {
                         ) : (
                             <div className="black/30 w-full h-full flex items-center justify-center">
                                 <div className="relative flex flex-col items-center justify-center h-full w-full">
-                                    <button
-                                        onClick={handleClose}
-                                        className="absolute top-2 right-2 text-gray-400 hover:text-gray-200 px-3 py-1 rounded bg-gray-800/50 hover:bg-gray-700/50 transition-colors"
-                                        style={{ color: widgetTheme?.bot_text_color }}
-                                    >
-                                        <X className="w-4 h-4" style={{ color: widgetTheme?.bot_text_color }} />
-                                    </button>
+                                   
 
                                     {/* Header */}
                                     <div className="px-6 py-4 flex justify-between items-center header" style={{ backgroundColor: widgetTheme?.bot_bubble_color }}>
@@ -648,14 +642,6 @@ const RetellaiAgent = () => {
                             </div>
                         </div>
 
-                        {status === "disconnected" && (
-                            <button
-                                onClick={handleSubmit}
-                                className="absolute top-2 left-2 text-gray-400 hover:text-gray-200 px-3 py-1 rounded bg-green-800/50 hover:bg-green-700/50 transition-colors"
-                            >
-                                start
-                            </button>
-                        )}
                     </div>
                 </div>
             ) : (
@@ -685,11 +671,7 @@ const RetellaiAgent = () => {
                                 </>
                             )}
                             <span className="text-yellow-400 font-bold text-3xl relative z-10 drop-shadow-xl tracking-tighter">
-                                <img 
-                                    src={widgetTheme?.bot_logo || logo} 
-                                    alt="logo" 
-                                    className="w-[54px] h-[54px]" 
-                                />
+                               <Mic />
                             </span>
                         </div>
                     </button>
