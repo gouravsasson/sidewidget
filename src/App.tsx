@@ -8,13 +8,13 @@ import Forkartik from "./components/Forkartik";
 import Autostart from "./components/Autostart";
 import CustomWidget from "./components/CustomWidget";
 import { WidgetTheme } from "./components/CustomWidget";
-import GrokMain from "./GrokMain";
 import { LiveKitRoom } from "@livekit/components-react";
 import { Room } from "livekit-client";
 
 
 import German from "./components/German";
 import RetellaiAgent from "./components/GrokWidget";
+import Whatsapp from "./components/Whatsapp";
 
 function App() {
   const [showPopup, setShowPopup] = useState(false);
@@ -44,12 +44,12 @@ function App() {
     german: <German />,
     thunderemotion: <LiveKitRoom token="" serverUrl="" room={room} connect={false}>
       <RetellaiAgent />
-    </LiveKitRoom>
+    </LiveKitRoom>,
+    whatsapp:<CustomWidget/>
   };
 
   return (
     widgetMap[type] || null
-
   );
 }
 
