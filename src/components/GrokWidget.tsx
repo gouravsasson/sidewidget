@@ -469,7 +469,7 @@ const RetellaiAgent = () => {
 
             {expanded ? (
                 <div 
-                    className="w-[400px] h-[600px] rounded-2xl shadow-xl overflow-hidden border border-gray-200"
+                    className="w-[400px] h-[600px] rounded-2xl shadow-xl border border-gray-200"
                     style={{
                         backgroundColor: "#ffffff", // White background
                     }}
