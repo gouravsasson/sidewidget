@@ -77,7 +77,7 @@ const RetellaiAgent = () => {
             setSpeech("");
         }
     }, [status, widgetTheme?.bot_name, widgetTheme?.bot_tagline]);
-    
+
     const serverUrl = "wss://abcd-sw47y5hk.livekit.cloud";
     const audioTrackRef = useRef<MediaStreamTrack | null>(null);
     const [muted, setMuted] = useState(false);
@@ -96,7 +96,7 @@ const RetellaiAgent = () => {
     const settingsBaseUrl = "https://test.snowie.ai";
 
     const capitalize = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
-    
+
     const getFieldIcon = (type: string) => {
         if (type === "email") return <svg className="h-5 w-5 text-gray-400" />;
         if (type === "tel") return <svg className="h-5 w-5 text-gray-400" />;
@@ -447,6 +447,12 @@ const RetellaiAgent = () => {
     return (
         <div className="fixed z-50" style={getPositionStyles()}>
             <style>{`
+                @media (max-width: 640px) {
+                    .widget-container {
+                        width: 90vw !important;
+                        height: ${widgetTheme?.bot_show_form && showform ? "80vh" : "85vh"} !important;
+                    }
+                }
                 @keyframes glowPulse {
                     0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7); }
                     70% { box-shadow: 0 0 0 20px rgba(37, 99, 235, 0); }
@@ -465,25 +471,55 @@ const RetellaiAgent = () => {
                     color: #374151 !important;
                     border: 1px solid #e5e7eb !important;
                 }
+
+                .transparent-background {
+                    background: ${widgetTheme?.bot_background_color}15 !important; 
+                    backdrop-filter: blur(12px);
+                    -webkit-backdrop-filter: blur(12px);
+                    border: 1px solid ${widgetTheme?.bot_border_color}30;
+                }
+
+                .transparent-widget .header,
+                .transparent-widget .mic-button,
+                .transparent-widget .status-bar,
+                .transparent-widget .transcript-box,
+                .transparent-widget .chat-input,
+                .transparent-widget input,
+                .transparent-widget button,
+                .transparent-widget .form-container,
+                .transparent-widget form {
+                    background: inherit !important;
+                    opacity: 1 !important;
+                    color: inherit !important;
+                }
+
+                .transparent-widget .transcript-box,
+                .transparent-widget input,
+                .transparent-widget .chat-input {
+                    background: white !important;
+                    color: #374151 !important;
+                }
             `}</style>
 
             {expanded ? (
-                <div 
-                    className="w-[400px] h-[600px] rounded-2xl shadow-xl border border-gray-200"
+                <div
+                    className={`rounded-3xl shadow-2xl overflow-hidden widget-container ${widgetTheme?.is_transparent ? "transparent-background transparent-widget" : ""}`}
                     style={{
-                        backgroundColor: "#ffffff", // White background
+                        width: "min(90vw, 400px)",
+                        height: widgetTheme?.bot_show_form && showform ? "min(90vh, 550px)" : "min(90vh, 600px)",
+                        backgroundColor: widgetTheme?.is_transparent ? undefined : (widgetTheme?.bot_background_color || "#ffffff"),
                     }}
                 >
                     {/* Header - Blue header like in the design */}
-                    <div 
+                    <div
                         className="px-6 py-4 flex justify-between items-center"
-                        style={{ 
+                        style={{
                             backgroundColor: widgetTheme?.bot_bubble_color || "#2563eb",
                             color: "#ffffff"
                         }}
                     >
                         <div className="flex items-center space-x-3">
-                            <div 
+                            <div
                                 className="w-8 h-8 rounded-full flex items-center justify-center overflow-hidden"
                                 style={{ backgroundColor: "#ffffff" }}
                             >
@@ -494,20 +530,20 @@ const RetellaiAgent = () => {
                             </span>
                         </div>
                         <div className="flex items-center space-x-2">
-                            <button 
-                                onClick={togglemute} 
+                            <button
+                                onClick={togglemute}
                                 className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors"
                             >
                                 {muted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
                             </button>
-                            <button 
-                                onClick={() => setExpanded(false)} 
+                            <button
+                                onClick={() => setExpanded(false)}
                                 className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors"
                             >
                                 <Minimize2 className="w-5 h-5" />
                             </button>
-                            <button 
-                                onClick={handleClose} 
+                            <button
+                                onClick={handleClose}
                                 className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors"
                             >
                                 <X className="w-5 h-5" />
@@ -516,10 +552,10 @@ const RetellaiAgent = () => {
                     </div>
 
                     {/* Main Content - White background */}
-                   <div className="flex flex-col bg-white h-[calc(100%-64px)] overflow-hidden">
+                    <div className="flex flex-col h-[calc(100%-64px)] overflow-hidden">
 
                         {widgetTheme?.bot_show_form && showform ? (
-                            <div className="flex-1 p-6 flex flex-col items-center justify-center bg-white">
+                            <div className="flex-1 p-6 flex flex-col items-center justify-center">
                                 <h3 className="text-lg font-semibold mb-6 text-gray-800">
                                     Enter Your Details
                                 </h3>
@@ -544,11 +580,11 @@ const RetellaiAgent = () => {
                                                         buttonClass="border-r border-gray-300"
                                                     />
                                                 ) : (
-                                                    <input 
-                                                        type={field.type} 
-                                                        required 
-                                                        value={formData[field.label.toLowerCase()] || ''} 
-                                                        onChange={(e) => setFormData({ ...formData, [field.label.toLowerCase()]: e.target.value })} 
+                                                    <input
+                                                        type={field.type}
+                                                        required
+                                                        value={formData[field.label.toLowerCase()] || ''}
+                                                        onChange={(e) => setFormData({ ...formData, [field.label.toLowerCase()]: e.target.value })}
                                                         className="w-full p-3 pl-12 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 bg-white"
                                                         placeholder={`Enter your ${field.label.toLowerCase()}`}
                                                     />
@@ -556,8 +592,8 @@ const RetellaiAgent = () => {
                                             </div>
                                         </div>
                                     ))}
-                                    <button 
-                                        type="submit" 
+                                    <button
+                                        type="submit"
                                         className="w-full p-3 rounded-lg text-white transition-colors hover:opacity-90"
                                         style={{ backgroundColor: widgetTheme?.bot_button_color || "#2563eb" }}
                                         disabled={formSubmitting}
@@ -574,32 +610,31 @@ const RetellaiAgent = () => {
                         ) : (
                             <>
                                 {/* Mic Button Section */}
-                                <div className="flex-1 flex flex-col items-center p-6 bg-white overflow-y-auto">
+                                <div className="flex-1 flex flex-col items-center p-6 overflow-y-auto">
 
-                                    <button 
+                                    <button
                                         onClick={handleMicClick}
-                                        className={`w-40 h-40 rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-lg mb-6 overflow-hidden ${
-                                            isRecording ? 'ring-4 ring-red-500' : ''
-                                        }`}
-                                        style={{ 
+                                        className={`w-40 h-40 rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-lg mb-6 overflow-hidden ${isRecording ? 'ring-4 ring-red-500' : ''
+                                            }`}
+                                        style={{
                                             backgroundColor: widgetTheme?.bot_button_color || "#2563eb",
                                             boxShadow: isRecording ? `0 0 30px ${widgetTheme?.bot_animation_color || '#ef4444'}80` : '0 4px 20px rgba(37, 99, 235, 0.3)'
                                         }}
                                     >
                                         {renderIcon("w-16 h-16 text-white")}
                                     </button>
-                                    
+
                                     {/* Status Bar - Like in the design */}
-                                    <div 
+                                    <div
                                         className="px-6 py-3 rounded-full text-sm font-medium mb-4"
-                                        style={{ 
+                                        style={{
                                             backgroundColor: widgetTheme?.bot_status_bar_color || "#f3f4f6",
                                             color: widgetTheme?.bot_status_bar_text_color || "#374151"
                                         }}
                                     >
                                         {speech}
                                     </div>
-                                    
+
                                     {/* Live Indicator - Like in the design */}
                                     {isRecording && (
                                         <div className="flex items-center mb-6">
@@ -611,7 +646,7 @@ const RetellaiAgent = () => {
                                     {/* Transcript Section - Always visible when expanded */}
                                     <div className="w-full px-4 mb-4">
                                         <div className="text-sm font-medium text-gray-700 mb-2">Conversation</div>
-                                        <div 
+                                        <div
                                             ref={containerRef}
                                             className="transcript-box rounded-lg p-4 h-32 overflow-y-auto text-sm"
                                         >
@@ -641,9 +676,9 @@ const RetellaiAgent = () => {
                                                 disabled={status !== 'connected'}
                                                 className="chat-input flex-1 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
                                             />
-                                            <button 
-                                                onClick={handleSendChat} 
-                                                disabled={status !== 'connected' || isSendingChat} 
+                                            <button
+                                                onClick={handleSendChat}
+                                                disabled={status !== 'connected' || isSendingChat}
                                                 className="w-12 h-12 rounded-lg flex items-center justify-center transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                                                 style={{ backgroundColor: widgetTheme?.bot_button_color || "#2563eb" }}
                                             >
