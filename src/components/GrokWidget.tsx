@@ -462,13 +462,13 @@ const RetellaiAgent = () => {
                 
                 .transcript-box {
                     background: #f9fafb !important;
-                    color: #374151 !important;
+                    color: ${widgetTheme?.bot_text_color || "#374151"} !important;
                     border: 1px solid #e5e7eb !important;
                 }
                 
                 .chat-input {
                     background: white !important;
-                    color: #374151 !important;
+                    color: ${widgetTheme?.bot_text_color || "#374151"} !important;
                     border: 1px solid #e5e7eb !important;
                 }
 
@@ -515,7 +515,7 @@ const RetellaiAgent = () => {
                         className="px-6 py-4 flex justify-between items-center"
                         style={{
                             backgroundColor: widgetTheme?.bot_bubble_color || "#2563eb",
-                            color: "#ffffff"
+                            color: widgetTheme?.bot_text_color || "#ffffff"
                         }}
                     >
                         <div className="flex items-center space-x-3">
@@ -556,13 +556,19 @@ const RetellaiAgent = () => {
 
                         {widgetTheme?.bot_show_form && showform ? (
                             <div className="flex-1 p-6 flex flex-col items-center justify-center">
-                                <h3 className="text-lg font-semibold mb-6 text-gray-800">
+                                <h3
+                                    className="text-lg font-semibold mb-6"
+                                    style={{ color: widgetTheme?.bot_text_color || "#1f2937" }}
+                                >
                                     Enter Your Details
                                 </h3>
                                 <form onSubmit={startFromForm} className="w-full space-y-4">
                                     {widgetTheme.custom_form_fields.map((field) => (
                                         <div key={field.id} className="w-full">
-                                            <label className="block text-sm font-medium mb-1 text-gray-700">
+                                            <label
+                                                className="block text-sm font-medium mb-1"
+                                                style={{ color: widgetTheme?.bot_text_color || "#374151" }}
+                                            >
                                                 {capitalize(field.label)}
                                             </label>
                                             <div className="relative">
@@ -645,7 +651,12 @@ const RetellaiAgent = () => {
 
                                     {/* Transcript Section - Always visible when expanded */}
                                     <div className="w-full px-4 mb-4">
-                                        <div className="text-sm font-medium text-gray-700 mb-2">Conversation</div>
+                                        <div
+                                            className="text-sm font-medium mb-2"
+                                            style={{ color: widgetTheme?.bot_text_color || "#374151" }}
+                                        >
+                                            Conversation
+                                        </div>
                                         <div
                                             ref={containerRef}
                                             className="transcript-box rounded-lg p-4 h-32 overflow-y-auto text-sm"
