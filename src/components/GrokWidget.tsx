@@ -651,11 +651,9 @@ const RetellaiAgent = () => {
                                             className="transcript-box rounded-lg p-4 h-32 overflow-y-auto text-sm"
                                         >
                                             {transcriptionSegments.length > 0 ? (
-                                                transcriptionSegments.map((segment: any, index: number) => (
-                                                    <div key={`seg-${index}`} className="text-sm mb-2">
-                                                        <span className="font-medium">AI:</span> {segment.text}
-                                                    </div>
-                                                ))
+                                                <div className="text-sm mb-2">
+                                                    {transcriptionSegments[transcriptionSegments.length - 1].text}
+                                                </div>
                                             ) : transcripts ? (
                                                 <div className="text-gray-600">{transcripts}</div>
                                             ) : (
