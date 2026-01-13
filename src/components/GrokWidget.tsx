@@ -85,11 +85,7 @@ const RetellaiAgent = ({ isWidget = false, colors, botName, botIcon }: RetellaiA
 
     const [speech, setSpeech] = useState("");
     const [isGlowing, setIsGlowing] = useState(false);
-    const [pulseEffects, setPulseEffects] = useState({
-        small: false,
-        medium: false,
-        large: false,
-    });
+    
     const [latestEvent, setLatestEvent] = useState<{ type: 'transcription' | 'chat', text: string, isLocal: boolean } | null>(null);
     useEffect(() => {
         if (status === "disconnected") {
@@ -787,19 +783,7 @@ const RetellaiAgent = ({ isWidget = false, colors, botName, botIcon }: RetellaiA
                                         }}
                                     >
                                         <div className="relative w-full h-full flex items-center justify-center">
-                                            {isRecording && (
-                                                <>
-                                                    {pulseEffects.small && (
-                                                        <div className="absolute inset-0 -m-3 bg-red-400 opacity-30 rounded-full animate-ping"></div>
-                                                    )}
-                                                    {pulseEffects.medium && (
-                                                        <div className="absolute inset-0 -m-6 bg-red-500 opacity-20 rounded-full animate-pulse"></div>
-                                                    )}
-                                                    {pulseEffects.large && (
-                                                        <div className="absolute inset-0 -m-12 bg-red-600 opacity-10 rounded-full animate-pulse"></div>
-                                                    )}
-                                                </>
-                                            )}
+                                        
                                             {isGlowing && (
                                                 <div className="absolute inset-0 -m-5 bg-blue-400 opacity-50 rounded-full animate-ping"></div>
                                             )}
