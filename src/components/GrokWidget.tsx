@@ -421,27 +421,7 @@ const RetellaiAgent = ({ isWidget = false, colors, botName, botIcon }: RetellaiA
     };
 
     // Pulse effects for recording animation
-    useEffect(() => {
-        if (isRecording) {
-            const smallPulse = setInterval(() => {
-                setPulseEffects((prev) => ({ ...prev, small: !prev.small }));
-            }, 1000);
 
-            const mediumPulse = setInterval(() => {
-                setPulseEffects((prev) => ({ ...prev, medium: !prev.medium }));
-            }, 1500);
-
-            const largePulse = setInterval(() => {
-                setPulseEffects((prev) => ({ ...prev, large: !prev.large }));
-            }, 2000);
-
-            return () => {
-                clearInterval(smallPulse);
-                clearInterval(mediumPulse);
-                clearInterval(largePulse);
-            };
-        }
-    }, [isRecording]);
 
     const handleSubmit = async () => {
         const microphonePermission = localStorage.getItem("microphonePermission");
