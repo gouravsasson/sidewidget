@@ -85,7 +85,7 @@ const RetellaiAgent = ({ isWidget = false, colors, botName, botIcon }: RetellaiA
 
     const [speech, setSpeech] = useState("");
     const [isGlowing, setIsGlowing] = useState(false);
-    
+
     const [latestEvent, setLatestEvent] = useState<{ type: 'transcription' | 'chat', text: string, isLocal: boolean } | null>(null);
     useEffect(() => {
         if (status === "disconnected") {
@@ -502,7 +502,7 @@ const RetellaiAgent = ({ isWidget = false, colors, botName, botIcon }: RetellaiA
                     >
                         {latestEvent ? (
                             <div className={`flex flex-col mb-2 ${latestEvent.isLocal ? "items-end" : "items-start"}`}>
-                                <div className={`px-3 py-2 rounded-lg max-w-[85%] ${latestEvent.isLocal ? "bg-blue-100 text-blue-900" : " text-gray-900"
+                                <div className={`px-3 py-2 rounded-lg max-w-[85%] ${latestEvent.isLocal ? "bg-blue-100 text-black" : " text-black"
                                     }`}>
                                     {latestEvent.text}
                                 </div>
@@ -783,7 +783,7 @@ const RetellaiAgent = ({ isWidget = false, colors, botName, botIcon }: RetellaiA
                                         }}
                                     >
                                         <div className="relative w-full h-full flex items-center justify-center">
-                                        
+
                                             {isGlowing && (
                                                 <div className="absolute inset-0 -m-5 bg-blue-400 opacity-50 rounded-full animate-ping"></div>
                                             )}
@@ -825,11 +825,11 @@ const RetellaiAgent = ({ isWidget = false, colors, botName, botIcon }: RetellaiA
                                             {latestEvent ? (
                                                 <div className={`flex flex-col ${latestEvent.type === 'chat' && latestEvent.isLocal ? "items-end" : "items-start"}`}>
                                                     {latestEvent.type === 'chat' ? (
-                                                        <div className={`px-2 py-1 rounded-lg text-[11px] max-w-[80%] ${latestEvent.isLocal ? "bg-blue-600/30 text-blue-100" : "bg-yellow-600/30 text-yellow-100"}`}>
+                                                        <div className={`px-2 py-1 rounded-lg text-[11px] max-w-[80%] ${latestEvent.isLocal ? "bg-blue-600/30 text-black" : "bg-yellow-600/30 text-black"}`}>
                                                             {latestEvent.text}
                                                         </div>
                                                     ) : (
-                                                        <span className={`text-[11px] leading-tight ${latestEvent.isLocal ? "text-blue-400" : "text-yellow-400"}`}>
+                                                        <span className={`text-[11px] leading-tight text-black`}>
                                                             {latestEvent.text}
                                                         </span>
                                                     )}
