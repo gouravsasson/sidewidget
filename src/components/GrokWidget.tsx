@@ -770,8 +770,7 @@ const RetellaiAgent = ({ isWidget = false, colors, botName, botIcon }: RetellaiA
 
                                     <button
                                         onClick={handleMicClick}
-                                        className={`w-40 h-40 rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-lg mb-6 overflow-hidden ${isRecording ? 'border-4 border-red-500' : ''
-                                            }`}
+                                        className="w-40 h-40 rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-lg mb-6 overflow-hidden"
                                         style={{
                                             backgroundColor: widgetTheme?.bot_button_color || "#2563eb",
                                             boxShadow: isRecording ? `0 0 30px ${widgetTheme?.bot_animation_color || '#ef4444'}80` : '0 4px 20px rgba(37, 99, 235, 0.3)'
