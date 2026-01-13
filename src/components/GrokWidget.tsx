@@ -608,12 +608,7 @@ const RetellaiAgent = ({ isWidget = false, colors, botName, botIcon }: RetellaiA
                         height: ${widgetTheme?.bot_show_form && showform ? "80vh" : "85vh"} !important;
                     }
                 }
-                @keyframes glowPulse {
-                    0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7); }
-                    70% { box-shadow: 0 0 0 20px rgba(37, 99, 235, 0); }
-                    100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
-                }
-                .glow-pulsate { animation: glowPulse 2s infinite; }
+
                 
                 .transcript-box {
                     background: #f9fafb !important;
@@ -775,7 +770,7 @@ const RetellaiAgent = ({ isWidget = false, colors, botName, botIcon }: RetellaiA
 
                                     <button
                                         onClick={handleMicClick}
-                                        className={`w-40 h-40 rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-lg mb-6 overflow-hidden ${isRecording ? 'ring-4 ring-red-500' : ''
+                                        className={`w-40 h-40 rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-lg mb-6 overflow-hidden ${isRecording ? 'border-4 border-red-500' : ''
                                             }`}
                                         style={{
                                             backgroundColor: widgetTheme?.bot_button_color || "#2563eb",
@@ -785,7 +780,7 @@ const RetellaiAgent = ({ isWidget = false, colors, botName, botIcon }: RetellaiA
                                         <div className="relative w-full h-full flex items-center justify-center">
 
                                             {isGlowing && (
-                                                <div className="absolute inset-0 -m-5 bg-blue-400 opacity-50 rounded-full animate-ping"></div>
+                                                <div className="absolute inset-0 -m-5 bg-blue-400 opacity-50 rounded-full"></div>
                                             )}
                                             {renderIcon("w-16 h-16 text-white relative z-10")}
                                         </div>
@@ -805,7 +800,7 @@ const RetellaiAgent = ({ isWidget = false, colors, botName, botIcon }: RetellaiA
                                     {/* Live Indicator - Like in the design */}
                                     {isRecording && (
                                         <div className="flex items-center mb-6">
-                                            <div className="w-3 h-3 bg-red-500 rounded-full mr-2 animate-pulse"></div>
+                                            <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
                                             <span className="text-red-600 font-medium text-sm">LIVE</span>
                                         </div>
                                     )}
@@ -889,11 +884,11 @@ const RetellaiAgent = ({ isWidget = false, colors, botName, botIcon }: RetellaiA
                             {widgetTheme?.is_glowing && (
                                 <>
                                     <div
-                                        className="absolute inset-0 -m-2 rounded-full animate-ping"
+                                        className="absolute inset-0 -m-2 rounded-full"
                                         style={{ backgroundColor: `${widgetTheme?.bot_animation_color || '#2563eb'}40` }}
                                     ></div>
                                     <div
-                                        className="absolute inset-0 -m-3 rounded-full animate-pulse"
+                                        className="absolute inset-0 -m-3 rounded-full"
                                         style={{ backgroundColor: `${widgetTheme?.bot_animation_color || '#2563eb'}20` }}
                                     ></div>
                                 </>
