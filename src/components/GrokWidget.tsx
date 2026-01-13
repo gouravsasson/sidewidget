@@ -54,7 +54,25 @@ export interface WidgetTheme {
     }>;
 }
 
-const RetellaiAgent = () => {
+interface RetellaiAgentProps {
+    isWidget?: boolean;
+    colors?: {
+        borderColor: string;
+        backgroundColor: string;
+        iconColor: string;
+        buttonColor: string;
+        buttonHoverColor: string;
+        buttonTextColor: string;
+        textColor: string;
+        headerBubbleColor: string;
+        statusColor: string;
+        statusBarTextColor: string;
+    };
+    botName?: string;
+    botIcon?: string | null;
+}
+
+const RetellaiAgent = ({ isWidget = false, colors, botName, botIcon }: RetellaiAgentProps) => {
     const decoder = new TextDecoder();
     const containerRef = useRef<HTMLDivElement>(null);
     const { agent_id, schema } = useWidgetContext();
@@ -66,6 +84,13 @@ const RetellaiAgent = () => {
     const status = useConnectionState(room);
 
     const [speech, setSpeech] = useState("");
+    const [isGlowing, setIsGlowing] = useState(false);
+    const [pulseEffects, setPulseEffects] = useState({
+        small: false,
+        medium: false,
+        large: false,
+    });
+    const [latestEvent, setLatestEvent] = useState<{ type: 'transcription' | 'chat', text: string, isLocal: boolean } | null>(null);
     useEffect(() => {
         if (status === "disconnected") {
             setSpeech(widgetTheme?.bot_tagline || "Talk To AI Assistant");
@@ -83,11 +108,12 @@ const RetellaiAgent = () => {
     useEffect(() => {
         if (status === "disconnected") {
             setIsRecording(false);
-        
+            setIsGlowing(false);
+            setLatestEvent(null);
         }
     }, [status]);
 
-    console.log("status:",status)
+    console.log("status:", status)
 
     const serverUrl = "wss://abcd-sw47y5hk.livekit.cloud";
     const audioTrackRef = useRef<MediaStreamTrack | null>(null);
@@ -98,6 +124,32 @@ const RetellaiAgent = () => {
     const transcriptionSegments = useTranscriptions();
     const { chatMessages, send, isSending: isSendingChat } = useChat();
     const [chatInput, setChatInput] = useState("");
+
+    // Effect for transcriptions
+    useEffect(() => {
+        if (transcriptionSegments.length > 0) {
+            const segment = transcriptionSegments[transcriptionSegments.length - 1] as any;
+            const isLocal = segment.participant?.isLocal || segment.participantInfo?.isLocal;
+            setLatestEvent({
+                type: 'transcription',
+                text: segment.text,
+                isLocal: !!isLocal
+            });
+        }
+    }, [transcriptionSegments]);
+
+    // Effect for chat
+    useEffect(() => {
+        if (chatMessages.length > 0) {
+            const msg = chatMessages[chatMessages.length - 1];
+            const isLocal = msg.from?.isLocal;
+            setLatestEvent({
+                type: 'chat',
+                text: msg.message,
+                isLocal: !!isLocal
+            });
+        }
+    }, [chatMessages]);
 
     const [formData, setFormData] = useState<Record<string, string>>({});
     const [showform, setShowform] = useState(false);
@@ -270,6 +322,7 @@ const RetellaiAgent = () => {
                     audioTrackRef.current.enabled = true;
                     setMuted(false);
                     setIsRecording(true);
+                    setIsGlowing(true);
                 }
             } else {
                 await handleSubmit();
@@ -279,17 +332,7 @@ const RetellaiAgent = () => {
         }
     };
 
-    const stopRecording = async () => {
-        try {
-            if (audioTrackRef.current) {
-                audioTrackRef.current.enabled = false;
-                setMuted(true);
-                setIsRecording(false);
-            }
-        } catch (err) {
-            console.error("Error stopping recording:", err);
-        }
-    };
+
 
     const handleSendChat = () => {
         if (chatInput.trim() && !isSendingChat) {
@@ -311,7 +354,7 @@ const RetellaiAgent = () => {
     };
 
     const handleMicClick = () => {
-        isRecording ? stopRecording() : startRecording();
+        isRecording ? handleClose() : startRecording();
     };
 
     const togglemute = () => {
@@ -329,10 +372,13 @@ const RetellaiAgent = () => {
             }
 
             await room.disconnect();
+
             setIsRecording(false);
+            setIsGlowing(false);
             setMuted(false);
             setTranscripts("");
             setExpanded(false);
+            setLatestEvent(null);
         } catch (err) {
             console.error("Error closing:", err);
         }
@@ -365,6 +411,7 @@ const RetellaiAgent = () => {
             audioTrackRef.current = audioTrack;
             setMuted(false);
             setIsRecording(true);
+            setIsGlowing(true);
             localStorage.setItem("formshow", "false");
             setTranscripts("");
         } catch (err) {
@@ -372,6 +419,29 @@ const RetellaiAgent = () => {
             alert("Failed to start call. Please check your microphone and try again.");
         }
     };
+
+    // Pulse effects for recording animation
+    useEffect(() => {
+        if (isRecording) {
+            const smallPulse = setInterval(() => {
+                setPulseEffects((prev) => ({ ...prev, small: !prev.small }));
+            }, 1000);
+
+            const mediumPulse = setInterval(() => {
+                setPulseEffects((prev) => ({ ...prev, medium: !prev.medium }));
+            }, 1500);
+
+            const largePulse = setInterval(() => {
+                setPulseEffects((prev) => ({ ...prev, large: !prev.large }));
+            }, 2000);
+
+            return () => {
+                clearInterval(smallPulse);
+                clearInterval(mediumPulse);
+                clearInterval(largePulse);
+            };
+        }
+    }, [isRecording]);
 
     const handleSubmit = async () => {
         const microphonePermission = localStorage.getItem("microphonePermission");
@@ -409,6 +479,104 @@ const RetellaiAgent = () => {
     // Loading state
     if (!onlyOnce.current || !widgetTheme) {
         return <div className="text-white text-center">Loading...</div>;
+    }
+
+    // Simplified return to match VoiceAssistant UI
+    if (isWidget && colors) {
+        return (
+            <div className="flex flex-col h-full bg-gray-50" style={{ height: "calc(100% - 0px)" }}>
+                {/* Microphone Section */}
+                <div className="flex flex-col items-center justify-center py-8 flex-1">
+                    <button
+                        onClick={isRecording ? handleClose : handleSubmit}
+                        className="w-40 h-40 rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-lg mb-6 overflow-hidden"
+                        style={{ backgroundColor: colors.buttonColor }}
+                    >
+                        {botIcon ? (
+                            <img
+                                src={botIcon}
+                                alt="Bot Icon"
+                                className="w-full h-full object-cover"
+                            />
+                        ) : (
+                            <Mic className="w-16 h-16" style={{ color: colors.iconColor }} />
+                        )}
+                    </button>
+
+                    <div
+                        className="px-6 py-2 rounded-full text-sm font-medium"
+                        style={{
+                            backgroundColor: colors.statusColor,
+                            color: colors.statusBarTextColor,
+                        }}
+                    >
+                        {isRecording ? "Listening..." : `Talk To ${botName || "AI Assistant"}`}
+                    </div>
+                </div>
+
+                {/* Transcription Box */}
+                <div className="px-6 py-4 h-48">
+                    <div
+                        ref={containerRef}
+                        className="bg-white rounded-2xl p-4 h-full text-gray-600 shadow-inner border overflow-y-auto text-sm"
+                        style={{
+                            fontStyle: (latestEvent || transcriptionSegments.length > 0) ? "normal" : "italic",
+                            color: "#374151",
+                        }}
+                    >
+                        {latestEvent ? (
+                            <div className={`flex flex-col mb-2 ${latestEvent.isLocal ? "items-end" : "items-start"}`}>
+                                <div className={`px-3 py-2 rounded-lg max-w-[85%] ${latestEvent.isLocal ? "bg-blue-100 text-blue-900" : " text-gray-900"
+                                    }`}>
+                                    {latestEvent.text}
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="text-gray-400 italic text-center mt-4">
+                                {isRecording ? "Listening..." : "Your conversation will appear here..."}
+                            </div>
+                        )}
+                        <div ref={containerRef} />
+                    </div>
+                </div>
+
+                {/* Input Area */}
+                <div className="p-6 pt-0">
+                    <div className="flex items-center space-x-3">
+                        <input
+                            type="text"
+                            value={chatInput}
+                            onChange={(e) => setChatInput(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                    handleSendChat();
+                                }
+                            }}
+                            placeholder="Type your message..."
+                            disabled={status !== "connected"}
+                            className="flex-1 bg-white text-gray-700 p-3 rounded-xl focus:outline-none focus:ring-2 placeholder-gray-400 border border-gray-200"
+                            style={{
+                                borderColor: colors.borderColor,
+                            }}
+                        />
+                        <button
+                            type="button"
+                            onClick={handleSendChat}
+                            disabled={status !== "connected" || isSendingChat}
+                            className="w-12 h-12 rounded-xl flex items-center justify-center transition-colors shadow-md"
+                            style={{ backgroundColor: colors.buttonColor }}
+                        >
+                            {isSendingChat ? (
+                                <Loader2 className="w-5 h-5 animate-spin" style={{ color: colors.buttonTextColor }} />
+                            ) : (
+                                <Send className="w-5 h-5" style={{ color: colors.buttonTextColor }} />
+                            )}
+                        </button>
+                    </div>
+                </div>
+                <RoomAudioRenderer muted={muted} />
+            </div>
+        );
     }
 
     // Position styles
@@ -638,7 +806,25 @@ const RetellaiAgent = () => {
                                             boxShadow: isRecording ? `0 0 30px ${widgetTheme?.bot_animation_color || '#ef4444'}80` : '0 4px 20px rgba(37, 99, 235, 0.3)'
                                         }}
                                     >
-                                        {renderIcon("w-16 h-16 text-white")}
+                                        <div className="relative w-full h-full flex items-center justify-center">
+                                            {isRecording && (
+                                                <>
+                                                    {pulseEffects.small && (
+                                                        <div className="absolute inset-0 -m-3 bg-red-400 opacity-30 rounded-full animate-ping"></div>
+                                                    )}
+                                                    {pulseEffects.medium && (
+                                                        <div className="absolute inset-0 -m-6 bg-red-500 opacity-20 rounded-full animate-pulse"></div>
+                                                    )}
+                                                    {pulseEffects.large && (
+                                                        <div className="absolute inset-0 -m-12 bg-red-600 opacity-10 rounded-full animate-pulse"></div>
+                                                    )}
+                                                </>
+                                            )}
+                                            {isGlowing && (
+                                                <div className="absolute inset-0 -m-5 bg-blue-400 opacity-50 rounded-full animate-ping"></div>
+                                            )}
+                                            {renderIcon("w-16 h-16 text-white relative z-10")}
+                                        </div>
                                     </button>
 
                                     {/* Status Bar - Like in the design */}
@@ -672,12 +858,18 @@ const RetellaiAgent = () => {
                                             ref={containerRef}
                                             className="transcript-box rounded-lg p-4 h-32 overflow-y-auto text-sm"
                                         >
-                                            {transcriptionSegments.length > 0 ? (
-                                                <div className="text-sm mb-2">
-                                                    {transcriptionSegments[transcriptionSegments.length - 1].text}
+                                            {latestEvent ? (
+                                                <div className={`flex flex-col ${latestEvent.type === 'chat' && latestEvent.isLocal ? "items-end" : "items-start"}`}>
+                                                    {latestEvent.type === 'chat' ? (
+                                                        <div className={`px-2 py-1 rounded-lg text-[11px] max-w-[80%] ${latestEvent.isLocal ? "bg-blue-600/30 text-blue-100" : "bg-yellow-600/30 text-yellow-100"}`}>
+                                                            {latestEvent.text}
+                                                        </div>
+                                                    ) : (
+                                                        <span className={`text-[11px] leading-tight ${latestEvent.isLocal ? "text-blue-400" : "text-yellow-400"}`}>
+                                                            {latestEvent.text}
+                                                        </span>
+                                                    )}
                                                 </div>
-                                            ) : transcripts ? (
-                                                <div className="text-gray-600">{transcripts}</div>
                                             ) : (
                                                 <div className="text-gray-400 italic">Your conversation will appear here...</div>
                                             )}
