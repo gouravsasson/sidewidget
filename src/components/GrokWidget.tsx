@@ -78,6 +78,17 @@ const RetellaiAgent = () => {
         }
     }, [status, widgetTheme?.bot_name, widgetTheme?.bot_tagline]);
 
+
+
+    useEffect(() => {
+        if (status === "disconnected") {
+            setIsRecording(false);
+        
+        }
+    }, [status]);
+
+    console.log("status:",status)
+
     const serverUrl = "wss://abcd-sw47y5hk.livekit.cloud";
     const audioTrackRef = useRef<MediaStreamTrack | null>(null);
     const [muted, setMuted] = useState(false);
