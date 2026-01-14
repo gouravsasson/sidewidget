@@ -410,6 +410,7 @@ const RetellaiAgent = ({ isWidget = false, colors, botName, botIcon }: RetellaiA
             setIsGlowing(true);
             localStorage.setItem("formshow", "false");
             setTranscripts("");
+            setShowform(false);
         } catch (err) {
             console.error("Form error:", err);
             alert("Failed to start call. Please check your microphone and try again.");
