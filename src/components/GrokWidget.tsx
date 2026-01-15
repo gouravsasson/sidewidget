@@ -900,9 +900,10 @@ const RetellaiAgent = ({ isWidget = false, colors, botName, botIcon }: RetellaiA
                     </button>
                     <button
                         onClick={toggleExpand}
-                        className="px-4 py-2 rounded-full font-semibold text-sm transition-all hover:scale-105 bg-white shadow-md border border-gray-200"
+                        className="px-4 py-2 rounded-full font-semibold text-sm transition-all hover:scale-105 shadow-md"
                         style={{
-                            color: widgetTheme?.bot_button_color || "#2563eb",
+                            backgroundColor: widgetTheme?.bot_button_color || "#2563eb",
+                            color: "#ffffff",
                         }}
                     >
                         {`Talk to ${widgetTheme?.bot_name || "AI Assistant"}`}
