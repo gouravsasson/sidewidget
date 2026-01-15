@@ -872,10 +872,9 @@ const RetellaiAgent = ({ isWidget = false, colors, botName, botIcon }: RetellaiA
                 <div className="flex flex-col items-center gap-2">
                     <button
                         onClick={toggleExpand}
-                        className="rounded-full w-16 h-16 flex items-center justify-center shadow-lg border-2 transition-all hover:scale-105 hover:shadow-xl"
+                        className="rounded-full w-16 h-16 flex items-center justify-center shadow-lg transition-all hover:scale-105 hover:shadow-xl"
                         style={{
                             backgroundColor: widgetTheme?.bot_button_color || "#2563eb",
-                            borderColor: widgetTheme?.bot_animation_color || "#2563eb",
                             boxShadow: widgetTheme?.is_glowing
                                 ? `0 0 20px ${widgetTheme?.bot_animation_color || '#2563eb'}80`
                                 : '0 4px 12px rgba(37, 99, 235, 0.3)',
