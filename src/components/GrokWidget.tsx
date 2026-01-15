@@ -163,10 +163,11 @@ const RetellaiAgent = ({ isWidget = false, colors, botName, botIcon }: RetellaiA
     };
 
     const renderIcon = (className: string) => {
-        if (widgetTheme?.bot_logo) {
+        const logoToUse = botIcon || widgetTheme?.bot_logo;
+        if (logoToUse) {
             return (
                 <img
-                    src={widgetTheme.bot_logo}
+                    src={logoToUse}
                     alt="Custom Icon"
                     className={className}
                     style={{ objectFit: "cover", width: "100%", height: "100%", borderRadius: "50%" }}
@@ -893,9 +894,9 @@ const RetellaiAgent = ({ isWidget = false, colors, botName, botIcon }: RetellaiA
                                     ></div>
                                 </>
                             )}
-                            <span className="text-white relative z-10">
-                                <Mic className="w-6 h-6" />
-                            </span>
+                            <div className="text-white relative z-10 w-8 h-8 flex items-center justify-center overflow-hidden">
+                                {renderIcon("w-full h-full")}
+                            </div>
                         </div>
                     </button>
                     <button
