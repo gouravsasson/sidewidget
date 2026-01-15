@@ -169,8 +169,8 @@ const RetellaiAgent = ({ isWidget = false, colors, botName, botIcon }: RetellaiA
                 <img
                     src={logoToUse}
                     alt="Custom Icon"
-                    className={className}
-                    style={{ objectFit: "cover", width: "100%", height: "100%", borderRadius: "50%" }}
+                    className="w-full h-full object-cover"
+                    style={{ borderRadius: "50%" }}
                 />
             );
         }
@@ -783,7 +783,7 @@ const RetellaiAgent = ({ isWidget = false, colors, botName, botIcon }: RetellaiA
                                             {isGlowing && (
                                                 <div className="absolute inset-0 -m-5 bg-blue-400 opacity-50 rounded-full"></div>
                                             )}
-                                            {renderIcon("w-16 h-16 text-white relative z-10")}
+                                            {renderIcon((botIcon || widgetTheme?.bot_logo) ? "w-full h-full" : "w-16 h-16 text-white relative z-10")}
                                         </div>
                                     </button>
 
@@ -894,8 +894,8 @@ const RetellaiAgent = ({ isWidget = false, colors, botName, botIcon }: RetellaiA
                                     ></div>
                                 </>
                             )}
-                            <div className="text-white relative z-10 w-8 h-8 flex items-center justify-center overflow-hidden">
-                                {renderIcon("w-full h-full")}
+                            <div className={`text-white relative z-10 flex items-center justify-center overflow-hidden ${(botIcon || widgetTheme?.bot_logo) ? "w-full h-full" : "w-8 h-8"}`}>
+                                {renderIcon("w-6 h-6")}
                             </div>
                         </div>
                     </button>
