@@ -574,7 +574,7 @@ const CustomWidget = () => {
   const getWidgetStyles = () => {
     const styles: React.CSSProperties = {
       position: "fixed",
-      zIndex: 10000,
+      zIndex: 999,
       display: "flex",
       flexDirection: "column",
       alignItems: "flex-end",
