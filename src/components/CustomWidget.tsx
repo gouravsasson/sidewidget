@@ -666,7 +666,7 @@ const CustomWidget = () => {
   const isTransparent = widgetTheme?.is_transparent;
 
   return (
-    <div style={getWidgetStyles()} className="flex flex-col items-end">
+    <div style={getWidgetStyles()} className="flex flex-col items-end z-[10000]">
       <style>
         {`
           @media (max-width: 640px) {
