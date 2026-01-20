@@ -21,6 +21,8 @@ import logo from "../assets/logo.png";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import { useWidgetContext } from "../constexts/WidgetContext";
+import { WhatsAppIcon } from "./whatsappicon";
+import whatsappIcon from "../assets/whatsapp-svgrepo-com.svg";
 
 export interface WidgetTheme {
   widget_theme: {
@@ -59,7 +61,10 @@ export interface WidgetTheme {
   };
 }
 
-const CustomWidget = () => {
+const WHATSAPP_LINK =
+  "https://api.whatsapp.com/send/?phone=971566337748&text&type=phone_number&app_absent=0";
+
+const Whatsapp = () => {
   const [widgetTheme, setWidgetTheme] = useState<WidgetTheme | null>(null);
   const countryCode = localStorage.getItem("countryCode");
   const continentcode = localStorage.getItem("continentcode");
@@ -405,7 +410,7 @@ const CustomWidget = () => {
     setStatus(session.status);
   });
 
-  session.addEventListener("experimental_message", (msg) => { });
+  session.addEventListener("experimental_message", (msg) => {});
 
   useEffect(() => {
     if (isRecording) {
@@ -574,7 +579,7 @@ const CustomWidget = () => {
   const getWidgetStyles = () => {
     const styles: React.CSSProperties = {
       position: "fixed",
-      zIndex: 10000,
+      zIndex: 1000,
       display: "flex",
       flexDirection: "column",
       alignItems: "flex-end",
@@ -672,8 +677,9 @@ const CustomWidget = () => {
           @media (max-width: 640px) {
             .widget-container {
               width: 90vw !important;
-              height: ${widgetTheme?.bot_show_form && showform ? "80vh" : "85vh"
-          } !important;
+              height: ${
+                widgetTheme?.bot_show_form && showform ? "80vh" : "85vh"
+              } !important;
             }
             .mic-button {
               width: 30vw !important;
@@ -789,8 +795,9 @@ const CustomWidget = () => {
       </style>
       {expanded ? (
         <div
-          className={`rounded-3xl shadow-2xl overflow-hidden widget-container ${isTransparent ? "transparent-background" : ""
-            }`}
+          className={`rounded-3xl shadow-2xl overflow-hidden widget-container ${
+            isTransparent ? "transparent-background" : ""
+          }`}
           style={{
             width: "min(90vw, 400px)",
             height:
@@ -984,7 +991,8 @@ const CustomWidget = () => {
                 {/* Input Area */}
                 {widgetTheme?.bot_show_chat && (
                   <div className="p-6 pt-0">
-                    <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-2">
+                      {/* Message Input */}
                       <input
                         type="text"
                         value={message}
@@ -996,6 +1004,8 @@ const CustomWidget = () => {
                         }
                         className="flex-1 bg-white text-gray-700 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 placeholder-gray-400 border border-gray-200 chat-input"
                       />
+
+                      {/* Send Button */}
                       <button
                         type="button"
                         onClick={handleSubmit}
@@ -1009,6 +1019,21 @@ const CustomWidget = () => {
                           style={{ color: widgetTheme?.bot_button_text_color }}
                         />
                       </button>
+
+                      {/* WhatsApp Button */}
+                      <a
+                        href={WHATSAPP_LINK}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Chat on WhatsApp"
+                        className="flex items-center justify-center w-12 h-12 hover:scale-110 transition-transform"
+                      >
+                        <img
+                          src={whatsappIcon}
+                          alt="WhatsApp"
+                          className="w-8 h-8 object-contain"
+                        />
+                      </a>
                     </div>
                   </div>
                 )}
@@ -1069,4 +1094,4 @@ const CustomWidget = () => {
   );
 };
 
-export default CustomWidget;
+export default Whatsapp;
