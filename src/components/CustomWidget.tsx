@@ -574,7 +574,7 @@ const CustomWidget = () => {
   const getWidgetStyles = () => {
     const styles: React.CSSProperties = {
       position: "fixed",
-      zIndex: 10000,
+      zIndex: 100000,
       display: "flex",
       flexDirection: "column",
       alignItems: "flex-end",
@@ -666,7 +666,7 @@ const CustomWidget = () => {
   const isTransparent = widgetTheme?.is_transparent;
 
   return (
-    <div style={getWidgetStyles()} className="flex flex-col items-end z-[10000]">
+    <div style={getWidgetStyles()} className="flex flex-col items-end z-[100000]">
       <style>
         {`
           @media (max-width: 640px) {
