@@ -19,7 +19,6 @@ import Whatsapp from "./components/Whatsapp";
 function App() {
   const [showPopup, setShowPopup] = useState(false);
   const { agent_id, schema, type } = useWidgetContext();
-  console.log("type", type);
   const [room] = useState(() => new Room({}))
 
   useEffect(() => {
