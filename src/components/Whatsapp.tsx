@@ -978,10 +978,10 @@ const Whatsapp = () => {
                     {renderIcon("w-full h-full icon")}
                   </button>
                   <div
-                    className="px-6 py-2 rounded-full text-sm font-medium status-bar"
+                    className="px-6 py-2 rounded-full text-sm font-medium status-bar text-white "
                     style={{
                       backgroundColor: widgetTheme?.bot_status_bar_color,
-                      color: widgetTheme?.bot_status_bar_text_color,
+                      // color: widgetTheme?.bot_status_bar_text_color,
                     }}
                   >
                     {speech}
