@@ -574,7 +574,7 @@ const CustomWidget = () => {
   const getWidgetStyles = () => {
     const styles: React.CSSProperties = {
       position: "fixed",
-      zIndex: 100000,
+      zIndex: 10000,
       display: "flex",
       flexDirection: "column",
       alignItems: "flex-end",
@@ -666,7 +666,7 @@ const CustomWidget = () => {
   const isTransparent = widgetTheme?.is_transparent;
 
   return (
-    <div style={getWidgetStyles()} className="flex flex-col items-end z-[100000]">
+    <div style={getWidgetStyles()} className="flex flex-col items-end z-100000">
       <style>
         {`
           @media (max-width: 640px) {
@@ -1036,7 +1036,7 @@ const CustomWidget = () => {
           )}
           <button
             onClick={toggleExpand}
-            className={`w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all hover:scale-110 overflow-hidden relative
+            className={`w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all hover:scale-110 overflow-hidden z-10000 relative
         ${widgetTheme?.is_glowing ? "glow-pulsate" : ""}`}
             style={{
               backgroundColor: widgetTheme?.bot_button_color,
