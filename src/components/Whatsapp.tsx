@@ -589,7 +589,7 @@ const Whatsapp = () => {
       styles.width = "min(90vw, 400px)"; // Responsive width
       styles.height =
         widgetTheme?.bot_show_form && showform
-          ? "min(90vh, 550px)"
+          ? "min(90vh, 580px)"
           : "min(90vh, 600px)"; // Responsive height
     } else {
       styles.width = "min(40vw, 160px)"; // Smaller width on mobile
@@ -722,13 +722,13 @@ const Whatsapp = () => {
           }
             @keyframes glowPulse {
       0% {
-        box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7);
+        box-shadow: 0 0 0 0 rgba(174, 24, 88, 0.7);
       }
       70% {
-        box-shadow: 0 0 0 20px rgba(37, 99, 235, 0);
+        box-shadow: 0 0 0 20px rgba(174, 24, 88, 0);
       }
       100% {
-        box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
+        box-shadow: 0 0 0 0 rgba(174, 24, 88, 0);
       }
     }
 
@@ -802,7 +802,7 @@ const Whatsapp = () => {
             width: "min(90vw, 400px)",
             height:
               widgetTheme?.bot_show_form && showform
-                ? "min(90vh, 550px)"
+                ? "min(90vh, 580px)"
                 : "min(90vh, 600px)",
             // Apply bot_background_color as base, only override if transparent
             backgroundColor: isTransparent
@@ -893,8 +893,8 @@ const Whatsapp = () => {
                   {widgetTheme.custom_form_fields.map((field) => (
                     <div key={field.id} className="w-full">
                       <label
-                        className="block text-sm font-bold mb-1"
-                        style={{ color: widgetTheme.bot_text_color }}
+                        className="block text-sm font-bold mb-1 text-black"
+                        // style={{ color: widgetTheme.bot_text_color }}
                       >
                         {capitalize(field.label)}
                       </label>
@@ -914,7 +914,22 @@ const Whatsapp = () => {
                               })
                             }
                             inputProps={{ required: true }}
-                            inputClass="w-full p-3 pl-10 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 text-gray-700"
+                            inputStyle={{
+                              width: '350px',
+                              height: '48px',
+                              padding: '12px 12px 12px 48px',
+                              borderRadius: '12px',
+                              border: '1px solid #d1d5db',
+                              fontSize: '16px',
+                              color: '#374151'
+                            }}
+                            containerStyle={{
+                              width: '350px'
+                            }}
+                            buttonStyle={{
+                              borderRadius: '12px 0 0 12px',
+                              border: '1px solid #d1d5db',
+                            }}
                           />
                         ) : (
                           <input
@@ -927,7 +942,7 @@ const Whatsapp = () => {
                                 [field.label.toLowerCase()]: e.target.value,
                               })
                             }
-                            className="w-full p-3 pl-10 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 text-gray-700"
+                            className="w-full p-3 pl-10 rounded-xl border bg-white border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400 text-gray-700"
                             placeholder={`Enter your ${field.label.toLowerCase()}`}
                           />
                         )}
@@ -1046,35 +1061,29 @@ const Whatsapp = () => {
         <div className="flex flex-col items-center gap-3">
           {widgetTheme?.is_glowing && (
             <>
-              <div
+              {/* <div
                 className="pulse-ring"
                 style={{ width: "120px", height: "120px" }}
-              ></div>
-              <div
+              ></div> */}
+              {/* <div
                 className="pulse-ring"
                 style={{ width: "120px", height: "120px" }}
-              ></div>
-              <div
+              ></div> */}
+              {/* <div
                 className="pulse-ring"
                 style={{ width: "120px", height: "120px" }}
-              ></div>
+              ></div> */}
             </>
           )}
           <button
-            onClick={toggleExpand}
-            className={`w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all hover:scale-110 overflow-hidden relative
-        ${widgetTheme?.is_glowing ? "glow-pulsate" : ""}`}
-            style={{
-              backgroundColor: widgetTheme?.bot_button_color,
-              boxShadow: widgetTheme?.is_glowing
-                ? "0 0 30px rgba(37, 99, 235, 0.8)"
-                : undefined,
-            }}
-          >
-            <div className="relative w-full h-full">
-              {renderIcon("w-full h-full")}
-            </div>
-          </button>
+              onClick={toggleExpand}
+              className={`w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all hover:scale-110 overflow-hidden relative
+                ${widgetTheme?.is_glowing ? "glow-pulsate" : ""}`}
+>
+              <div className="relative w-full h-full">
+                {renderIcon("w-full h-full")}
+              </div>
+            </button>
           <div
             className="px-4 py-2 rounded-full shadow-lg flex items-center justify-center max-w-xs"
             style={{
