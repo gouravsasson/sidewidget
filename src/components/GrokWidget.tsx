@@ -179,6 +179,7 @@ const RetellaiAgent = ({ isWidget = false, colors, botName, botIcon }: RetellaiA
 
     // Fetch widget theme settings
     useEffect(() => {
+        localStorage.removeItem("callId");
         if (onlyOnce.current) return;
         const getWidgetTheme = async () => {
             try {
@@ -386,6 +387,8 @@ const RetellaiAgent = ({ isWidget = false, colors, botName, botIcon }: RetellaiA
             const res = await axios.post(`${baseUrl}`, payload);
             const decryptedPayload = res.data.response;
             const accessToken = decryptedPayload.token;
+            const callId = decryptedPayload.call_id || decryptedPayload.room_id || "active";
+            localStorage.setItem("callId", callId);
 
             await room.connect(serverUrl, accessToken);
 
