@@ -151,8 +151,8 @@ const RetellaiAgent = ({ isWidget = false, colors, botName, botIcon }: RetellaiA
     const [showform, setShowform] = useState(false);
     const [formSubmitting, setFormSubmitting] = useState(false);
 
-    const baseUrl = "https://test.snowie.ai/api/create-room/";
-    const settingsBaseUrl = "https://test.snowie.ai";
+    const baseUrl = "https://app.snowie.ai/api/create-room/";
+    const settingsBaseUrl = "https://app.snowie.ai";
 
     const capitalize = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
