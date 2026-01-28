@@ -830,7 +830,7 @@ const Whatsapp = () => {
                 className="font-semibold text-lg"
                 style={{ color: widgetTheme?.bot_text_color }}
               >
-                {`Talk to ${widgetTheme?.bot_name}` || "AI Assistant"}
+                {`Talk to Our Team` }
               </span>
             </div>
             <div className="flex items-center space-x-3">
@@ -960,7 +960,7 @@ const Whatsapp = () => {
                         Connecting To Dr. Jwan Murad’s Team
                       </div>
                     ) : (
-                      "Talk to us now"
+                      "Start The Call Now"
                     )}
                   </button>
                 </form>
@@ -1095,7 +1095,7 @@ const Whatsapp = () => {
               className="text-sm font-medium text-center truncate px-1"
               title={widgetTheme?.bot_name || "AI Assistant"} // Shows full name on hover
             >
-              {"Talk to us now "}
+              {"Talk To Us Now "}
             </p>
           </div>
         </div>
