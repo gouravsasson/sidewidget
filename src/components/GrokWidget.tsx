@@ -75,7 +75,7 @@ interface RetellaiAgentProps {
 const RetellaiAgent = ({ isWidget = false, colors, botName, botIcon }: RetellaiAgentProps) => {
     const decoder = new TextDecoder();
     const containerRef = useRef<HTMLDivElement>(null);
-    const { agent_id, schema,type } = useWidgetContext();
+    const { agent_id, schema,type:agent_type } = useWidgetContext();
     const [widgetTheme, setWidgetTheme] = useState<WidgetTheme | null>(null);
     const onlyOnce = useRef(false);
     const [expanded, setExpanded] = useState(false);
@@ -184,7 +184,7 @@ const RetellaiAgent = ({ isWidget = false, colors, botName, botIcon }: RetellaiA
         const getWidgetTheme = async () => {
             try {
                 const response = await axios.get(
-                    `${settingsBaseUrl}/api/thunder-widget-settings/${schema}/${agent_id}/?type=${type==="thunderemotionlite" ? "thunder_emotion_lite" : "thunder_emotion"}`
+                    `${settingsBaseUrl}/api/thunder-widget-settings/${schema}/${agent_id}/?type=${agent_type==="thunderemotionlite" ? "thunder_emotion_lite" : "thunder_emotion"}`
                 );
                 const data = response.data.response;
                 setWidgetTheme(data);
@@ -430,7 +430,7 @@ const RetellaiAgent = ({ isWidget = false, colors, botName, botIcon }: RetellaiA
             alert("Microphone permission is required. Please enable it in your browser settings.");
             return;
         }
-        if (type === "thunderemotion") {
+        if (agent_type === "thunderemotion") {
             await doStart({ agent_code: agent_id, schema_name: schema,  });
         } else {
             await doStart({ agent_code: agent_id, schema_name: schema, provider: 'thunderemotionlite' });
