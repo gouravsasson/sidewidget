@@ -44,7 +44,10 @@ function App() {
     thunderemotion: <LiveKitRoom token="" serverUrl="" room={room} connect={false}>
       <RetellaiAgent />
     </LiveKitRoom>,
-    whatsapp:<Whatsapp/>
+    whatsapp:<Whatsapp/>,
+    thunderemotionlite: <LiveKitRoom token="" serverUrl="" room={room} connect={false}>
+      <RetellaiAgent />
+    </LiveKitRoom>,
   };
 
   return (

@@ -75,7 +75,7 @@ interface RetellaiAgentProps {
 const RetellaiAgent = ({ isWidget = false, colors, botName, botIcon }: RetellaiAgentProps) => {
     const decoder = new TextDecoder();
     const containerRef = useRef<HTMLDivElement>(null);
-    const { agent_id, schema } = useWidgetContext();
+    const { agent_id, schema,type } = useWidgetContext();
     const [widgetTheme, setWidgetTheme] = useState<WidgetTheme | null>(null);
     const onlyOnce = useRef(false);
     const [expanded, setExpanded] = useState(false);
@@ -184,7 +184,7 @@ const RetellaiAgent = ({ isWidget = false, colors, botName, botIcon }: RetellaiA
         const getWidgetTheme = async () => {
             try {
                 const response = await axios.get(
-                    `${settingsBaseUrl}/api/thunder-widget-settings/${schema}/${agent_id}/?type=thunder_emotion`
+                    `${settingsBaseUrl}/api/thunder-widget-settings/${schema}/${agent_id}/?type=${type==="thunderemotionlite" ? "thunder_emotion_lite" : "thunder_emotion"}`
                 );
                 const data = response.data.response;
                 setWidgetTheme(data);
@@ -431,7 +431,7 @@ const RetellaiAgent = ({ isWidget = false, colors, botName, botIcon }: RetellaiA
             return;
         }
 
-        await doStart({ agent_code: agent_id, schema_name: schema });
+        await doStart({ agent_code: agent_id, schema_name: schema ,provider:'thunderemotionlite' });
     };
 
     const startFromForm = async (e: React.FormEvent<HTMLFormElement>) => {
