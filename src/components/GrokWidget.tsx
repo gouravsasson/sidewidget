@@ -430,8 +430,11 @@ const RetellaiAgent = ({ isWidget = false, colors, botName, botIcon }: RetellaiA
             alert("Microphone permission is required. Please enable it in your browser settings.");
             return;
         }
-
-        await doStart({ agent_code: agent_id, schema_name: schema ,provider:'thunderemotionlite' });
+        if (type === "thunderemotion") {
+            await doStart({ agent_code: agent_id, schema_name: schema,  });
+        } else {
+            await doStart({ agent_code: agent_id, schema_name: schema, provider: 'thunderemotionlite' });
+        }
     };
 
     const startFromForm = async (e: React.FormEvent<HTMLFormElement>) => {
