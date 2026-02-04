@@ -62,7 +62,7 @@ export interface WidgetTheme {
 }
 
 const WHATSAPP_LINK =
-  "https://api.whatsapp.com/send/?phone=971566337748&text&type=phone_number&app_absent=0";
+  "https://wa.me/971566337748?text=Hi%2C%20I%E2%80%99d%20like%20to%20contact%20Dr.%20Jwan%20Murad%E2%80%99s%20admin%20team%20for%20more%20information";
 
 const Whatsapp = () => {
   const [widgetTheme, setWidgetTheme] = useState<WidgetTheme | null>(null);
@@ -84,6 +84,7 @@ const Whatsapp = () => {
     large: false,
   });
   const [message, setMessage] = useState("");
+  const[micpermissiondenied,setMicrophoneAccessDenied]=useState(false);
   const hasReconnected = useRef(false);
   const hasClosed = useRef(false);
   const { callSessionIds, setCallSessionIds } = useSessionStore();
@@ -325,10 +326,29 @@ const Whatsapp = () => {
     }
   };
 
+  const onClose = () => {
+    setMicrophoneAccessDenied(false);
+  };
+
+  const checkMicPermission = async () => {
+  try {
+    await navigator.mediaDevices.getUserMedia({ audio: true });
+    return true;
+  } catch (err) {
+    return false;
+  }
+};
+
   const handleMicClick = async () => {
     try {
       if (status === "disconnected") {
         setFormSubmitting(true);
+        const hasPermission = await checkMicPermission();
+      if (!hasPermission) {
+        console.log("Microphone access denied by user.");
+        setMicrophoneAccessDenied(true);
+        return;
+      }
 
         const response = await axios.post(`${baseurl}/api/start-thunder/`, {
           agent_code: agent_id,
@@ -611,6 +631,7 @@ const Whatsapp = () => {
         styles.right = "2vw";
         break;
       case "bottom-left":
+
         styles.bottom = "6vh";
         styles.left = "2vw";
         break;
@@ -668,10 +689,34 @@ const Whatsapp = () => {
     return <div className="text-white text-center">Loading...</div>;
   }
 
+  
+
   const isTransparent = widgetTheme?.is_transparent;
 
   return (
     <div style={getWidgetStyles()} className="flex flex-col items-end">
+      {micpermissiondenied && (
+        <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-[10000] p-5 bg-black/50">
+          <div className="bg-gradient-to-br from-pink-50 to-rose-50 rounded-3xl p-10 max-w-md w-full max-h-[80vh] overflow-y-auto shadow-2xl shadow-purple-500/50 border border-rose-200/50">
+            <h2 className="text-3xl md:text-4xl font-bold text-[#AC1858] mb-6 leading-tight text-center">
+              Microphone Access Needed
+            </h2>
+            <p className="text-xl text-[#AC1858] mb-8 leading-relaxed text-center px-4">
+              To start your call, please allow microphone access in your browser.
+            </p>
+            <div className="flex gap-4 justify-center flex-wrap">
+              <button 
+                className="px-8 py-4 bg-[#AC1858] border-2 border-[#AC1858]/60 hover:bg-[#AC1858]/90 text-white font-semibold rounded-full text-lg transition-all duration-300 hover:shadow-lg min-w-[120px]"
+                onClick={onClose}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
       <style>
         {`
           @media (max-width: 640px) {
@@ -1053,8 +1098,9 @@ const Whatsapp = () => {
                     </div>
                   </div>
                 )}
-              </>
-            )}
+                {/* Microphone Permission Overlay */}
+                
+              </>)}
           </div>
         </div>
       ) : (
