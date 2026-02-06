@@ -111,7 +111,7 @@ const RetellaiAgent = ({ isWidget = false, colors, botName, botIcon }: RetellaiA
 
     console.log("status:", status)
 
-    const serverUrl = "wss://abcd-sw47y5hk.livekit.cloud";
+    const serverUrl = "wss://agnibyravanai-sw47y5hk.livekit.cloud";
     const audioTrackRef = useRef<MediaStreamTrack | null>(null);
     const [muted, setMuted] = useState(false);
     const [transcripts, setTranscripts] = useState("");
