@@ -336,17 +336,6 @@ const RetellaiAgent = ({
     }
   }, [status]);
 
-  useEffect(() => {
-    if (expanded && !micStartedRef.current) {
-      micStartedRef.current = true;
-      handleMicClick();
-    }
-
-    if (!expanded) {
-      micStartedRef.current = false; // reset on close
-    }
-  }, [expanded]);
-
   // Auto-scroll transcript
   useEffect(() => {
     const container = containerRef.current;
@@ -355,8 +344,34 @@ const RetellaiAgent = ({
     }
   }, [transcripts, transcriptionSegments, chatMessages]);
 
+  useEffect(() => {
+    if (widgetTheme?.bot_auto_start && status === "disconnected" && !expanded) {
+      setExpanded(true);
+      startRecording();
+    }
+  }, [widgetTheme?.bot_auto_start]);
+
+  let audioCtx: AudioContext | null = null;
+
+  const resumeAudioContext = async (): Promise<void> => {
+    try {
+      if (!audioCtx) {
+        const AudioContext =
+          window.AudioContext || (window as any).webkitAudioContext;
+        audioCtx = new AudioContext();
+      }
+
+      if (audioCtx.state === "suspended") {
+        await audioCtx.resume();
+      }
+    } catch (e) {
+      console.error("AudioContext resume failed", e);
+    }
+  };
+
   const startRecording = async () => {
     try {
+      await resumeAudioContext();
       if (status === "connected") {
         if (audioTrackRef.current) {
           audioTrackRef.current.enabled = true;
@@ -379,21 +394,53 @@ const RetellaiAgent = ({
     }
   };
 
-  const toggleExpand = async () => {
-    const priorCallIdList = JSON.parse(
-      localStorage.getItem("priorCallIdList") || "[]",
-    );
-    setExpanded(true);
-    if (
-      !expanded &&
-      status === "disconnected" &&
-      priorCallIdList.length === 0
-    ) {
-      localStorage.setItem("formshow", "true");
-    } else if (muted) {
-      setMuted(false);
+  // const toggleExpand = () => {
+  //   if (!expanded) {
+  //     setExpanded(true);
+
+  //     if (status === "disconnected") {
+  //       if (widgetTheme?.bot_show_form && !widgetTheme?.bot_auto_start) {
+  //         setShowform(true); // form only if auto-start OFF
+  //       } else {
+  //         startRecording(); // auto-start call
+  //       }
+  //     }
+  //   } else {
+  //     setExpanded(false); // minimize only
+  //   }
+  // };
+
+  const toggleExpand = () => {
+    if (!expanded) {
+      setExpanded(true);
+      if (status === "disconnected") {
+        if (widgetTheme?.bot_show_form) {
+          setShowform(true); // show form if enabled, let form handle start
+        } else {
+          startRecording(); // no form, auto start directly
+        }
+      }
+      // if connected, just re-open UI — call already running
+    } else {
+      setExpanded(false); // minimize only, call keeps running
     }
   };
+
+  // const toggleExpand = async () => {
+  //   const priorCallIdList = JSON.parse(
+  //     localStorage.getItem("priorCallIdList") || "[]",
+  //   );
+  //   setExpanded(true);
+  //   if (
+  //     !expanded &&
+  //     status === "disconnected" &&
+  //     priorCallIdList.length === 0
+  //   ) {
+  //     localStorage.setItem("formshow", "true");
+  //   } else if (muted) {
+  //     setMuted(false);
+  //   }
+  // };
 
   const handleMicClick = () => {
     isRecording ? handleClose() : startRecording();
@@ -901,6 +948,7 @@ const RetellaiAgent = ({
                 {/* Mic Button Section */}
                 <div className="flex-1 flex flex-col items-center p-6 overflow-y-auto">
                   <button
+                    // onClick={handleMicClick}
                     className="w-40 h-40 rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-lg mb-6 overflow-hidden"
                     style={{
                       backgroundColor:
