@@ -80,6 +80,8 @@ interface RetellaiAgentProps {
   botIcon?: string | null;
 }
 
+let audioCtx: AudioContext | null = null;
+
 const RetellaiAgent = ({
   isWidget = false,
   colors,
@@ -261,9 +263,11 @@ const RetellaiAgent = ({
   }, [widgetTheme?.bot_mute_on_tab_change]);
 
   // Auto start setting
+
   useEffect(() => {
     const callId = localStorage.getItem("callId");
     if (widgetTheme?.bot_auto_start && !callId && status === "disconnected") {
+      setExpanded(true);
       handleSubmit();
     }
   }, [widgetTheme?.bot_auto_start, status]);
@@ -345,13 +349,29 @@ const RetellaiAgent = ({
   }, [transcripts, transcriptionSegments, chatMessages]);
 
   useEffect(() => {
-    if (widgetTheme?.bot_auto_start && status === "disconnected" && !expanded) {
-      setExpanded(true);
-      startRecording();
-    }
-  }, [widgetTheme?.bot_auto_start]);
+    const initAudioOnInteraction = () => {
+      if (!audioCtx) {
+        const AudioContext =
+          window.AudioContext || (window as any).webkitAudioContext;
+        audioCtx = new AudioContext();
+      }
+      document.removeEventListener("click", initAudioOnInteraction);
+      document.removeEventListener("touchstart", initAudioOnInteraction);
+    };
 
-  let audioCtx: AudioContext | null = null;
+    document.addEventListener("click", initAudioOnInteraction);
+    document.addEventListener("touchstart", initAudioOnInteraction);
+
+    return () => {
+      document.removeEventListener("click", initAudioOnInteraction);
+      document.removeEventListener("touchstart", initAudioOnInteraction);
+    };
+  }, []);
+
+  const startRecordingWithAudio = async () => {
+    await resumeAudioContext();
+    startRecording();
+  };
 
   const resumeAudioContext = async (): Promise<void> => {
     try {
@@ -394,53 +414,20 @@ const RetellaiAgent = ({
     }
   };
 
-  // const toggleExpand = () => {
-  //   if (!expanded) {
-  //     setExpanded(true);
-
-  //     if (status === "disconnected") {
-  //       if (widgetTheme?.bot_show_form && !widgetTheme?.bot_auto_start) {
-  //         setShowform(true); // form only if auto-start OFF
-  //       } else {
-  //         startRecording(); // auto-start call
-  //       }
-  //     }
-  //   } else {
-  //     setExpanded(false); // minimize only
-  //   }
-  // };
-
   const toggleExpand = () => {
     if (!expanded) {
       setExpanded(true);
       if (status === "disconnected") {
         if (widgetTheme?.bot_show_form) {
-          setShowform(true); // show form if enabled, let form handle start
+          setShowform(true);
         } else {
-          startRecording(); // no form, auto start directly
+          startRecordingWithAudio();
         }
       }
-      // if connected, just re-open UI — call already running
     } else {
-      setExpanded(false); // minimize only, call keeps running
+      setExpanded(false);
     }
   };
-
-  // const toggleExpand = async () => {
-  //   const priorCallIdList = JSON.parse(
-  //     localStorage.getItem("priorCallIdList") || "[]",
-  //   );
-  //   setExpanded(true);
-  //   if (
-  //     !expanded &&
-  //     status === "disconnected" &&
-  //     priorCallIdList.length === 0
-  //   ) {
-  //     localStorage.setItem("formshow", "true");
-  //   } else if (muted) {
-  //     setMuted(false);
-  //   }
-  // };
 
   const handleMicClick = () => {
     isRecording ? handleClose() : startRecording();
@@ -483,6 +470,8 @@ const RetellaiAgent = ({
       localStorage.setItem("callId", callId);
 
       await room.connect(serverUrl, accessToken);
+
+      await room.startAudio();
 
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
