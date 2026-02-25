@@ -36,7 +36,7 @@ const Autostart = () => {
     status,
     setStatus,
   } = useUltravoxStore();
-  const baseurl = "https://test.snowie.ai";
+  const baseurl = "https://app.snowie.ai";
   // const agent_id = "bd204830-afcb-4ddb-881c-4f7b2d00dd95";
   // const schema = "21babbd4-cd63-4763-9b08-671951c04470";
 
