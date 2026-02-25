@@ -7,9 +7,9 @@ import { WidgetProvider } from "./constexts/WidgetContext.tsx";
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <WidgetProvider
-      agent_id="c95a3759-bb70-4463-a3b1-390910ed46e8"
-      schema="7a5a46c6-a08e-477c-93c8-5afd7565069c"
-      type="whatsapp"
+      agent_id="e23ffe2b-3fe3-4fb2-b34f-83b66918151a"
+      schema="9cd3db15-5dbe-4199-aa8c-80c5701857f7"
+      type="thunderemotionlite"
     >
       <App />
     </WidgetProvider>

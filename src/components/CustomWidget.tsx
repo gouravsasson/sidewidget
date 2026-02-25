@@ -93,7 +93,7 @@ const CustomWidget = () => {
     status,
     setStatus,
   } = useUltravoxStore();
-  const baseurl = "https://app.snowie.ai";
+  const baseurl = "https://test.snowie.ai";
   const { agent_id, schema } = useWidgetContext();
   // const agent_id = "be2af828-47d6-4f0e-bbae-08aaff1d6908";
   // const schema = "9cd3db15-5dbe-4199-aa8c-80c5701857f7";
@@ -105,7 +105,6 @@ const CustomWidget = () => {
   const [showform, setShowform] = useState(false);
   const [formSubmitting, setFormSubmitting] = useState(false);
   console.log(formSubmitting);
-
   useEffect(() => {
     if (widgetTheme?.custom_form_fields) {
       const initialData: Record<string, string> = {};
@@ -290,6 +289,7 @@ const CustomWidget = () => {
         agent_code: agent_id,
         schema_name: schema,
         prior_call_id: id,
+        requested_domains:`https://${window.location.hostname}`
       });
       const wssUrl = response.data.joinUrl;
       const callId = response.data.callId;
@@ -328,6 +328,7 @@ const CustomWidget = () => {
         const response = await axios.post(`${baseurl}/api/start-thunder/`, {
           agent_code: agent_id,
           schema_name: schema,
+          requested_domains:`https://${window.location.hostname}`
         });
         const wssUrl = response.data.joinUrl;
         const callId = response.data.callId;
@@ -501,6 +502,7 @@ const CustomWidget = () => {
     setExpanded(false);
   };
 
+
   const startFromForm = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
@@ -509,6 +511,7 @@ const CustomWidget = () => {
         const payload: any = {
           agent_code: agent_id,
           schema_name: schema,
+          requested_domains:`https://${window.location.hostname}`
         };
 
         // Add all custom fields to payload

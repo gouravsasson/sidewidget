@@ -35,7 +35,7 @@ const VoiceAIWidget = () => {
     status,
     setStatus,
   } = useUltravoxStore();
-  const baseurl = "https://app.snowie.ai";
+  const baseurl = "https://test.snowie.ai";
   // const agent_id = "43279ed4-9039-49c8-b11b-e90f3f7c588c";
   // const schema = "6af30ad4-a50c-4acc-8996-d5f562b6987f";
   const debugMessages = new Set(["debug"]);
