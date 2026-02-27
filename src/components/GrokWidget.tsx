@@ -427,7 +427,6 @@ const startRecording = async () => {
       }
     } else {
       await handleSubmit();
-      await audio(); // ← add this, mic track gets recreated every time
     }
   } catch (err) {
     console.error("Error starting recording:", err);
