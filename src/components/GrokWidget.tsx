@@ -122,6 +122,7 @@ const RetellaiAgent = ({
     string | null
   >(null);
   const micStartedRef = useRef(false);
+  const wasConnectedRef = useRef(false);
 
   const baseUrl = "https://app.snowie.ai/api/create-room/";
   const settingsBaseUrl = "https://app.snowie.ai";
@@ -141,14 +142,22 @@ const RetellaiAgent = ({
   }, [status, widgetTheme?.bot_name, widgetTheme?.bot_tagline]);
 
   useEffect(() => {
-    if (status === "disconnected") {
-      setIsRecording(false);
-      setIsGlowing(false);
-      setLatestEvent(null);
-    }
-  }, [status]);
+  if (status === "connected") {
+    wasConnectedRef.current = true;
+  }
+
+  if (status === "disconnected" && wasConnectedRef.current) {
+    wasConnectedRef.current = false;
+    setIsRecording(false);
+    setIsGlowing(false);
+    setLatestEvent(null);
+    setTranscripts("");
+    setExpanded(false); // just collapse, don't call full handleClose
+  }
+}, [status]);
 
   console.log("status:", status);
+
 
   // Effect for transcriptions
   useEffect(() => {
@@ -263,12 +272,34 @@ const RetellaiAgent = ({
   }, [widgetTheme?.bot_mute_on_tab_change]);
 
   // Auto start setting
+  const audio= async()=>{
+      await room.startAudio();
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
+
+      const [audioTrack] = stream.getAudioTracks();
+      audioTrack.enabled = true;
+
+      await room.localParticipant.publishTrack(audioTrack, {
+        name: "microphone",
+        source: Track.Source.Microphone,
+      });
+
+      audioTrackRef.current = audioTrack;
+  }
 
   useEffect(() => {
     const callId = localStorage.getItem("callId");
     if (widgetTheme?.bot_auto_start && !callId && status === "disconnected") {
       setExpanded(true);
       handleSubmit();
+      audio();
     }
   }, [widgetTheme?.bot_auto_start, status]);
 
@@ -314,31 +345,26 @@ const RetellaiAgent = ({
   }, [room]);
 
   // Request microphone permissions early
-  useEffect(() => {
-    const requestMicPermission = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          audio: true,
-        });
-        localStorage.setItem("microphonePermission", "granted");
-        stream.getTracks().forEach((track) => track.stop());
-      } catch (err) {
-        console.error("Microphone permission denied:", err);
-        localStorage.setItem("microphonePermission", "denied");
-      }
-    };
+  // useEffect(() => {
+  //   const requestMicPermission = async () => {
+  //     try {
+  //       const stream = await navigator.mediaDevices.getUserMedia({
+  //         audio: true,
+  //       });
+  //       localStorage.setItem("microphonePermission", "granted");
+  //       stream.getTracks().forEach((track) => track.stop());
+  //     } catch (err) {
+  //       console.error("Microphone permission denied:", err);
+  //       localStorage.setItem("microphonePermission", "denied");
+  //     }
+  //   };
 
-    if (!localStorage.getItem("microphonePermission")) {
-      requestMicPermission();
-    }
-  }, []);
+  //   if (!localStorage.getItem("microphonePermission")) {
+  //     requestMicPermission();
+  //   }
+  // }, []);
 
-  // Clear transcripts when disconnected
-  useEffect(() => {
-    if (status === "disconnected") {
-      setTranscripts("");
-    }
-  }, [status]);
+  
 
   // Auto-scroll transcript
   useEffect(() => {
@@ -389,24 +415,24 @@ const RetellaiAgent = ({
     }
   };
 
-  const startRecording = async () => {
-    try {
-      await resumeAudioContext();
-      if (status === "connected") {
-        if (audioTrackRef.current) {
-          audioTrackRef.current.enabled = true;
-          setMuted(false);
-          setIsRecording(true);
-          setIsGlowing(true);
-        }
-      } else {
-        await handleSubmit();
+const startRecording = async () => {
+  try {
+    await resumeAudioContext();
+    if (status === "connected") {
+      if (audioTrackRef.current) {
+        audioTrackRef.current.enabled = true;
+        setMuted(false);
+        setIsRecording(true);
+        setIsGlowing(true);
       }
-    } catch (err) {
-      console.error("Error starting recording:", err);
+    } else {
+      await handleSubmit();
+      await audio(); // ← add this, mic track gets recreated every time
     }
-  };
-
+  } catch (err) {
+    console.error("Error starting recording:", err);
+  }
+};
   const handleSendChat = () => {
     if (chatInput.trim() && !isSendingChat) {
       send(chatInput);
@@ -441,24 +467,25 @@ const RetellaiAgent = ({
   };
 
   const handleClose = async () => {
-    try {
-      if (audioTrackRef.current) {
-        audioTrackRef.current.stop();
-        audioTrackRef.current = null;
-      }
-
-      await room.disconnect();
-
-      setIsRecording(false);
-      setIsGlowing(false);
-      setMuted(false);
-      setTranscripts("");
-      setExpanded(false);
-      setLatestEvent(null);
-    } catch (err) {
-      console.error("Error closing:", err);
+  try {
+    if (audioTrackRef.current) {
+      audioTrackRef.current.stop();
+      audioTrackRef.current = null; // ← already null, good
     }
-  };
+
+    await room.disconnect();
+
+    setIsRecording(false);
+    setIsGlowing(false);
+    setMuted(false);
+    setTranscripts("");
+    setExpanded(false);
+    setLatestEvent(null);
+    wasConnectedRef.current = false; // ← reset the ref too
+  } catch (err) {
+    console.error("Error closing:", err);
+  }
+};
 
   const doStart = async (payload: Record<string, any>) => {
     try {
@@ -470,8 +497,7 @@ const RetellaiAgent = ({
       localStorage.setItem("callId", callId);
 
       await room.connect(serverUrl, accessToken);
-
-      await room.startAudio();
+        await room.startAudio();
 
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
@@ -536,7 +562,7 @@ const RetellaiAgent = ({
     //     return;
     // }
     if (agent_type === "thunderemotion") {
-      await doStart({ agent_code: agent_id, schema_name: schema });
+      await doStart({ agent_code: agent_id, schema_name: schema ,provider:agent_type});
     } else {
       await doStart({
         agent_code: agent_id,
@@ -555,6 +581,8 @@ const RetellaiAgent = ({
         const payload: Record<string, any> = {
           agent_code: agent_id,
           schema_name: schema,
+          provider:agent_type
+         
         };
         Object.entries(formData).forEach(([key, value]) => {
           payload[key] = value;
@@ -609,7 +637,7 @@ const RetellaiAgent = ({
           >
             {isRecording
               ? "Listening..."
-              : `Talk To ${botName || "AI Assistant"}`}
+              : ` ${botName || "Talk To AI Assistant"}`}
           </div>
         </div>
 
@@ -1102,7 +1130,7 @@ const RetellaiAgent = ({
               color: "#ffffff",
             }}
           >
-            {`Talk to ${widgetTheme?.bot_name || "AI Assistant"}`}
+            {`${widgetTheme?.bot_name || "Talk to AI Assistant"}`}
           </button>
         </div>
       )}
