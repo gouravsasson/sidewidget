@@ -9,6 +9,7 @@ import {
   Minimize2,
   Volume2,
   VolumeX,
+  MicOff,
 } from "lucide-react";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
@@ -30,6 +31,8 @@ import axios from "axios";
 export interface WidgetTheme {
   bot_auto_start: boolean;
   bot_position: string;
+  agent_mute: boolean;
+  widget_heading: string;
   bot_logo: string | null;
   svg_logo: string | null;
   bot_height: string;
@@ -54,6 +57,7 @@ export interface WidgetTheme {
   bot_tagline: string;
   is_glowing: boolean;
   is_transparent: boolean;
+  widget_submit_btn_text: string;
   custom_form_fields: Array<{
     id: number;
     type: "text" | "email" | "tel" | "number" | "textarea";
@@ -82,6 +86,180 @@ interface RetellaiAgentProps {
 
 let audioCtx: AudioContext | null = null;
 
+// ─────────────────────────────────────────────
+// Mic Denied Modal Component
+// ─────────────────────────────────────────────
+const MicDeniedModal = ({
+  onClose,
+  buttonColor,
+}: {
+  onClose: () => void;
+  buttonColor?: string;
+}) => {
+  // Detect browser for tailored instructions
+  const getBrowserInstructions = () => {
+    const ua = navigator.userAgent;
+    if (ua.includes("Chrome") && !ua.includes("Edg")) {
+      return {
+        browser: "Chrome",
+        steps: [
+          "Click the 🔒 lock icon (or ℹ️ info icon) in the address bar",
+          'Find "Microphone" in the permissions list',
+          'Change it from "Blocked" to "Allow"',
+          "Refresh the page and try again",
+        ],
+      };
+    } else if (ua.includes("Firefox")) {
+      return {
+        browser: "Firefox",
+        steps: [
+          "Click the 🔒 lock icon in the address bar",
+          'Click "Connection Secure" → "More Information"',
+          'Go to the "Permissions" tab',
+          'Find "Use the Microphone" and uncheck "Block"',
+          "Refresh the page and try again",
+        ],
+      };
+    } else if (ua.includes("Edg")) {
+      return {
+        browser: "Edge",
+        steps: [
+          "Click the 🔒 lock icon in the address bar",
+          'Click "Permissions for this site"',
+          'Set "Microphone" to "Allow"',
+          "Refresh the page and try again",
+        ],
+      };
+    } else if (ua.includes("Safari")) {
+      return {
+        browser: "Safari",
+        steps: [
+          "Go to Safari → Settings (or Preferences) → Websites",
+          'Click "Microphone" in the left sidebar',
+          'Find this website and set it to "Allow"',
+          "Refresh the page and try again",
+        ],
+      };
+    }
+    return {
+      browser: "your browser",
+      steps: [
+        "Click the lock or info icon in the address bar",
+        'Look for "Microphone" in site permissions',
+        'Change the setting to "Allow"',
+        "Refresh the page and try again",
+      ],
+    };
+  };
+
+  const { browser, steps } = getBrowserInstructions();
+
+  return (
+    // Backdrop
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center"
+      style={{ backgroundColor: "rgba(0,0,0,0.55)" }}
+      onClick={onClose}
+    >
+      {/* Modal card */}
+      <div
+        className="bg-white rounded-2xl shadow-2xl w-[min(90vw,380px)] p-6 relative"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+        >
+          <X className="w-4 h-4 text-gray-500" />
+        </button>
+
+        {/* Icon */}
+        <div className="flex justify-center mb-4">
+          <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center">
+            <MicOff className="w-8 h-8 text-red-500" />
+          </div>
+        </div>
+
+        {/* Title */}
+        <h2 className="text-center text-lg font-bold text-gray-800 mb-1">
+          Microphone Access Denied
+        </h2>
+
+        {/* Crop container — clips all sides */}
+        <div
+          className="overflow-hidden rounded-xl mx-auto"
+          style={{ width: "100%", height: "160px", position: "relative" }}
+        >
+          <iframe
+            src="https://www.youtube.com/embed/vWp-3eZw3WI?autoplay=1&mute=1&controls=0&loop=1&playlist=vWp-3eZw3WI&rel=0&modestbranding=1&showinfo=0&iv_load_policy=3"
+            allow="autoplay; encrypted-media"
+            allowFullScreen={false}
+            style={{
+              position: "absolute",
+              top: "-40px", 
+              left: "-40px", 
+              width: "calc(100% + 80px)",
+              height: "calc(100% + 120px)", 
+              border: "none",
+              pointerEvents: "none",
+            }}
+          />
+        </div>
+        {/* Steps */}
+        <div className="bg-gray-50 rounded-xl p-4 mb-5">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+            How to enable in {browser}
+          </p>
+          <ol className="space-y-2">
+            {steps.map((step, i) => (
+              <li
+                key={i}
+                className="flex items-start gap-2 text-sm text-gray-700"
+              >
+                <span
+                  className="flex-shrink-0 w-5 h-5 rounded-full text-white text-xs flex items-center justify-center font-bold mt-0.5"
+                  style={{ backgroundColor: buttonColor || "#2563eb" }}
+                >
+                  {i + 1}
+                </span>
+                {step}
+              </li>
+            ))}
+          </ol>
+        </div>
+
+        {/* Action button */}
+        <button
+          onClick={onClose}
+          className="w-full py-3 rounded-xl text-white font-semibold text-sm transition-opacity hover:opacity-90"
+          style={{ backgroundColor: buttonColor || "#2563eb" }}
+        >
+          Got it, I'll update settings
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────
+// Utility: check if mic is already denied
+// ─────────────────────────────────────────────
+const checkMicPermission = async (): Promise<PermissionState | null> => {
+  try {
+    if (navigator.permissions) {
+      const result = await navigator.permissions.query({
+        name: "microphone" as PermissionName,
+      });
+      return result.state; // 'granted' | 'denied' | 'prompt'
+    }
+  } catch (_) {}
+  return null;
+};
+
+// ─────────────────────────────────────────────
+// Main Component
+// ─────────────────────────────────────────────
 const RetellaiAgent = ({
   isWidget = false,
   colors,
@@ -97,6 +275,7 @@ const RetellaiAgent = ({
   const [isRecording, setIsRecording] = useState(false);
   const room = useRoomContext();
   const status = useConnectionState(room);
+  const [micMute, setMicMute] = useState(false);
 
   const [speech, setSpeech] = useState("");
   const [isGlowing, setIsGlowing] = useState(false);
@@ -118,17 +297,51 @@ const RetellaiAgent = ({
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [showform, setShowform] = useState(false);
   const [formSubmitting, setFormSubmitting] = useState(false);
-  const [microphonePermission, setMicrophonePermission] = useState<
-    string | null
-  >(null);
-  const micStartedRef = useRef(false);
   const wasConnectedRef = useRef(false);
+
+  // ── NEW: mic denied modal state ──
+  const [showMicDeniedModal, setShowMicDeniedModal] = useState(false);
 
   const baseUrl = "https://app.snowie.ai/api/create-room/";
   const settingsBaseUrl = "https://app.snowie.ai";
 
   const capitalize = (s: string) =>
     s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+
+  //  request mic and handle denial 
+  const requestMicAccess = async (): Promise<MediaStreamTrack | null> => {
+   
+    const permState = await checkMicPermission();
+
+    if (permState === "denied") {
+      setShowMicDeniedModal(true);
+      return null;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
+      const [audioTrack] = stream.getAudioTracks();
+      audioTrack.enabled = true;
+      return audioTrack;
+    } catch (err: any) {
+      if (
+        err?.name === "NotAllowedError" ||
+        err?.name === "PermissionDeniedError"
+      ) {
+        setShowMicDeniedModal(true);
+      } else {
+        console.error("Mic error:", err);
+      }
+      return null;
+    }
+  };
+
   useEffect(() => {
     if (status === "disconnected") {
       setSpeech(widgetTheme?.bot_tagline || "Talk To AI Assistant");
@@ -142,24 +355,30 @@ const RetellaiAgent = ({
   }, [status, widgetTheme?.bot_name, widgetTheme?.bot_tagline]);
 
   useEffect(() => {
-  if (status === "connected") {
-    wasConnectedRef.current = true;
-  }
+    if (status === "connected") {
+      wasConnectedRef.current = true;
+    }
 
-  if (status === "disconnected" && wasConnectedRef.current) {
-    wasConnectedRef.current = false;
-    setIsRecording(false);
-    setIsGlowing(false);
-    setLatestEvent(null);
-    setTranscripts("");
-    setExpanded(false); // just collapse, don't call full handleClose
-  }
-}, [status]);
+    if (status === "disconnected" && wasConnectedRef.current) {
+      wasConnectedRef.current = false;
 
-  console.log("status:", status);
+      // Clean up audio track if it's still alive
+      if (audioTrackRef.current) {
+        audioTrackRef.current.stop();
+        audioTrackRef.current = null;
+      }
 
+      // Reset all UI state
+      setIsRecording(false);
+      setIsGlowing(false);
+      setLatestEvent(null);
+      setTranscripts("");
+      setMuted(false);
+      setExpanded(false);
+      localStorage.removeItem("callId");
+    }
+  }, [status]);
 
-  // Effect for transcriptions
   useEffect(() => {
     if (transcriptionSegments.length > 0) {
       const segment = transcriptionSegments[
@@ -175,7 +394,6 @@ const RetellaiAgent = ({
     }
   }, [transcriptionSegments]);
 
-  // Effect for chat
   useEffect(() => {
     if (chatMessages.length > 0) {
       const msg = chatMessages[chatMessages.length - 1];
@@ -189,8 +407,6 @@ const RetellaiAgent = ({
   }, [chatMessages]);
 
   const getFieldIcon = (type: string) => {
-    if (type === "email") return <svg className="h-5 w-5 text-gray-400" />;
-    if (type === "tel") return <svg className="h-5 w-5 text-gray-400" />;
     return <svg className="h-5 w-5 text-gray-400" />;
   };
 
@@ -214,7 +430,6 @@ const RetellaiAgent = ({
     );
   };
 
-  // Fetch widget theme settings
   useEffect(() => {
     localStorage.removeItem("callId");
     if (onlyOnce.current) return;
@@ -233,7 +448,6 @@ const RetellaiAgent = ({
     getWidgetTheme();
   }, []);
 
-  // Initialize form data
   useEffect(() => {
     if (widgetTheme?.custom_form_fields) {
       const initialData: Record<string, string> = {};
@@ -244,14 +458,12 @@ const RetellaiAgent = ({
     }
   }, [widgetTheme?.custom_form_fields]);
 
-  // Show form based on setting
   useEffect(() => {
     if (widgetTheme?.bot_show_form) {
       setShowform(true);
     }
   }, [widgetTheme?.bot_show_form]);
 
-  // Tab change mute setting
   useEffect(() => {
     if (widgetTheme?.bot_mute_on_tab_change) {
       const handleVisibilityChange = () => {
@@ -271,28 +483,17 @@ const RetellaiAgent = ({
     }
   }, [widgetTheme?.bot_mute_on_tab_change]);
 
-  // Auto start setting
-  const audio= async()=>{
-      await room.startAudio();
+  const audio = async () => {
+    await room.startAudio();
+    const audioTrack = await requestMicAccess();
+    if (!audioTrack) return;
 
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
-      });
-
-      const [audioTrack] = stream.getAudioTracks();
-      audioTrack.enabled = true;
-
-      await room.localParticipant.publishTrack(audioTrack, {
-        name: "microphone",
-        source: Track.Source.Microphone,
-      });
-
-      audioTrackRef.current = audioTrack;
-  }
+    await room.localParticipant.publishTrack(audioTrack, {
+      name: "microphone",
+      source: Track.Source.Microphone,
+    });
+    audioTrackRef.current = audioTrack;
+  };
 
   useEffect(() => {
     const callId = localStorage.getItem("callId");
@@ -303,7 +504,6 @@ const RetellaiAgent = ({
     }
   }, [widgetTheme?.bot_auto_start, status]);
 
-  // Setup transcript listener
   useEffect(() => {
     const transcriptEmitter = transcriptEmitterRef.current;
 
@@ -324,11 +524,9 @@ const RetellaiAgent = ({
       if (event.event_type === "update") {
         const alltrans = event.transcript;
         let Trans = "";
-
         for (let index = 0; index < alltrans.length; index++) {
           const currentTranscript = alltrans[index];
           Trans = currentTranscript.content;
-
           if (currentTranscript) {
             setTranscripts(Trans);
           }
@@ -363,10 +561,6 @@ const RetellaiAgent = ({
   //     requestMicPermission();
   //   }
   // }, []);
-
-  
-
-  // Auto-scroll transcript
   useEffect(() => {
     const container = containerRef.current;
     if (container) {
@@ -384,20 +578,13 @@ const RetellaiAgent = ({
       document.removeEventListener("click", initAudioOnInteraction);
       document.removeEventListener("touchstart", initAudioOnInteraction);
     };
-
     document.addEventListener("click", initAudioOnInteraction);
     document.addEventListener("touchstart", initAudioOnInteraction);
-
     return () => {
       document.removeEventListener("click", initAudioOnInteraction);
       document.removeEventListener("touchstart", initAudioOnInteraction);
     };
   }, []);
-
-  const startRecordingWithAudio = async () => {
-    await resumeAudioContext();
-    startRecording();
-  };
 
   const resumeAudioContext = async (): Promise<void> => {
     try {
@@ -406,7 +593,6 @@ const RetellaiAgent = ({
           window.AudioContext || (window as any).webkitAudioContext;
         audioCtx = new AudioContext();
       }
-
       if (audioCtx.state === "suspended") {
         await audioCtx.resume();
       }
@@ -415,23 +601,29 @@ const RetellaiAgent = ({
     }
   };
 
-const startRecording = async () => {
-  try {
+  const startRecordingWithAudio = async () => {
     await resumeAudioContext();
-    if (status === "connected") {
-      if (audioTrackRef.current) {
-        audioTrackRef.current.enabled = true;
-        setMuted(false);
-        setIsRecording(true);
-        setIsGlowing(true);
+    startRecording();
+  };
+
+  const startRecording = async () => {
+    try {
+      await resumeAudioContext();
+      if (status === "connected") {
+        if (audioTrackRef.current) {
+          audioTrackRef.current.enabled = true;
+          setMuted(false);
+          setIsRecording(true);
+          setIsGlowing(true);
+        }
+      } else {
+        await handleSubmit();
       }
-    } else {
-      await handleSubmit();
+    } catch (err) {
+      console.error("Error starting recording:", err);
     }
-  } catch (err) {
-    console.error("Error starting recording:", err);
-  }
-};
+  };
+
   const handleSendChat = () => {
     if (chatInput.trim() && !isSendingChat) {
       send(chatInput);
@@ -466,28 +658,34 @@ const startRecording = async () => {
   };
 
   const handleClose = async () => {
-  try {
-    if (audioTrackRef.current) {
-      audioTrackRef.current.stop();
-      audioTrackRef.current = null; // ← already null, good
+    try {
+      if (audioTrackRef.current) {
+        audioTrackRef.current.stop();
+        audioTrackRef.current = null;
+      }
+      await room.disconnect();
+      setIsRecording(false);
+      setIsGlowing(false);
+      setMuted(false);
+      setTranscripts("");
+      setExpanded(false);
+      setLatestEvent(null);
+      wasConnectedRef.current = false;
+    } catch (err) {
+      console.error("Error closing:", err);
     }
+  };
 
-    await room.disconnect();
-
-    setIsRecording(false);
-    setIsGlowing(false);
-    setMuted(false);
-    setTranscripts("");
-    setExpanded(false);
-    setLatestEvent(null);
-    wasConnectedRef.current = false; // ← reset the ref too
-  } catch (err) {
-    console.error("Error closing:", err);
-  }
-};
-
+  // ── UPDATED: doStart uses requestMicAccess ──
   const doStart = async (payload: Record<string, any>) => {
     try {
+      // Check mic permission BEFORE making the API call
+      const permState = await checkMicPermission();
+      if (permState === "denied") {
+        setShowMicDeniedModal(true);
+        return;
+      }
+
       const res = await axios.post(`${baseUrl}`, payload);
       const decryptedPayload = res.data.response;
       const accessToken = decryptedPayload.token;
@@ -496,18 +694,15 @@ const startRecording = async () => {
       localStorage.setItem("callId", callId);
 
       await room.connect(serverUrl, accessToken);
-        await room.startAudio();
+      await room.startAudio();
 
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
-      });
-
-      const [audioTrack] = stream.getAudioTracks();
-      audioTrack.enabled = true;
+      const audioTrack = await requestMicAccess();
+      if (!audioTrack) {
+        // Mic denied — modal already shown, disconnect cleanly
+        await room.disconnect();
+        localStorage.removeItem("callId");
+        return;
+      }
 
       await room.localParticipant.publishTrack(audioTrack, {
         name: "microphone",
@@ -528,13 +723,10 @@ const startRecording = async () => {
         err?.name === "NotAllowedError" ||
         err?.name === "PermissionDeniedError"
       ) {
-        alert(
-          "Microphone access is required. Please allow microphone permission and try again.",
-        );
+        setShowMicDeniedModal(true);
         return;
       }
 
-      // Optional: device already in use / duplicate start
       if (
         err?.name === "NotReadableError" ||
         err?.message?.includes("already")
@@ -544,30 +736,21 @@ const startRecording = async () => {
 
       alert("Failed to start call. Please try again.");
     }
-
-    // } catch (err) {
-    //   console.error("Form error:", err);
-    //   alert(
-    //     "Failed to start call. Please check your microphone and try again.",
-    //   );
-    // }
   };
 
-  // Pulse effects for recording animation
-
   const handleSubmit = async () => {
-    // if (microphonePermission === "denied") {
-    //     alert("Microphone permission is required. Please enable it in your browser settings.");
-    //     return;
-    // }
     if (agent_type === "thunderemotion") {
-      await doStart({ agent_code: agent_id, schema_name: schema ,provider:agent_type});
+      await doStart({
+        agent_code: agent_id,
+        schema_name: schema,
+        provider: agent_type,
+      });
     } else {
       await doStart({
         agent_code: agent_id,
         schema_name: schema,
         provider: "thunderemotionlite",
-        requested_domains:`https://${window.location.hostname}`
+        requested_domains: `https://${window.location.hostname}`,
       });
     }
   };
@@ -580,8 +763,7 @@ const startRecording = async () => {
         const payload: Record<string, any> = {
           agent_code: agent_id,
           schema_name: schema,
-          provider:agent_type
-         
+          provider: agent_type,
         };
         Object.entries(formData).forEach(([key, value]) => {
           payload[key] = value;
@@ -597,19 +779,24 @@ const startRecording = async () => {
     }
   };
 
-  // Loading state
   if (!onlyOnce.current || !widgetTheme) {
     return <div className="text-white text-center">Loading...</div>;
   }
 
-  // Simplified return to match VoiceAssistant UI
   if (isWidget && colors) {
     return (
       <div
         className="flex flex-col h-full bg-gray-50"
         style={{ height: "calc(100% - 0px)" }}
       >
-        {/* Microphone Section */}
+        {/* Mic Denied Modal */}
+        {showMicDeniedModal && (
+          <MicDeniedModal
+            onClose={() => setShowMicDeniedModal(false)}
+            buttonColor={colors.buttonColor}
+          />
+        )}
+
         <div className="flex flex-col items-center justify-center py-8 flex-1">
           <button
             onClick={isRecording ? handleClose : handleSubmit}
@@ -640,7 +827,6 @@ const startRecording = async () => {
           </div>
         </div>
 
-        {/* Transcription Box */}
         <div className="px-6 py-4 h-48">
           <div
             ref={containerRef}
@@ -658,11 +844,7 @@ const startRecording = async () => {
                 className={`flex flex-col mb-2 ${latestEvent.isLocal ? "items-end" : "items-start"}`}
               >
                 <div
-                  className={`px-3 py-2 rounded-lg max-w-[85%] ${
-                    latestEvent.isLocal
-                      ? "bg-blue-100 text-black"
-                      : " text-black"
-                  }`}
+                  className={`px-3 py-2 rounded-lg max-w-[85%] ${latestEvent.isLocal ? "bg-blue-100 text-black" : " text-black"}`}
                 >
                   {latestEvent.text}
                 </div>
@@ -678,7 +860,6 @@ const startRecording = async () => {
           </div>
         </div>
 
-        {/* Input Area */}
         <div className="p-6 pt-0">
           <div className="flex items-center space-x-3">
             <input
@@ -686,16 +867,12 @@ const startRecording = async () => {
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  handleSendChat();
-                }
+                if (e.key === "Enter") handleSendChat();
               }}
               placeholder="Type your message..."
               disabled={status !== "connected"}
               className="flex-1 bg-white text-gray-700 p-3 rounded-xl focus:outline-none focus:ring-2 placeholder-gray-400 border border-gray-200"
-              style={{
-                borderColor: colors.borderColor,
-              }}
+              style={{ borderColor: colors.borderColor }}
             />
             <button
               type="button"
@@ -723,7 +900,6 @@ const startRecording = async () => {
     );
   }
 
-  // Position styles
   const getPositionStyles = () => {
     const baseStyles: React.CSSProperties = {
       position: "fixed",
@@ -732,7 +908,6 @@ const startRecording = async () => {
       flexDirection: "column",
       alignItems: "flex-end",
     };
-
     switch (widgetTheme?.bot_position) {
       case "top-left":
         baseStyles.top = "2vh";
@@ -769,55 +944,44 @@ const startRecording = async () => {
 
   return (
     <div className="fixed z-50" style={getPositionStyles()}>
+      {/* Mic Denied Modal — rendered at widget level so it sits above everything */}
+      {showMicDeniedModal && (
+        <MicDeniedModal
+          onClose={() => setShowMicDeniedModal(false)}
+          buttonColor={widgetTheme?.bot_button_color}
+        />
+      )}
+
       <style>{`
-                @media (max-width: 640px) {
-                    .widget-container {
-                        width: 90vw !important;
-                        height: ${widgetTheme?.bot_show_form && showform ? "80vh" : "85vh"} !important;
-                    }
-                }
-
-                
-                .transcript-box {
-                    background: #f9fafb !important;
-                    color: ${widgetTheme?.bot_text_color || "#374151"} !important;
-                    border: 1px solid #e5e7eb !important;
-                }
-                
-                .chat-input {
-                    background: white !important;
-                    color: ${widgetTheme?.bot_text_color || "#374151"} !important;
-                    border: 1px solid #e5e7eb !important;
-                }
-
-                .transparent-background {
-                    background: ${widgetTheme?.bot_background_color}15 !important; 
-                    backdrop-filter: blur(12px);
-                    -webkit-backdrop-filter: blur(12px);
-                    border: 1px solid ${widgetTheme?.bot_border_color}30;
-                }
-
-                .transparent-widget .header,
-                .transparent-widget .mic-button,
-                .transparent-widget .status-bar,
-                .transparent-widget .transcript-box,
-                .transparent-widget .chat-input,
-                .transparent-widget input,
-                .transparent-widget button,
-                .transparent-widget .form-container,
-                .transparent-widget form {
-                    background: inherit !important;
-                    opacity: 1 !important;
-                    color: inherit !important;
-                }
-
-                .transparent-widget .transcript-box,
-                .transparent-widget input,
-                .transparent-widget .chat-input {
-                    background: white !important;
-                    color: #374151 !important;
-                }
-            `}</style>
+        @media (max-width: 640px) {
+          .widget-container {
+            width: 90vw !important;
+            height: ${widgetTheme?.bot_show_form && showform ? "80vh" : "85vh"} !important;
+          }
+        }
+        .transcript-box {
+          background: #f9fafb !important;
+          color: ${widgetTheme?.bot_text_color || "#374151"} !important;
+          border: 1px solid #e5e7eb !important;
+        }
+        .chat-input {
+          background: white !important;
+          color: ${widgetTheme?.bot_text_color || "#374151"} !important;
+          border: 1px solid #e5e7eb !important;
+        }
+        .transparent-background {
+          background: ${widgetTheme?.bot_background_color}15 !important;
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border: 1px solid ${widgetTheme?.bot_border_color}30;
+        }
+        .transparent-widget .transcript-box,
+        .transparent-widget input,
+        .transparent-widget .chat-input {
+          background: white !important;
+          color: #374151 !important;
+        }
+      `}</style>
 
       {expanded ? (
         <div
@@ -833,7 +997,7 @@ const startRecording = async () => {
               : widgetTheme?.bot_background_color || "#ffffff",
           }}
         >
-          {/* Header - Blue header like in the design */}
+          {/* Header */}
           <div
             className="px-6 py-4 flex justify-between items-center"
             style={{
@@ -853,6 +1017,22 @@ const startRecording = async () => {
               </span>
             </div>
             <div className="flex items-center space-x-2">
+              <button
+                onClick={() => {
+                  if (audioTrackRef.current) {
+                    audioTrackRef.current.enabled = micMute;
+                  }
+                  setMicMute(!micMute);
+                }}
+                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors"
+              >
+                {widgetTheme?.agent_mute &&
+                  (micMute ? (
+                    <MicOff className="w-5 h-5" />
+                  ) : (
+                    <Mic className="w-5 h-5" />
+                  ))}
+              </button>
               <button
                 onClick={togglemute}
                 className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors"
@@ -878,7 +1058,7 @@ const startRecording = async () => {
             </div>
           </div>
 
-          {/* Main Content - White background */}
+          {/* Main Content */}
           <div className="flex flex-col h-[calc(100%-64px)] overflow-hidden">
             {widgetTheme?.bot_show_form && showform ? (
               <div className="flex-1 p-6 flex flex-col items-center justify-center">
@@ -886,58 +1066,57 @@ const startRecording = async () => {
                   className="text-lg font-semibold mb-6"
                   style={{ color: widgetTheme?.bot_text_color || "#1f2937" }}
                 >
-                  Enter Your Details
+                  {widgetTheme.widget_heading}
                 </h3>
-                <form onSubmit={startFromForm} className="w-full space-y-4">
+                <form onSubmit={startFromForm} className="w-full space-y-3">
                   {widgetTheme.custom_form_fields.map((field) => (
                     <div key={field.id} className="w-full">
                       <label
-                        className="block text-sm font-medium mb-1"
+                        className="block text-xs font-semibold mb-1 tracking-wide uppercase"
                         style={{
-                          color: widgetTheme?.bot_text_color || "#374151",
+                          color: widgetTheme?.bot_text_color || "#6b7280",
                         }}
                       >
                         {capitalize(field.label)}
                       </label>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                          {getFieldIcon(field.type)}
-                        </div>
-                        {field.type === "tel" ? (
-                          <PhoneInput
-                            country={
-                              localStorage
-                                .getItem("continentcode")
-                                ?.toLowerCase() || "us"
-                            }
-                            value={formData[field.label.toLowerCase()] || ""}
-                            onChange={(phone) =>
-                              setFormData({
-                                ...formData,
-                                [field.label.toLowerCase()]: phone,
-                              })
-                            }
-                            inputProps={{ required: true }}
-                            containerClass="w-full"
-                            inputClass="w-full p-3 pl-12 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 bg-white"
-                            buttonClass="border-r border-gray-300"
-                          />
-                        ) : (
-                          <input
-                            type={field.type}
-                            required
-                            value={formData[field.label.toLowerCase()] || ""}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                [field.label.toLowerCase()]: e.target.value,
-                              })
-                            }
-                            className="w-full p-3 pl-12 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 bg-white"
-                            placeholder={`Enter your ${field.label.toLowerCase()}`}
-                          />
-                        )}
-                      </div>
+
+                      {field.type === "tel" ? (
+                        <PhoneInput
+                          country={
+                            localStorage
+                              .getItem("continentcode")
+                              ?.toLowerCase() || "us"
+                          }
+                          value={formData[field.label.toLowerCase()] || ""}
+                          onChange={(phone) =>
+                            setFormData({
+                              ...formData,
+                              [field.label.toLowerCase()]: phone,
+                            })
+                          }
+                          inputProps={{ required: true }}
+                          containerClass="w-full"
+                          inputClass="!w-full !h-11 !text-sm !rounded-xl !border !border-gray-200 !pl-12 !text-gray-700 !bg-gray-50 focus:!ring-2 focus:!border-transparent"
+                          buttonClass="!rounded-l-xl !border-gray-200 !bg-gray-50"
+                        />
+                      ) : (
+                        <input
+                          type={field.type}
+                          required
+                          value={formData[field.label.toLowerCase()] || ""}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              [field.label.toLowerCase()]: e.target.value,
+                            })
+                          }
+                          className="w-full h-11 text-sm px-4 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all"
+                          style={{
+                            focusRingColor: widgetTheme?.bot_button_color,
+                          }}
+                          placeholder={`Enter your ${field.label.toLowerCase()}`}
+                        />
+                      )}
                     </div>
                   ))}
                   <button
@@ -955,17 +1134,15 @@ const startRecording = async () => {
                         Connecting to AI Assistant
                       </div>
                     ) : (
-                      "Submit"
+                      widgetTheme.widget_submit_btn_text
                     )}
                   </button>
                 </form>
               </div>
             ) : (
               <>
-                {/* Mic Button Section */}
                 <div className="flex-1 flex flex-col items-center p-6 overflow-y-auto">
                   <button
-                    // onClick={handleMicClick}
                     className="w-40 h-40 rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-lg mb-6 overflow-hidden"
                     style={{
                       backgroundColor:
@@ -987,7 +1164,6 @@ const startRecording = async () => {
                     </div>
                   </button>
 
-                  {/* Status Bar - Like in the design */}
                   <div
                     className="px-6 py-3 rounded-full text-sm font-medium mb-4"
                     style={{
@@ -1000,7 +1176,6 @@ const startRecording = async () => {
                     {speech}
                   </div>
 
-                  {/* Live Indicator - Like in the design */}
                   {isRecording && (
                     <div className="flex items-center mb-6">
                       <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
@@ -1010,7 +1185,6 @@ const startRecording = async () => {
                     </div>
                   )}
 
-                  {/* Transcript Section - Always visible when expanded */}
                   <div className="w-full px-4 mb-4">
                     <div
                       className="text-sm font-medium mb-2"
@@ -1035,9 +1209,7 @@ const startRecording = async () => {
                               {latestEvent.text}
                             </div>
                           ) : (
-                            <span
-                              className={`text-[11px] leading-tight text-black`}
-                            >
+                            <span className="text-[11px] leading-tight text-black">
                               {latestEvent.text}
                             </span>
                           )}
@@ -1050,7 +1222,6 @@ const startRecording = async () => {
                     </div>
                   </div>
 
-                  {/* Chat Input - Always visible when expanded */}
                   <div className="w-full px-4">
                     <div className="flex gap-2">
                       <input
@@ -1085,42 +1256,75 @@ const startRecording = async () => {
           </div>
         </div>
       ) : (
-        /* Collapsed State */
         <div className="flex flex-col items-center gap-2">
-          <button
-            onClick={toggleExpand}
-            className="rounded-full w-16 h-16 flex items-center justify-center shadow-lg transition-all hover:scale-105 hover:shadow-xl"
-            style={{
-              backgroundColor: widgetTheme?.bot_button_color || "#2563eb",
-              boxShadow: widgetTheme?.is_glowing
-                ? `0 0 20px ${widgetTheme?.bot_animation_color || "#2563eb"}80`
-                : "0 4px 12px rgba(37, 99, 235, 0.3)",
-            }}
-          >
-            <div className="relative">
-              {widgetTheme?.is_glowing && (
-                <>
-                  <div
-                    className="absolute inset-0 -m-2 rounded-full"
-                    style={{
-                      backgroundColor: `${widgetTheme?.bot_animation_color || "#2563eb"}40`,
-                    }}
-                  ></div>
-                  <div
-                    className="absolute inset-0 -m-3 rounded-full"
-                    style={{
-                      backgroundColor: `${widgetTheme?.bot_animation_color || "#2563eb"}20`,
-                    }}
-                  ></div>
-                </>
-              )}
+          {widgetTheme?.is_glowing && (
+            <style>{`
+              @keyframes ray-ping-1 {
+                0%   { transform: scale(1);   opacity: 0.55; }
+                80%  { transform: scale(1.9); opacity: 0; }
+                100% { transform: scale(1.9); opacity: 0; }
+              }
+              @keyframes ray-ping-2 {
+                0%   { transform: scale(1);   opacity: 0.38; }
+                80%  { transform: scale(2.4); opacity: 0; }
+                100% { transform: scale(2.4); opacity: 0; }
+              }
+              @keyframes ray-ping-3 {
+                0%   { transform: scale(1);   opacity: 0.22; }
+                80%  { transform: scale(2.9); opacity: 0; }
+                100% { transform: scale(2.9); opacity: 0; }
+              }
+              .glow-ray-1 { animation: ray-ping-1 2s ease-out infinite; }
+              .glow-ray-2 { animation: ray-ping-2 2s ease-out infinite 0.4s; }
+              .glow-ray-3 { animation: ray-ping-3 2s ease-out infinite 0.8s; }
+            `}</style>
+          )}
+
+          {/* Pulse ray wrapper */}
+          <div className="relative flex items-center justify-center w-16 h-16">
+            {widgetTheme?.is_glowing && (
+              <>
+                <div
+                  className="glow-ray-1 absolute inset-0 rounded-full pointer-events-none"
+                  style={{
+                    backgroundColor: widgetTheme?.bot_button_color || "#2563eb",
+                  }}
+                />
+                <div
+                  className="glow-ray-2 absolute inset-0 rounded-full pointer-events-none"
+                  style={{
+                    backgroundColor: widgetTheme?.bot_button_color || "#2563eb",
+                  }}
+                />
+                <div
+                  className="glow-ray-3 absolute inset-0 rounded-full pointer-events-none"
+                  style={{
+                    backgroundColor: widgetTheme?.bot_button_color || "#2563eb",
+                  }}
+                />
+              </>
+            )}
+
+            <button
+              onClick={toggleExpand}
+              className="w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105 hover:shadow-xl relative z-10"
+              style={{
+                backgroundColor: widgetTheme?.bot_button_color || "#2563eb",
+                boxShadow: widgetTheme?.is_glowing
+                  ? `0 0 20px ${widgetTheme?.bot_animation_color || "#2563eb"}80`
+                  : "0 4px 12px rgba(37, 99, 235, 0.3)",
+              }}
+            >
               <div
-                className={`text-white relative z-10 flex items-center justify-center overflow-hidden ${botIcon || widgetTheme?.bot_logo ? "w-full h-full" : "w-8 h-8"}`}
+                className={`text-white flex items-center justify-center overflow-hidden ${
+                  botIcon || widgetTheme?.bot_logo ? "w-full h-full" : "w-8 h-8"
+                }`}
               >
                 {renderIcon("w-6 h-6")}
               </div>
-            </div>
-          </button>
+            </button>
+          </div>
+
           <button
             onClick={toggleExpand}
             className="px-4 py-2 rounded-full font-semibold text-sm transition-all hover:scale-105 shadow-md"
