@@ -197,10 +197,10 @@ const MicDeniedModal = ({
             allowFullScreen={false}
             style={{
               position: "absolute",
-              top: "-40px", 
-              left: "-40px", 
+              top: "-40px",
+              left: "-40px",
               width: "calc(100% + 80px)",
-              height: "calc(100% + 120px)", 
+              height: "calc(100% + 120px)",
               border: "none",
               pointerEvents: "none",
             }}
@@ -276,10 +276,35 @@ const RetellaiAgent = ({
   const room = useRoomContext();
   const status = useConnectionState(room);
   const [micMute, setMicMute] = useState(false);
+  const manualDisconnectRef = useRef(false);
 
   const [speech, setSpeech] = useState("");
   const [isGlowing, setIsGlowing] = useState(false);
+  const [domainStatus,setDomainStatus] =useState(null)
+  useEffect(() => {
+    const getAgentData = async () => {
+      try {
+        const res = await axios.get(
+          `https://test.snowie.ai/api/get-agent/${agent_id}/?schema_name=${schema}`,
+        );
 
+        const allowed_domain = res.data.allowed_domains;
+        const host = window.location.hostname;
+
+        const status = allowed_domain?.[host];
+
+        if (!status) {
+          setDomainStatus("not_found");
+        } else {
+          setDomainStatus(status); 
+        }
+      } catch {
+        setDomainStatus("not_found");
+      }
+    };
+
+    getAgentData();
+  }, []);
   const [latestEvent, setLatestEvent] = useState<{
     type: "transcription" | "chat";
     text: string;
@@ -302,15 +327,14 @@ const RetellaiAgent = ({
   // ── NEW: mic denied modal state ──
   const [showMicDeniedModal, setShowMicDeniedModal] = useState(false);
 
-  const baseUrl = "https://app.snowie.ai/api/create-room/";
-  const settingsBaseUrl = "https://app.snowie.ai";
+  const baseUrl = "https://test.snowie.ai/api/create-room/";
+  const settingsBaseUrl = "https://test.snowie.ai";
 
   const capitalize = (s: string) =>
     s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 
-  //  request mic and handle denial 
+  //  request mic and handle denial
   const requestMicAccess = async (): Promise<MediaStreamTrack | null> => {
-   
     const permState = await checkMicPermission();
 
     if (permState === "denied") {
@@ -495,14 +519,18 @@ const RetellaiAgent = ({
     audioTrackRef.current = audioTrack;
   };
 
-  useEffect(() => {
-    const callId = localStorage.getItem("callId");
-    if (widgetTheme?.bot_auto_start && !callId && status === "disconnected") {
-      setExpanded(true);
-      handleSubmit();
-      audio();
-    }
-  }, [widgetTheme?.bot_auto_start, status]);
+useEffect(() => {
+  if (!widgetTheme?.bot_auto_start) return;
+  if (manualDisconnectRef.current) return;   // ⭐ STOP LOOP
+
+  const callId = localStorage.getItem("callId");
+
+  if (!callId && status === "disconnected") {
+    setExpanded(true);
+    handleSubmit();
+    audio();
+  }
+}, [widgetTheme?.bot_auto_start, status]);
 
   useEffect(() => {
     const transcriptEmitter = transcriptEmitterRef.current;
@@ -585,6 +613,11 @@ const RetellaiAgent = ({
       document.removeEventListener("touchstart", initAudioOnInteraction);
     };
   }, []);
+  useEffect(() => {
+  manualDisconnectRef.current = false;
+}, []);
+
+
 
   const resumeAudioContext = async (): Promise<void> => {
     try {
@@ -657,25 +690,30 @@ const RetellaiAgent = ({
     }
   };
 
-  const handleClose = async () => {
-    try {
-      if (audioTrackRef.current) {
-        audioTrackRef.current.stop();
-        audioTrackRef.current = null;
-      }
-      await room.disconnect();
-      setIsRecording(false);
-      setIsGlowing(false);
-      setMuted(false);
-      setTranscripts("");
-      setExpanded(false);
-      setLatestEvent(null);
-      wasConnectedRef.current = false;
-    } catch (err) {
-      console.error("Error closing:", err);
-    }
-  };
+const handleClose = async () => {
+  try {
+    manualDisconnectRef.current = true;   
 
+    if (audioTrackRef.current) {
+      audioTrackRef.current.stop();
+      audioTrackRef.current = null;
+    }
+
+    await room.disconnect();
+
+    setIsRecording(false);
+    setIsGlowing(false);
+    setMuted(false);
+    setTranscripts("");
+    setExpanded(false);
+    setLatestEvent(null);
+    wasConnectedRef.current = false;
+
+    localStorage.removeItem("callId");
+  } catch (err) {
+    console.error("Error closing:", err);
+  }
+};
   // ── UPDATED: doStart uses requestMicAccess ──
   const doStart = async (payload: Record<string, any>) => {
     try {
@@ -782,7 +820,9 @@ const RetellaiAgent = ({
   if (!onlyOnce.current || !widgetTheme) {
     return <div className="text-white text-center">Loading...</div>;
   }
+  if (domainStatus === "loading") return null;
 
+if (domainStatus !== "active") return null;
   if (isWidget && colors) {
     return (
       <div
