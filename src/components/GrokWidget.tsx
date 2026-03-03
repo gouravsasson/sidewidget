@@ -280,7 +280,7 @@ const RetellaiAgent = ({
 
   const [speech, setSpeech] = useState("");
   const [isGlowing, setIsGlowing] = useState(false);
-  const [domainStatus,setDomainStatus] =useState(null)
+  const [domainStatus,setDomainStatus] =useState("active")
   useEffect(() => {
     const getAgentData = async () => {
       try {
@@ -292,15 +292,10 @@ const RetellaiAgent = ({
         const host = window.location.hostname;
 
         const status = allowed_domain?.[host];
-
-        if (!status) {
-          setDomainStatus("not_found");
-        } else {
+        if(status) {
           setDomainStatus(status); 
         }
-      } catch {
-        setDomainStatus("not_found");
-      }
+      } catch(_){}
     };
 
     getAgentData();
