@@ -285,7 +285,7 @@ const RetellaiAgent = ({
     const getAgentData = async () => {
       try {
         const res = await axios.get(
-          `https://test.snowie.ai/api/get-agent/${agent_id}/?schema_name=${schema}`,
+          `https://app.snowie.ai/api/get-agent/${agent_id}/?schema_name=${schema}`,
         );
 
         const allowed_domain = res.data.allowed_domains;
@@ -327,8 +327,8 @@ const RetellaiAgent = ({
   // ── NEW: mic denied modal state ──
   const [showMicDeniedModal, setShowMicDeniedModal] = useState(false);
 
-  const baseUrl = "https://test.snowie.ai/api/create-room/";
-  const settingsBaseUrl = "https://test.snowie.ai";
+  const baseUrl = "https://app.snowie.ai/api/create-room/";
+  const settingsBaseUrl = "https://app.snowie.ai";
 
   const capitalize = (s: string) =>
     s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
