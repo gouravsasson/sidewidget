@@ -771,12 +771,15 @@ const handleClose = async () => {
     }
   };
 
+  const getSessionId = () => localStorage.getItem("snowie_session_id") || undefined;
+
   const handleSubmit = async () => {
     if (agent_type === "thunderemotion") {
       await doStart({
         agent_code: agent_id,
         schema_name: schema,
         provider: agent_type,
+        session_id: getSessionId(),
       });
     } else {
       await doStart({
@@ -784,6 +787,7 @@ const handleClose = async () => {
         schema_name: schema,
         provider: "thunderemotionlite",
         requested_domains: `https://${window.location.hostname}`,
+        session_id: getSessionId(),
       });
     }
   };
@@ -797,6 +801,7 @@ const handleClose = async () => {
           agent_code: agent_id,
           schema_name: schema,
           provider: agent_type,
+          session_id: getSessionId(),
         };
         Object.entries(formData).forEach(([key, value]) => {
           payload[key] = value;
