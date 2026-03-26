@@ -1,3 +1,4 @@
+import "./rtc-fix"; // Must be first — fixes Wix Thunderbolt freezing RTCPeerConnection
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
