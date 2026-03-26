@@ -1,5 +1,4 @@
-// Strategy: Try to restore writability. If the prototype is fully frozen,
-// replace window.RTCPeerConnection with a subclass that has a mutable prototype.
+
 try {
   const OrigRTC = window.RTCPeerConnection;
   if (OrigRTC) {
