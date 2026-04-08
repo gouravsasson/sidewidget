@@ -268,7 +268,7 @@ const RetellaiAgent = ({
 }: RetellaiAgentProps) => {
   const decoder = new TextDecoder();
   const containerRef = useRef<HTMLDivElement>(null);
-  const { agent_id, schema, type: agent_type } = useWidgetContext();
+  const { agent_id, schema, type: agent_type, tool } = useWidgetContext();
   const [widgetTheme, setWidgetTheme] = useState<WidgetTheme | null>(null);
   const onlyOnce = useRef(false);
   const [expanded, setExpanded] = useState(false);
@@ -774,22 +774,28 @@ const handleClose = async () => {
   const getSessionId = () => localStorage.getItem("snowie_session_id") || undefined;
 
   const handleSubmit = async () => {
+    let payload: Record<string, any> = {};
     if (agent_type === "thunderemotion") {
-      await doStart({
-        agent_code: agent_id,
-        schema_name: schema,
-        provider: agent_type,
-        session_id: getSessionId(),
-      });
-    } else {
-      await doStart({
-        agent_code: agent_id,
-        schema_name: schema,
-        provider: "thunderemotionlite",
-        requested_domains: `https://${window.location.hostname}`,
-        session_id: getSessionId(),
-      });
-    }
+      payload = {
+      agent_code: agent_id,
+      schema_name: schema,
+      provider: agent_type,
+      session_id: getSessionId(),
+    };
+  } else if (agent_type === "thunderemotionlite") {
+    payload = {
+      agent_code: agent_id,
+      schema_name: schema,
+      provider: "thunderemotionlite",
+      requested_domains: `https://${window.location.hostname}`,
+      session_id: getSessionId(),
+    };
+  }
+  if (tool) {
+    payload.tool_list = tool;
+  }
+
+  await doStart(payload);
   };
 
   const startFromForm = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -803,6 +809,9 @@ const handleClose = async () => {
           provider: agent_type,
           session_id: getSessionId(),
         };
+        if (tool) {
+          payload.tool_list = tool;
+        }
         Object.entries(formData).forEach(([key, value]) => {
           payload[key] = value;
         });

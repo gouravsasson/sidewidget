@@ -48,6 +48,7 @@ function App() {
     thunderemotionlite: <LiveKitRoom token="" serverUrl="" room={room} connect={false}>
       <RetellaiAgent />
     </LiveKitRoom>,
+    
   };
 
   return (
