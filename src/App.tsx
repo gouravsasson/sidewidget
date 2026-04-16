@@ -9,6 +9,7 @@ import Autostart from "./components/Autostart";
 import CustomWidget from "./components/CustomWidget";
 import { WidgetTheme } from "./components/CustomWidget";
 import { LiveKitRoom } from "@livekit/components-react";
+import EmpRetellaiAgent from "./components/emperiumWidget";
 import { Room } from "livekit-client";
 
 
@@ -18,7 +19,7 @@ import Whatsapp from "./components/Whatsapp";
 
 function App() {
   const [showPopup, setShowPopup] = useState(false);
-  const { agent_id, schema, type } = useWidgetContext();
+  const { agent_id, schema, type,tool } = useWidgetContext();
   const [room] = useState(() => new Room({}))
 
   useEffect(() => {
@@ -43,7 +44,10 @@ function App() {
     german: <German />,
     thunderemotion: <LiveKitRoom token="" serverUrl="" room={room} connect={false}>
       <RetellaiAgent />
+
     </LiveKitRoom>,
+
+
     whatsapp:<Whatsapp/>,
     thunderemotionlite: <LiveKitRoom token="" serverUrl="" room={room} connect={false}>
       <RetellaiAgent />
@@ -52,8 +56,21 @@ function App() {
   };
 
   return (
-    widgetMap[type] || null
-  );
+  <>
+    {(type === "thunderemotion" || type === "thunderemotionlite") && tool === "whatsapp" ? (
+      <LiveKitRoom
+        token=""
+        serverUrl=""
+        room={room}
+        connect={false}
+      >
+        <EmpRetellaiAgent />
+      </LiveKitRoom>
+    ) : (
+      widgetMap[type] || null
+    )}
+  </>
+);
 }
 
 export default App;
