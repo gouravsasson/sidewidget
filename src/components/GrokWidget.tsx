@@ -305,13 +305,26 @@ const RetellaiAgent = ({
     text: string;
     isLocal: boolean;
   } | null>(null);
+  const [messages, setMessages] = useState<
+    Array<{
+      id: string;
+      text: string;
+      isLocal: boolean;
+      type: "transcription" | "chat";
+      isStreaming?: boolean;
+    }>
+  >([]);
+  const transcriptionSegmentIdMapRef = useRef<Map<string, string>>(new Map());
   const serverUrl = "wss://agnibyravanai-sw47y5hk.livekit.cloud";
   const audioTrackRef = useRef<MediaStreamTrack | null>(null);
   const [muted, setMuted] = useState(false);
   const [transcripts, setTranscripts] = useState("");
   const transcriptEmitterRef = useRef(new EventEmitter());
 
-  const transcriptionSegments = useTranscriptions();
+  // useTranscriptions() doesn't reliably expose participant.isLocal — we
+  // wire up RoomEvent.TranscriptionReceived directly (same pattern as
+  // agent-studio-sim.tsx) where participant is the explicit second argument.
+  const transcriptionSegments = useTranscriptions(); // kept only for scroll trigger
   const { chatMessages, send, isSending: isSendingChat } = useChat();
   const [chatInput, setChatInput] = useState("");
   const [formData, setFormData] = useState<Record<string, string>>({});
@@ -391,6 +404,8 @@ const RetellaiAgent = ({
       setIsRecording(false);
       setIsGlowing(false);
       setLatestEvent(null);
+      setMessages([]);
+      transcriptionSegmentIdMapRef.current.clear();
       setTranscripts("");
       setMuted(false);
       setExpanded(false);
@@ -398,31 +413,76 @@ const RetellaiAgent = ({
     }
   }, [status]);
 
-  useEffect(() => {
-    if (transcriptionSegments.length > 0) {
-      const segment = transcriptionSegments[
-        transcriptionSegments.length - 1
-      ] as any;
-      const isLocal =
-        segment.participant?.isLocal || segment.participantInfo?.isLocal;
-      setLatestEvent({
-        type: "transcription",
-        text: segment.text,
-        isLocal: !!isLocal,
+  const upsertMessage = React.useCallback(
+    (msg: {
+      id: string;
+      text: string;
+      isLocal: boolean;
+      type: "transcription" | "chat";
+      isStreaming?: boolean;
+    }) => {
+      setMessages((prev) => {
+        const idx = prev.findIndex((m) => m.id === msg.id);
+        if (idx < 0) return [...prev, msg];
+        const next = [...prev];
+        next[idx] = { ...next[idx], ...msg };
+        return next;
       });
-    }
-  }, [transcriptionSegments]);
+    },
+    []
+  );
+
+  // Wire transcription directly to RoomEvent so participant.isLocal is reliable
+  useEffect(() => {
+    const handleTranscriptionReceived: Parameters<typeof room.on<RoomEvent.TranscriptionReceived>>[1] = (
+      segments,
+      participant
+    ) => {
+      const isLocal = !!participant?.isLocal;
+      const participantId = participant?.identity || "unknown";
+
+      segments.forEach((segment) => {
+        const text = (segment.text || "").trim();
+        if (!text) return;
+
+        const messageId =
+          transcriptionSegmentIdMapRef.current.get(segment.id) ||
+          `ts-${participantId}-${segment.id}`;
+        transcriptionSegmentIdMapRef.current.set(segment.id, messageId);
+
+        setLatestEvent({ type: "transcription", text, isLocal });
+        upsertMessage({
+          id: messageId,
+          text,
+          isLocal,
+          type: "transcription",
+          isStreaming: !segment.final,
+        });
+
+        if (segment.final) {
+          transcriptionSegmentIdMapRef.current.delete(segment.id);
+        }
+      });
+    };
+
+    room.on(RoomEvent.TranscriptionReceived, handleTranscriptionReceived);
+    return () => {
+      room.off(RoomEvent.TranscriptionReceived, handleTranscriptionReceived);
+    };
+  }, [room, upsertMessage]);
 
   useEffect(() => {
-    if (chatMessages.length > 0) {
-      const msg = chatMessages[chatMessages.length - 1];
-      const isLocal = msg.from?.isLocal;
-      setLatestEvent({
-        type: "chat",
-        text: msg.message,
-        isLocal: !!isLocal,
-      });
-    }
+    if (chatMessages.length === 0) return;
+    const msg = chatMessages[chatMessages.length - 1];
+    const isLocal = !!msg.from?.isLocal;
+    const text = (msg.message || "").trim();
+    if (!text) return;
+    const id = `chat-${(msg as { id?: string }).id || Date.now()}`;
+    setLatestEvent({ type: "chat", text, isLocal });
+    setMessages((prev) => {
+      if (prev.some((m) => m.id === id)) return prev;
+      return [...prev, { id, text, isLocal, type: "chat" }];
+    });
   }, [chatMessages]);
 
   const getFieldIcon = (type: string) => {
@@ -702,6 +762,8 @@ const handleClose = async () => {
     setTranscripts("");
     setExpanded(false);
     setLatestEvent(null);
+    setMessages([]);
+    transcriptionSegmentIdMapRef.current.clear();
     wasConnectedRef.current = false;
 
     localStorage.removeItem("callId");
@@ -879,16 +941,19 @@ if (domainStatus !== "active") return null;
               color: "#374151",
             }}
           >
-            {latestEvent ? (
-              <div
-                className={`flex flex-col mb-2 ${latestEvent.isLocal ? "items-end" : "items-start"}`}
-              >
+            {messages.length > 0 ? (
+              messages.map((msg) => (
                 <div
-                  className={`px-3 py-2 rounded-lg max-w-[85%] ${latestEvent.isLocal ? "bg-blue-100 text-black" : " text-black"}`}
+                  key={msg.id}
+                  className={`flex mb-2 ${msg.isLocal ? "justify-end" : "justify-start"}`}
                 >
-                  {latestEvent.text}
+                  <div
+                    className={`px-3 py-2 rounded-lg max-w-[85%] text-sm ${msg.isLocal ? "bg-blue-100 text-black" : "bg-gray-100 text-black"}`}
+                  >
+                    {msg.text}
+                  </div>
                 </div>
-              </div>
+              ))
             ) : (
               <div className="text-gray-400 italic text-center mt-4">
                 {isRecording
@@ -1238,22 +1303,19 @@ if (domainStatus !== "active") return null;
                       ref={containerRef}
                       className="transcript-box rounded-lg p-4 h-32 overflow-y-auto text-sm"
                     >
-                      {latestEvent ? (
-                        <div
-                          className={`flex flex-col ${latestEvent.type === "chat" && latestEvent.isLocal ? "items-end" : "items-start"}`}
-                        >
-                          {latestEvent.type === "chat" ? (
+                      {messages.length > 0 ? (
+                        messages.map((msg) => (
+                          <div
+                            key={msg.id}
+                            className={`flex mb-1 ${msg.isLocal ? "justify-end" : "justify-start"}`}
+                          >
                             <div
-                              className={`px-2 py-1 rounded-lg text-[11px] max-w-[80%] ${latestEvent.isLocal ? "bg-blue-600/30 text-black" : "bg-yellow-600/30 text-black"}`}
+                              className={`px-2 py-1 rounded-lg text-[11px] max-w-[80%] ${msg.isLocal ? "bg-blue-600/30 text-black" : "bg-gray-200 text-black"}`}
                             >
-                              {latestEvent.text}
+                              {msg.text}
                             </div>
-                          ) : (
-                            <span className="text-[11px] leading-tight text-black">
-                              {latestEvent.text}
-                            </span>
-                          )}
-                        </div>
+                          </div>
+                        ))
                       ) : (
                         <div className="text-gray-400 italic">
                           Your conversation will appear here...
