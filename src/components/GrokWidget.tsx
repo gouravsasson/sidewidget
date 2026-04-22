@@ -1225,14 +1225,6 @@ if (domainStatus !== "active") return null;
                     {speech}
                   </div>
 
-                  {isRecording && (
-                    <div className="flex items-center mb-6">
-                      <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
-                      <span className="text-red-600 font-medium text-sm">
-                        LIVE
-                      </span>
-                    </div>
-                  )}
 
                   <div className="w-full px-4 mb-4">
                     <div

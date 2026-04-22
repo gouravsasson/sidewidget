@@ -60,7 +60,7 @@ export interface WidgetTheme {
 }
 
 const CustomWidget = () => {
-  const [widgetTheme, setWidgetTheme] = useState<WidgetTheme | null>(null);
+  const [widgetTheme, setWidgetTheme] = useState<WidgetTheme['widget_theme'] | null>(null);
   const countryCode = localStorage.getItem("countryCode");
   const continentcode = localStorage.getItem("continentcode");
   const [expanded, setExpanded] = useState(false);
@@ -973,7 +973,7 @@ const CustomWidget = () => {
                   <div className="px-6 py-4 flex-1">
                     <div
                       ref={containerRef}
-                      className="bg-white rounded-2xl p-4 h-32 text-gray-600 shadow-inner border overflow-y-auto text-sm transcript-box"
+                      className={`bg-white rounded-2xl p-4 text-gray-600 shadow-inner border overflow-y-auto text-sm transcript-box ${widgetTheme?.bot_show_chat ? "h-56" : "h-32"}`}
                       style={{
                         fontStyle: transcripts ? "normal" : "italic",
                         color: transcripts ? "#374151" : "#9CA3AF",

@@ -1069,7 +1069,7 @@ if (domainStatus !== "active") return null;
         @media (max-width: 640px) {
           .widget-container {
             width: 90vw !important;
-            height: ${widgetTheme?.bot_show_form && showform ? "80vh" : "85vh"} !important;
+            height: ${widgetTheme?.bot_show_form && showform ? "80vh" : tool === "whatsapp" ? "90vh" : "85vh"} !important;
           }
         }
         .transcript-box {
@@ -1104,6 +1104,8 @@ if (domainStatus !== "active") return null;
             height:
               widgetTheme?.bot_show_form && showform
                 ? "min(90vh, 550px)"
+                : tool === "whatsapp"
+                ? "min(90vh, 680px)"
                 : "min(90vh, 600px)",
             backgroundColor: widgetTheme?.is_transparent
               ? undefined
@@ -1256,7 +1258,7 @@ if (domainStatus !== "active") return null;
               <>
                 <div className="flex-1 flex flex-col items-center p-6 overflow-y-auto">
                   <button
-                    className="w-40 h-40 rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-lg mb-6 overflow-hidden"
+                    className={`${tool === "whatsapp" ? "w-28 h-28 mb-4" : "w-40 h-40 mb-6"} rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-lg overflow-hidden`}
                     style={{
                       backgroundColor:
                         widgetTheme?.bot_button_color || "#2563eb",
@@ -1289,15 +1291,6 @@ if (domainStatus !== "active") return null;
                     {speech}
                   </div>
 
-                  {isRecording && (
-                    <div className="flex items-center mb-6">
-                      <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
-                      <span className="text-red-600 font-medium text-sm">
-                        LIVE
-                      </span>
-                    </div>
-                  )}
-
                   <div className="w-full px-4 mb-4">
                     <div
                       className="text-sm font-medium mb-2"
@@ -1309,7 +1302,7 @@ if (domainStatus !== "active") return null;
                     </div>
                     <div
                       ref={containerRef}
-                      className="transcript-box rounded-lg p-4 h-32 overflow-y-auto text-sm"
+                      className={`transcript-box rounded-lg p-4 overflow-y-auto text-sm ${tool === "whatsapp" ? "h-56" : "h-32"}`}
                     >
                       {messages.length > 0 ? (
                         messages.map((msg) => (
