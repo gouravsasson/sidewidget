@@ -335,8 +335,8 @@ const EmpRetellaiAgent = ({
   // ── NEW: mic denied modal state ──
   const [showMicDeniedModal, setShowMicDeniedModal] = useState(false);
 
-  const baseUrl = "https://app.snowie.ai/api/create-room/";
-  const settingsBaseUrl = "https://app.snowie.ai";
+  const baseUrl = "https://jxczr0vz-80.inc1.devtunnels.ms/";
+  // const settingsBaseUrl = "https://app.snowie.ai";
 
   const capitalize = (s: string) =>
     s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
@@ -512,19 +512,54 @@ const EmpRetellaiAgent = ({
   useEffect(() => {
     localStorage.removeItem("callId");
     if (onlyOnce.current) return;
-    const getWidgetTheme = async () => {
-      try {
-        const response = await axios.get(
-          `${settingsBaseUrl}/api/thunder-widget-settings/${schema}/${agent_id}/?type=${agent_type === "thunderemotionlite" ? "thunder_emotion_lite" : "thunder_emotion"}`,
-        );
-        const data = response.data.response;
-        setWidgetTheme(data);
-        onlyOnce.current = true;
-      } catch (error) {
-        console.error("Failed to fetch widget theme:", error);
-      }
-    };
-    getWidgetTheme();
+    // const getWidgetTheme = async () => {
+    //   try {
+    //     const response = await axios.get(
+    //       `${settingsBaseUrl}/api/thunder-widget-settings/${schema}/${agent_id}/?type=${agent_type === "thunderemotionlite" ? "thunder_emotion_lite" : "thunder_emotion"}`,
+    //     );
+    //     const data = response.data.response;
+    //     setWidgetTheme(data);
+    //     onlyOnce.current = true;
+    //   } catch (error) {
+    //     console.error("Failed to fetch widget theme:", error);
+    //   }
+    // };
+    // getWidgetTheme();
+
+    // Hardcoded widget theme for testing
+    setWidgetTheme({
+      bot_auto_start: false,
+      bot_position: "bottom-right",
+      agent_mute: false,
+      widget_heading: "Talk to Riya",
+      bot_logo: null,
+      svg_logo: null,
+      bot_height: "600px",
+      bot_width: "400px",
+      bot_show_transcript: true,
+      bot_show_chat: true,
+      bot_mute_on_tab_change: false,
+      bot_mute_on_minimize: false,
+      bot_bubble_color: "#1a1a2e",
+      bot_background_color: "#ffffff",
+      bot_icon_color: "#ffffff",
+      bot_text_color: "#1f2937",
+      bot_border_color: "#e5e7eb",
+      bot_button_color: "#1a1a2e",
+      bot_button_text_color: "#ffffff",
+      bot_button_hover_color: "#16213e",
+      bot_status_bar_color: "#f3f4f6",
+      bot_status_bar_text_color: "#374151",
+      bot_animation_color: "#1a1a2e",
+      bot_name: "Riya - Emperium",
+      bot_show_form: false,
+      bot_tagline: "Talk to Riya",
+      is_glowing: true,
+      is_transparent: false,
+      widget_submit_btn_text: "Start Conversation",
+      custom_form_fields: [],
+    });
+    onlyOnce.current = true;
   }, []);
 
   useEffect(() => {
