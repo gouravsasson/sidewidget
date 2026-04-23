@@ -24,6 +24,8 @@ import {
   DataPacket_Kind,
   RemoteParticipant,
   RoomEvent,
+  RpcError,
+  RpcInvocationData,
   Track,
 } from "livekit-client";
 import axios from "axios";
@@ -258,6 +260,10 @@ const checkMicPermission = async (): Promise<PermissionState | null> => {
 };
 
 // ─────────────────────────────────────────────
+// User Details Modal Component
+// ─────────────────────────────────────────────
+
+// ─────────────────────────────────────────────
 // Main Component
 // ─────────────────────────────────────────────
 const EmpRetellaiAgent = ({
@@ -335,7 +341,8 @@ const EmpRetellaiAgent = ({
   // ── NEW: mic denied modal state ──
   const [showMicDeniedModal, setShowMicDeniedModal] = useState(false);
 
-  const baseUrl = "https://jxczr0vz-80.inc1.devtunnels.ms/";
+  const base ="https://jxczr0vz-80.inc1.devtunnels.ms/api/v1/";
+  const baseUrl = "https://jxczr0vz-80.inc1.devtunnels.ms/api/v1/calling/create-call";
   // const settingsBaseUrl = "https://app.snowie.ai";
 
   const capitalize = (s: string) =>
@@ -622,6 +629,72 @@ useEffect(() => {
   }
 }, [widgetTheme?.bot_auto_start, status]);
 
+  const registeredToolsRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    const toolsUrl = "https://jxczr0vz-80.inc1.devtunnels.ms/api/v1/tools";
+    const apiKey = "ak_9cc8d2fd68fe840fd44412a37d6273e98a67d69e229d925def1f98defce198ff";
+
+    // Dynamic handler builder — matches tool by name pattern, falls back to a no-op
+    const buildHandler = (toolName: string): ((data: RpcInvocationData) => Promise<string>) => {
+      if (toolName.includes("location")) {
+        return async (data) => {
+          const params = JSON.parse(data.payload || "{}");
+          console.log(`[${toolName}] params:`, params);
+          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              enableHighAccuracy: params.high_accuracy ?? false,
+              timeout: data.responseTimeout,
+            });
+          });
+          return JSON.stringify({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+        };
+      }
+
+      // Default: log invocation and return empty object
+      return async (data) => {
+        console.log(`[${toolName}] invoked, payload:`, data.payload);
+        return JSON.stringify({});
+      };
+    };
+
+    const registerClientTools = async () => {
+      try {
+        const res = await axios.get(toolsUrl, {
+          headers: { "X-Api-Key": apiKey },
+          params: { limit: 100, offset: 0, agent_id: agent_id },
+        });
+
+        const tools: Array<{ name: string; type: string }> = res.data.data ?? [];
+        const clientTools = tools.filter((t) => t.type === "client");
+        console.log(`[registerClientTools] found ${clientTools.length} client tools:`, clientTools.map((t) => t.name));
+
+        for (const clientTool of clientTools) {
+          if (registeredToolsRef.current.has(clientTool.name)) continue;
+
+          const handler = buildHandler(clientTool.name);
+          room.localParticipant.registerRpcMethod(clientTool.name, async (data: RpcInvocationData) => {
+            try {
+              return await handler(data);
+            } catch (err) {
+              console.error(`[${clientTool.name}] handler error:`, err);
+              throw new RpcError(1, `Tool ${clientTool.name} failed`);
+            }
+          });
+          registeredToolsRef.current.add(clientTool.name);
+          console.log(`[registerClientTools] registered: ${clientTool.name}`);
+        }
+      } catch (err) {
+        console.error("Failed to fetch/register client tools:", err);
+      }
+    };
+
+    registerClientTools();
+  }, [room.localParticipant, agent_id]);
+
   useEffect(() => {
     const transcriptEmitter = transcriptEmitterRef.current;
 
@@ -816,14 +889,25 @@ const handleClose = async () => {
         return;
       }
 
-      const res = await axios.post(`${baseUrl}`, payload);
-      const decryptedPayload = res.data.response;
-      const accessToken = decryptedPayload.token;
+      const res = await axios.post(`${baseUrl}`,{
+        agent_id:"019da353-fed1-73ae-bb3b-d2276836adc6",
+        metadata: {},
+        prompt_dynamic_variables: {},
+        type: "web_call"
+      },{
+        headers:{
+          "X-Api-Key": "ak_9cc8d2fd68fe840fd44412a37d6273e98a67d69e229d925def1f98defce198ff"
+        }
+      });
+      console.log("API response:", res);
+      const decryptedPayload = res.data.data;
+      console.log(decryptedPayload);
+      const accessToken = decryptedPayload.access_token;
       const callId =
         decryptedPayload.call_id || decryptedPayload.room_id || "active";
       localStorage.setItem("callId", callId);
 
-      await room.connect(serverUrl, accessToken);
+      await room.connect(decryptedPayload.url, accessToken);
       await room.startAudio();
 
       const audioTrack = await requestMicAccess();
