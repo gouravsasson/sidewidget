@@ -10,6 +10,8 @@ import {
   Volume2,
   VolumeX,
   MicOff,
+  Download,
+  FileText,
 } from "lucide-react";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
@@ -37,8 +39,8 @@ export interface WidgetTheme {
   widget_heading: string;
   bot_logo: string | null;
   svg_logo: string | null;
-  bot_height: string;
-  bot_width: string;
+  bot_height: string | null;
+  bot_width: string | null;
   bot_show_transcript: boolean;
   bot_show_chat: boolean;
   bot_mute_on_tab_change: boolean;
@@ -53,7 +55,7 @@ export interface WidgetTheme {
   bot_button_hover_color: string;
   bot_status_bar_color: string;
   bot_status_bar_text_color: string;
-  bot_animation_color: string;
+  bot_animation_color: string | null;
   bot_name: string;
   bot_show_form: boolean;
   bot_tagline: string;
@@ -316,8 +318,9 @@ const EmpRetellaiAgent = ({
       id: string;
       text: string;
       isLocal: boolean;
-      type: "transcription" | "chat";
+      type: "transcription" | "chat" | "brochure";
       isStreaming?: boolean;
+      brochure?: { name: string; url: string };
     }>
   >([]);
   const transcriptionSegmentIdMapRef = useRef<Map<string, string>>(new Map());
@@ -341,7 +344,6 @@ const EmpRetellaiAgent = ({
   // ── NEW: mic denied modal state ──
   const [showMicDeniedModal, setShowMicDeniedModal] = useState(false);
 
-  const base ="https://jxczr0vz-80.inc1.devtunnels.ms/api/v1/";
   const baseUrl = "https://jxczr0vz-80.inc1.devtunnels.ms/api/v1/calling/create-call";
   // const settingsBaseUrl = "https://app.snowie.ai";
 
@@ -425,8 +427,9 @@ const EmpRetellaiAgent = ({
       id: string;
       text: string;
       isLocal: boolean;
-      type: "transcription" | "chat";
+      type: "transcription" | "chat" | "brochure";
       isStreaming?: boolean;
+      brochure?: { name: string; url: string };
     }) => {
       setMessages((prev) => {
         const idx = prev.findIndex((m) => m.id === msg.id);
@@ -535,36 +538,40 @@ const EmpRetellaiAgent = ({
 
     // Hardcoded widget theme for testing
     setWidgetTheme({
-      bot_auto_start: false,
-      bot_position: "bottom-right",
-      agent_mute: false,
-      widget_heading: "Talk to Riya",
-      bot_logo: null,
-      svg_logo: null,
-      bot_height: "600px",
-      bot_width: "400px",
-      bot_show_transcript: true,
-      bot_show_chat: true,
-      bot_mute_on_tab_change: false,
-      bot_mute_on_minimize: false,
-      bot_bubble_color: "#1a1a2e",
-      bot_background_color: "#ffffff",
-      bot_icon_color: "#ffffff",
-      bot_text_color: "#1f2937",
-      bot_border_color: "#e5e7eb",
-      bot_button_color: "#1a1a2e",
-      bot_button_text_color: "#ffffff",
-      bot_button_hover_color: "#16213e",
-      bot_status_bar_color: "#f3f4f6",
-      bot_status_bar_text_color: "#374151",
-      bot_animation_color: "#1a1a2e",
-      bot_name: "Riya - Emperium",
-      bot_show_form: false,
-      bot_tagline: "Talk to Riya",
-      is_glowing: true,
-      is_transparent: false,
-      widget_submit_btn_text: "Start Conversation",
-      custom_form_fields: [],
+        id: 7,
+        bot_name: "Emperium",
+        bot_auto_start: false,
+        bot_position: "bottom-right",
+        bot_logo: "https://snowie.s3.amazonaws.com/media/bot_logo/Minimalist_Circle_Monogram_Brand_Logo_2.jpg",
+        svg_logo: null,
+        bot_height: null,
+        bot_width: null,
+        bot_show_transcript: true,
+        bot_show_chat: true,
+        bot_mute_on_tab_change: true,
+        bot_mute_on_minimize: true,
+        bot_bubble_color: "#000813",
+        bot_background_color: "#f3e8ff",
+        bot_icon_color: "#bd8c34",
+        bot_text_color: "#d49f3c",
+        bot_border_color: "#03060f",
+        bot_button_color: "#760e00",
+        bot_button_text_color: "#e8b04a",
+        bot_button_hover_color: "#040c18",
+        bot_status_bar_color: "#040c18",
+        bot_status_bar_text_color: "#d49f3c",
+        bot_animation_color: null,
+        bot_show_form: false,
+        bot_tagline: "Talk to Riya",
+        widget_submit_btn_text: "Submit",
+        is_glowing: true,
+        is_transparent: true,
+        agent_mute: true,
+        widget_heading: "Enter Your Details",
+        custom_form_fields: [],
+        post_call_analysis_tags: null,
+        created_at: "2026-04-08T18:09:44.265678+05:30",
+        updated_at: "2026-04-22T17:06:52.982628+05:30"
     });
     onlyOnce.current = true;
   }, []);
@@ -618,7 +625,7 @@ const EmpRetellaiAgent = ({
 
 useEffect(() => {
   if (!widgetTheme?.bot_auto_start) return;
-  if (manualDisconnectRef.current) return;   // ⭐ STOP LOOP
+  if (manualDisconnectRef.current) return;   
 
   const callId = localStorage.getItem("callId");
 
@@ -630,13 +637,55 @@ useEffect(() => {
 }, [widgetTheme?.bot_auto_start, status]);
 
   const registeredToolsRef = useRef<Set<string>>(new Set());
+  const handlerMapRef = useRef<Record<string, (data: RpcInvocationData) => Promise<string>>>({});
 
   useEffect(() => {
+    // Clear on each run so handler logic updates are picked up
+    registeredToolsRef.current.clear();
+
     const toolsUrl = "https://jxczr0vz-80.inc1.devtunnels.ms/api/v1/tools";
     const apiKey = "ak_9cc8d2fd68fe840fd44412a37d6273e98a67d69e229d925def1f98defce198ff";
 
+    const BROCHURES: Array<{ project_name: string; name: string; url: string }> = [
+      { project_name: "emperium_casa_villas", name: "EMPERIUM CASA VILLAS BROCHURE (1).pdf", url: "https://drive.google.com/file/d/110xpDypyX7LKzDT4oJmLHdZcZI8_Twur/view?usp=drive_link" },
+      { project_name: "emperium_city", name: "Emperium City brochure.pdf", url: "https://drive.google.com/file/d/19EUnAgTuE26iMrPvalj_Q7oxSIBF-ZEo/view?usp=drive_link" },
+      { project_name: "emperium_city_sco", name: "Emperium City SCO Brochure.jpeg", url: "https://drive.google.com/file/d/1RvihtodSNpmzJcgPQWh62SiMj3n_VKyQ/view?usp=drive_link" },
+      { project_name: "emperium_palm_drive", name: "Emperium Palm Drive Brochure.pdf", url: "https://drive.google.com/file/d/1QqvvlcqRQtMxkoURflLUTufvszw_OUVD/view?usp=drive_link" },
+      { project_name: "emperium_premio", name: "Emperium Premio Brochure.pdf", url: "https://drive.google.com/file/d/1ngeMJf38uA6vKpcydgVHHGeOrad6gB_m/view?usp=drive_link" },
+      { project_name: "emperium_supreme_panipat", name: "Emperium Supreme Brochure.pdf", url: "https://drive.google.com/file/d/10POOBsbXFbS6sSoBSVxA8RsasmIhsGgq/view?usp=drive_link" },
+      { project_name: "emperium_titan", name: "Emperium Titan Brochure.pdf", url: "https://drive.google.com/file/d/1lGuTieCLENEXLonVbv-mVRLcZ8JpKB_R/view?usp=drive_link" },
+      { project_name: "emperium_happy_homes", name: "Emperium-Happy-Homes-Brochure (1).pdf", url: "https://drive.google.com/file/d/1JE_RGdRHPIjHmecjPrWIUeE6Da4975KX/view?usp=drive_link" },
+      { project_name: "emperium_palm_villas", name: "Emperium-Palm-Villas-Brochure (1).pdf", url: "https://drive.google.com/file/d/1WzTUi7NXcyyxIg8rJ9_1exYlXKmQujfF/view?usp=drive_link" },
+      { project_name: "emperium_palm_drive_sco", name: "Palm Drive SCO (1).pdf", url: "https://drive.google.com/file/d/1nOQ6hLfq9pIh_Nla0C6MqmF4-cjI5bQO/view?usp=drive_link" },
+      { project_name: "emperium_prime_residences", name: "Prime Residences Brochure.pdf", url: "https://drive.google.com/file/d/1KQvmO4zoHTqjdeSar-KVo3_qZIK_txiu/view?usp=drive_link" },
+      { project_name: "emperium_resortico", name: "Resortico Brouchure Rera.pdf", url: "https://drive.google.com/file/d/1K_qMciKPr0ntKYHlaVEaDY5GkbrV2pjy/view?usp=drive_link" },
+      { project_name: "emperium_resortico_villas", name: "Resortico Villa Brochure.pdf", url: "https://drive.google.com/file/d/1WVcq5aiyqTne1RcbbOYWI6K6bfnsKM6W/view?usp=drive_link" },
+    ];
+
     // Dynamic handler builder — matches tool by name pattern, falls back to a no-op
     const buildHandler = (toolName: string): ((data: RpcInvocationData) => Promise<string>) => {
+      if (toolName === "get_brochure") {
+        return async (data) => {
+          const params = JSON.parse(data.payload || "{}");
+          const projectName: string = params.project_name || "";
+          const match = BROCHURES.find((b) => b.project_name === projectName);
+          if (match) {
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: `brochure-${Date.now()}`,
+                text: match.name,
+                isLocal: false,
+                type: "brochure",
+                brochure: { name: match.name, url: match.url },
+              },
+            ]);
+            return JSON.stringify({ success: true, name: match.name, url: match.url });
+          }
+          return JSON.stringify({ success: false, message: "Brochure not found" });
+        };
+      }
+
       if (toolName.includes("location")) {
         return async (data) => {
           const params = JSON.parse(data.payload || "{}");
@@ -665,7 +714,7 @@ useEffect(() => {
       try {
         const res = await axios.get(toolsUrl, {
           headers: { "X-Api-Key": apiKey },
-          params: { limit: 100, offset: 0, agent_id: agent_id },
+          params: { limit: 100, offset: 0, agent_id: "019da353-fed1-73ae-bb3b-d2276836adc6" },
         });
 
         const tools: Array<{ name: string; type: string }> = res.data.data ?? [];
@@ -673,19 +722,22 @@ useEffect(() => {
         console.log(`[registerClientTools] found ${clientTools.length} client tools:`, clientTools.map((t) => t.name));
 
         for (const clientTool of clientTools) {
-          if (registeredToolsRef.current.has(clientTool.name)) continue;
-
           const handler = buildHandler(clientTool.name);
-          room.localParticipant.registerRpcMethod(clientTool.name, async (data: RpcInvocationData) => {
-            try {
-              return await handler(data);
-            } catch (err) {
-              console.error(`[${clientTool.name}] handler error:`, err);
-              throw new RpcError(1, `Tool ${clientTool.name} failed`);
-            }
-          });
-          registeredToolsRef.current.add(clientTool.name);
-          console.log(`[registerClientTools] registered: ${clientTool.name}`);
+          if (!registeredToolsRef.current.has(clientTool.name)) {
+            room.localParticipant.registerRpcMethod(clientTool.name, async (data: RpcInvocationData) => {
+              try {
+                // Read handler from ref so logic updates are picked up without re-registering
+                return await handlerMapRef.current[clientTool.name]?.(data) ?? JSON.stringify({});
+              } catch (err) {
+                console.error(`[${clientTool.name}] handler error:`, err);
+                throw new RpcError(1, `Tool ${clientTool.name} failed`);
+              }
+            });
+            registeredToolsRef.current.add(clientTool.name);
+            console.log(`[registerClientTools] registered: ${clientTool.name}`);
+          }
+          // Always update the live handler so RPC calls use the latest logic
+          handlerMapRef.current[clientTool.name] = handler;
         }
       } catch (err) {
         console.error("Failed to fetch/register client tools:", err);
@@ -1069,18 +1121,38 @@ if (domainStatus !== "active") return null;
             }}
           >
             {messages.length > 0 ? (
-              messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`flex mb-2 ${msg.isLocal ? "justify-end" : "justify-start"}`}
-                >
-                  <div
-                    className={`px-3 py-2 rounded-lg max-w-[85%] text-sm ${msg.isLocal ? "bg-blue-100 text-black" : "bg-gray-100 text-black"}`}
-                  >
-                    {msg.text}
+              messages.map((msg) =>
+                msg.type === "brochure" && msg.brochure ? (
+                  <div key={msg.id} className="flex mb-2 justify-start">
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg max-w-[85%] bg-gray-100 text-black text-sm border border-gray-200">
+                      <FileText className="w-4 h-4 flex-shrink-0 text-red-500" />
+                      <span className="truncate flex-1">{msg.brochure.name}</span>
+                      <a
+                        href={msg.brochure.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        download
+                        className="flex items-center gap-1 px-2 py-1 rounded-md text-white text-xs font-medium flex-shrink-0"
+                        style={{ backgroundColor: colors?.buttonColor || "#1a1a2e" }}
+                      >
+                        <Download className="w-3 h-3" />
+                        Download
+                      </a>
+                    </div>
                   </div>
-                </div>
-              ))
+                ) : (
+                  <div
+                    key={msg.id}
+                    className={`flex mb-2 ${msg.isLocal ? "justify-end" : "justify-start"}`}
+                  >
+                    <div
+                      className={`px-3 py-2 rounded-lg max-w-[85%] text-sm ${msg.isLocal ? "bg-blue-100 text-black" : "bg-gray-100 text-black"}`}
+                    >
+                      {msg.text}
+                    </div>
+                  </div>
+                )
+              )
             ) : (
               <div className="text-gray-400 italic text-center mt-4">
                 {isRecording
@@ -1212,6 +1284,9 @@ if (domainStatus !== "active") return null;
         .transparent-widget .chat-input {
           background: white !important;
           color: #374151 !important;
+        }
+        .brochure-download-btn {
+          background-color: ${widgetTheme?.bot_button_color || "#1a1a2e"};
         }
       `}</style>
 
@@ -1424,18 +1499,37 @@ if (domainStatus !== "active") return null;
                       className={`transcript-box rounded-lg p-4 overflow-y-auto text-sm ${tool === "whatsapp" ? "h-56" : "h-32"}`}
                     >
                       {messages.length > 0 ? (
-                        messages.map((msg) => (
-                          <div
-                            key={msg.id}
-                            className={`flex mb-1 ${msg.isLocal ? "justify-end" : "justify-start"}`}
-                          >
-                            <div
-                              className={`px-2 py-1 rounded-lg text-[11px] max-w-[80%] ${msg.isLocal ? "bg-blue-600/30 text-black" : "bg-gray-200 text-black"}`}
-                            >
-                              {msg.text}
+                        messages.map((msg) =>
+                          msg.type === "brochure" && msg.brochure ? (
+                            <div key={msg.id} className="flex mb-1 justify-start">
+                              <div className="flex items-center gap-2 px-2 py-1 rounded-lg text-[11px] max-w-[90%] bg-gray-200 text-black border border-gray-300">
+                                <FileText className="w-3 h-3 flex-shrink-0 text-red-500" />
+                                <span className="truncate flex-1">{msg.brochure.name}</span>
+                                <a
+                                  href={msg.brochure.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  download
+                                  className="brochure-download-btn flex items-center gap-1 px-2 py-0.5 rounded text-white text-[10px] font-medium flex-shrink-0"
+                                >
+                                  <Download className="w-2.5 h-2.5" />
+                                  Download
+                                </a>
+                              </div>
                             </div>
-                          </div>
-                        ))
+                          ) : (
+                            <div
+                              key={msg.id}
+                              className={`flex mb-1 ${msg.isLocal ? "justify-end" : "justify-start"}`}
+                            >
+                              <div
+                                className={`px-2 py-1 rounded-lg text-[11px] max-w-[80%] ${msg.isLocal ? "bg-blue-600/30 text-black" : "bg-gray-200 text-black"}`}
+                              >
+                                {msg.text}
+                              </div>
+                            </div>
+                          )
+                        )
                       ) : (
                         <div className="text-gray-400 italic">
                           Your conversation will appear here...
