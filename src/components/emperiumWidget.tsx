@@ -644,7 +644,7 @@ useEffect(() => {
     registeredToolsRef.current.clear();
 
     const toolsUrl = "https://api.ravan.ai/api/v1/tools";
-    const apiKey = "ak_9cc8d2fd68fe840fd44412a37d6273e98a67d69e229d925def1f98defce198ff";
+    const apiKey = "ak_272f3c75fbab14ca9eb122905111bf14c966b6c9d3d455664e7ab1b01406ab06";
 
     const BROCHURES: Array<{ project_name: string; name: string; url: string }> = [
       { project_name: "emperium_casa_villas", name: "EMPERIUM CASA VILLAS BROCHURE (1).pdf", url: "https://drive.google.com/file/d/110xpDypyX7LKzDT4oJmLHdZcZI8_Twur/view?usp=drive_link" },
@@ -714,7 +714,7 @@ useEffect(() => {
       try {
         const res = await axios.get(toolsUrl, {
           headers: { "X-Api-Key": apiKey },
-          params: { limit: 100, offset: 0, agent_id: "019da353-fed1-73ae-bb3b-d2276836adc6" },
+          params: { limit: 100, offset: 0, agent_id: "019db4d9-c997-771a-8fc6-2d3d1dae2ff0" },
         });
 
         const tools: Array<{ name: string; type: string }> = res.data.data ?? [];
@@ -942,13 +942,13 @@ const handleClose = async () => {
       }
 
       const res = await axios.post(`${baseUrl}`,{
-        agent_id:"019da353-fed1-73ae-bb3b-d2276836adc6",
+        agent_id:"019db4d9-c997-771a-8fc6-2d3d1dae2ff0",
         metadata: {},
         prompt_dynamic_variables: {},
         type: "web_call"
       },{
         headers:{
-          "X-Api-Key": "ak_9cc8d2fd68fe840fd44412a37d6273e98a67d69e229d925def1f98defce198ff"
+          "X-Api-Key": "ak_272f3c75fbab14ca9eb122905111bf14c966b6c9d3d455664e7ab1b01406ab06"
         }
       });
       console.log("API response:", res);
