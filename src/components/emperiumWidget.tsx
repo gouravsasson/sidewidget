@@ -344,7 +344,7 @@ const EmpRetellaiAgent = ({
   // ── NEW: mic denied modal state ──
   const [showMicDeniedModal, setShowMicDeniedModal] = useState(false);
 
-  const baseUrl = "https://jxczr0vz-80.inc1.devtunnels.ms/api/v1/calling/create-call";
+  const baseUrl = "https://api.ravan.ai/api/v1/calling/create-call";
   // const settingsBaseUrl = "https://app.snowie.ai";
 
   const capitalize = (s: string) =>
@@ -643,7 +643,7 @@ useEffect(() => {
     // Clear on each run so handler logic updates are picked up
     registeredToolsRef.current.clear();
 
-    const toolsUrl = "https://jxczr0vz-80.inc1.devtunnels.ms/api/v1/tools";
+    const toolsUrl = "https://api.ravan.ai/api/v1/tools";
     const apiKey = "ak_9cc8d2fd68fe840fd44412a37d6273e98a67d69e229d925def1f98defce198ff";
 
     const BROCHURES: Array<{ project_name: string; name: string; url: string }> = [
