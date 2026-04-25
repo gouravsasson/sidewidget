@@ -644,7 +644,6 @@ useEffect(() => {
     registeredToolsRef.current.clear();
 
     const toolsUrl = "https://api.ravan.ai/api/v1/tools";
-    const apiKey = "ak_272f3c75fbab14ca9eb122905111bf14c966b6c9d3d455664e7ab1b01406ab06";
 
     const BROCHURES: Array<{ project_name: string; name: string; url: string }> = [
       { project_name: "emperium_casa_villas", name: "EMPERIUM CASA VILLAS BROCHURE (1).pdf", url: "https://drive.google.com/file/d/110xpDypyX7LKzDT4oJmLHdZcZI8_Twur/view?usp=drive_link" },
@@ -712,6 +711,12 @@ useEffect(() => {
 
     const registerClientTools = async () => {
       let agni_agent_id2 = agni_agent_id || "019db4d9-c997-771a-8fc6-2d3d1dae2ff0";
+      let apiKey = "";
+      if (!agni_agent_id) {
+        apiKey = "ak_4c3101cbcf7ceaebf2c461b405ed7cd025d50a202915ab28e79c1c50e3caf5d2";
+      } else {
+        apiKey = "ak_a579c7540418ffa23147b97a01d984d21a023319cf51aad5c0950da3f26cb965";
+      }
       try {
         const res = await axios.get(toolsUrl, {
           headers: { "X-Api-Key": apiKey },
@@ -935,6 +940,12 @@ const handleClose = async () => {
   // ── UPDATED: doStart uses requestMicAccess ──
   const doStart = async (payload: Record<string, unknown>) => {
     let agni_agent_id2 = agni_agent_id || "019db4d9-c997-771a-8fc6-2d3d1dae2ff0";
+    let apiKey = "";
+      if (!agni_agent_id) {
+        apiKey = "ak_4c3101cbcf7ceaebf2c461b405ed7cd025d50a202915ab28e79c1c50e3caf5d2";
+      } else {
+        apiKey = "ak_a579c7540418ffa23147b97a01d984d21a023319cf51aad5c0950da3f26cb965";
+      }
     try {
       // Check mic permission BEFORE making the API call
       const permState = await checkMicPermission();
@@ -950,7 +961,7 @@ const handleClose = async () => {
         type: "web_call"
       },{
         headers:{
-          "X-Api-Key": "ak_272f3c75fbab14ca9eb122905111bf14c966b6c9d3d455664e7ab1b01406ab06"
+          "X-Api-Key": apiKey
         }
       });
       console.log("API response:", res);
