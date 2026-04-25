@@ -5,6 +5,7 @@ type WidgetContextType = {
   schema: string;
   type: string;
   tool: string;
+  agni_agent_id: string;
 };
 
 const WidgetContext = createContext<WidgetContextType | undefined>(undefined);
@@ -23,6 +24,7 @@ type WidgetProviderProps = {
   schema: string;
   type: string;
   tool: string;
+  agni_agent_id: string;
 };
 
 export const WidgetProvider: React.FC<WidgetProviderProps> = ({
@@ -31,9 +33,10 @@ export const WidgetProvider: React.FC<WidgetProviderProps> = ({
   schema,
   type,
   tool,
+  agni_agent_id,
 }) => {
   return (
-    <WidgetContext.Provider value={{ agent_id, schema, type, tool }}>
+    <WidgetContext.Provider value={{ agent_id, schema, type, tool, agni_agent_id }}>
       {children}
     </WidgetContext.Provider>
   );

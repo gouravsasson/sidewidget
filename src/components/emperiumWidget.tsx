@@ -276,7 +276,7 @@ const EmpRetellaiAgent = ({
 }: RetellaiAgentProps) => {
   const decoder = new TextDecoder();
   const containerRef = useRef<HTMLDivElement>(null);
-  const { agent_id, schema, type: agent_type, tool } = useWidgetContext();
+  const { agent_id, schema, type: agent_type, tool, agni_agent_id } = useWidgetContext();
   const [widgetTheme, setWidgetTheme] = useState<WidgetTheme | null>(null);
   const onlyOnce = useRef(false);
   const [expanded, setExpanded] = useState(false);
@@ -711,10 +711,11 @@ useEffect(() => {
     };
 
     const registerClientTools = async () => {
+      let agni_agent_id2 = agni_agent_id || "019db4d9-c997-771a-8fc6-2d3d1dae2ff0";
       try {
         const res = await axios.get(toolsUrl, {
           headers: { "X-Api-Key": apiKey },
-          params: { limit: 100, offset: 0, agent_id: "019db4d9-c997-771a-8fc6-2d3d1dae2ff0" },
+          params: { limit: 100, offset: 0, agent_id: agni_agent_id2 },
         });
 
         const tools: Array<{ name: string; type: string }> = res.data.data ?? [];
@@ -933,6 +934,7 @@ const handleClose = async () => {
 };
   // ── UPDATED: doStart uses requestMicAccess ──
   const doStart = async (payload: Record<string, unknown>) => {
+    let agni_agent_id2 = agni_agent_id || "019db4d9-c997-771a-8fc6-2d3d1dae2ff0";
     try {
       // Check mic permission BEFORE making the API call
       const permState = await checkMicPermission();
@@ -942,7 +944,7 @@ const handleClose = async () => {
       }
 
       const res = await axios.post(`${baseUrl}`,{
-        agent_id:"019db4d9-c997-771a-8fc6-2d3d1dae2ff0",
+        agent_id: agni_agent_id2,  
         metadata: {},
         prompt_dynamic_variables: {},
         type: "web_call"

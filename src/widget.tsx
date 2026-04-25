@@ -26,11 +26,12 @@ class ReactWidget extends HTMLElement {
     const agent_id = this.getAttribute("agent_id") || "";
     const schema = this.getAttribute("schema") || "";
     const type = this.getAttribute("type") || "";
+    const agni_agent_id = this.getAttribute("agni_agent_id") || "";
     const tool = this.getAttribute("tool") || "";
     this.root = ReactDOM.createRoot(container);
     this.root.render(
       <React.StrictMode>
-        <WidgetProvider agent_id={agent_id} schema={schema} type={type} tool={tool}>
+        <WidgetProvider agent_id={agent_id} schema={schema} type={type} tool={tool} agni_agent_id={agni_agent_id}>
           <App />
         </WidgetProvider>
       </React.StrictMode>
