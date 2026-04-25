@@ -345,7 +345,7 @@ const EmpRetellaiAgent = ({
   const [showMicDeniedModal, setShowMicDeniedModal] = useState(false);
 
   const baseUrl = "https://api.ravan.ai/api/v1/calling/create-call";
-  // const settingsBaseUrl = "https://app.snowie.ai";
+  const settingsBaseUrl = "https://app.snowie.ai";
 
   const capitalize = (s: string) =>
     s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
@@ -522,58 +522,22 @@ const EmpRetellaiAgent = ({
   useEffect(() => {
     localStorage.removeItem("callId");
     if (onlyOnce.current) return;
-    // const getWidgetTheme = async () => {
-    //   try {
-    //     const response = await axios.get(
-    //       `${settingsBaseUrl}/api/thunder-widget-settings/${schema}/${agent_id}/?type=${agent_type === "thunderemotionlite" ? "thunder_emotion_lite" : "thunder_emotion"}`,
-    //     );
-    //     const data = response.data.response;
-    //     setWidgetTheme(data);
-    //     onlyOnce.current = true;
-    //   } catch (error) {
-    //     console.error("Failed to fetch widget theme:", error);
-    //   }
-    // };
-    // getWidgetTheme();
-
-    // Hardcoded widget theme for testing
-    setWidgetTheme({
-        id: 7,
-        bot_name: "Emperium",
-        bot_auto_start: false,
-        bot_position: "bottom-right",
-        bot_logo: "https://snowie.s3.amazonaws.com/media/bot_logo/Minimalist_Circle_Monogram_Brand_Logo_2.jpg",
-        svg_logo: null,
-        bot_height: null,
-        bot_width: null,
-        bot_show_transcript: true,
-        bot_show_chat: true,
-        bot_mute_on_tab_change: true,
-        bot_mute_on_minimize: true,
-        bot_bubble_color: "#000813",
-        bot_background_color: "#f3e8ff",
-        bot_icon_color: "#bd8c34",
-        bot_text_color: "#d49f3c",
-        bot_border_color: "#03060f",
-        bot_button_color: "#760e00",
-        bot_button_text_color: "#e8b04a",
-        bot_button_hover_color: "#040c18",
-        bot_status_bar_color: "#040c18",
-        bot_status_bar_text_color: "#d49f3c",
-        bot_animation_color: null,
-        bot_show_form: false,
-        bot_tagline: "Talk to Riya",
-        widget_submit_btn_text: "Submit",
-        is_glowing: true,
-        is_transparent: true,
-        agent_mute: true,
-        widget_heading: "Enter Your Details",
-        custom_form_fields: [],
-        post_call_analysis_tags: null,
-        created_at: "2026-04-08T18:09:44.265678+05:30",
-        updated_at: "2026-04-22T17:06:52.982628+05:30"
-    });
-    onlyOnce.current = true;
+    const getWidgetTheme = async () => {
+      try {
+        console.log("hello 2222 ")
+        const response = await axios.get(
+          `${settingsBaseUrl}/api/thunder-widget-settings/${schema}/${agent_id}/?type=${agent_type === "thunderemotionlite" ? "thunder_emotion_lite" : "thunder_emotion"}`,
+        );
+        console.log(response);
+        const data = response.data.response;
+        console.log(data)
+        setWidgetTheme(data);
+        onlyOnce.current = true;
+      } catch (error) {
+        console.error("Failed to fetch widget theme:", error);
+      }
+    };
+    getWidgetTheme();
   }, []);
 
   useEffect(() => {
@@ -659,6 +623,7 @@ useEffect(() => {
       { project_name: "emperium_prime_residences", name: "Prime Residences Brochure.pdf", url: "https://drive.google.com/file/d/1KQvmO4zoHTqjdeSar-KVo3_qZIK_txiu/view?usp=drive_link" },
       { project_name: "emperium_resortico", name: "Resortico Brouchure Rera.pdf", url: "https://drive.google.com/file/d/1K_qMciKPr0ntKYHlaVEaDY5GkbrV2pjy/view?usp=drive_link" },
       { project_name: "emperium_resortico_villas", name: "Resortico Villa Brochure.pdf", url: "https://drive.google.com/file/d/1WVcq5aiyqTne1RcbbOYWI6K6bfnsKM6W/view?usp=drive_link" },
+      { project_name: "marlin_avana", name: "Marlin Avana Brochure.pdf", url: "https://assets.cdn.filesafe.space/KUu5UkTcHdHgg0RsAb37/media/69ecd79e717d5dd4e1e3de8d.pdf" },
     ];
 
     // Dynamic handler builder — matches tool by name pattern, falls back to a no-op
@@ -666,6 +631,7 @@ useEffect(() => {
       if (toolName === "get_brochure") {
         return async (data) => {
           const params = JSON.parse(data.payload || "{}");
+          console.log(`[${toolName}] params:`, params);
           const projectName: string = params.project_name || "";
           const match = BROCHURES.find((b) => b.project_name === projectName);
           if (match) {
