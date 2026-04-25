@@ -713,9 +713,9 @@ useEffect(() => {
       let agni_agent_id2 = agni_agent_id || "019db4d9-c997-771a-8fc6-2d3d1dae2ff0";
       let apiKey = "";
       if (!agni_agent_id) {
-        apiKey = "ak_4c3101cbcf7ceaebf2c461b405ed7cd025d50a202915ab28e79c1c50e3caf5d2";
-      } else {
         apiKey = "ak_a579c7540418ffa23147b97a01d984d21a023319cf51aad5c0950da3f26cb965";
+      } else {
+        apiKey = "ak_4c3101cbcf7ceaebf2c461b405ed7cd025d50a202915ab28e79c1c50e3caf5d2";
       }
       try {
         const res = await axios.get(toolsUrl, {
@@ -942,9 +942,9 @@ const handleClose = async () => {
     let agni_agent_id2 = agni_agent_id || "019db4d9-c997-771a-8fc6-2d3d1dae2ff0";
     let apiKey = "";
       if (!agni_agent_id) {
-        apiKey = "ak_4c3101cbcf7ceaebf2c461b405ed7cd025d50a202915ab28e79c1c50e3caf5d2";
-      } else {
         apiKey = "ak_a579c7540418ffa23147b97a01d984d21a023319cf51aad5c0950da3f26cb965";
+      } else {
+        apiKey = "ak_4c3101cbcf7ceaebf2c461b405ed7cd025d50a202915ab28e79c1c50e3caf5d2";
       }
     try {
       // Check mic permission BEFORE making the API call
