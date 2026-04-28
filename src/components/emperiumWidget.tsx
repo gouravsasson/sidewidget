@@ -258,7 +258,7 @@ const checkMicPermission = async (): Promise<PermissionState | null> => {
       });
       return result.state; // 'granted' | 'denied' | 'prompt'
     }
-  } catch (_) {}
+  } catch (_) { }
   return null;
 };
 
@@ -289,7 +289,7 @@ const EmpRetellaiAgent = ({
 
   const [speech, setSpeech] = useState("");
   const [isGlowing, setIsGlowing] = useState(false);
-  const [domainStatus,setDomainStatus] =useState("active")
+  const [domainStatus, setDomainStatus] = useState("active")
   useEffect(() => {
     const getAgentData = async () => {
       try {
@@ -301,10 +301,10 @@ const EmpRetellaiAgent = ({
         const host = window.location.hostname;
 
         const status = allowed_domain?.[host];
-        if(status) {
-          setDomainStatus(status); 
+        if (status) {
+          setDomainStatus(status);
         }
-      } catch(_){}
+      } catch (_) { }
     };
 
     getAgentData();
@@ -346,7 +346,7 @@ const EmpRetellaiAgent = ({
   const [showMicDeniedModal, setShowMicDeniedModal] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
 
-  const baseUrl = "https://jxczr0vz-80.inc1.devtunnels.ms/api/v1/calling/create-call";
+  const baseUrl = "https://api.ravan.ai/api/v1/calling/create-call";
   const settingsBaseUrl = "https://app.snowie.ai";
 
   const capitalize = (s: string) =>
@@ -593,18 +593,18 @@ const EmpRetellaiAgent = ({
     audioTrackRef.current = audioTrack;
   };
 
-useEffect(() => {
-  if (!widgetTheme?.bot_auto_start) return;
-  if (manualDisconnectRef.current) return;   
+  useEffect(() => {
+    if (!widgetTheme?.bot_auto_start) return;
+    if (manualDisconnectRef.current) return;
 
-  const callId = localStorage.getItem("callId");
+    const callId = localStorage.getItem("callId");
 
-  if (!callId && status === "disconnected") {
-    setExpanded(true);
-    handleSubmit();
-    audio();
-  }
-}, [widgetTheme?.bot_auto_start, status]);
+    if (!callId && status === "disconnected") {
+      setExpanded(true);
+      handleSubmit();
+      audio();
+    }
+  }, [widgetTheme?.bot_auto_start, status]);
 
   const registeredToolsRef = useRef<Set<string>>(new Set());
   const handlerMapRef = useRef<Record<string, (data: RpcInvocationData) => Promise<string>>>({});
@@ -613,7 +613,7 @@ useEffect(() => {
     // Clear on each run so handler logic updates are picked up
     registeredToolsRef.current.clear();
 
-    const toolsUrl = "https://jxczr0vz-80.inc1.devtunnels.ms/api/v1/tools";
+    const toolsUrl = "https://api.ravan.ai/api/v1/tools";
 
     const BROCHURES: Array<{ project_name: string; name: string; url: string }> = [
       { project_name: "emperium_casa_villas", name: "EMPERIUM CASA VILLAS BROCHURE (1).pdf", url: "https://drive.google.com/file/d/110xpDypyX7LKzDT4oJmLHdZcZI8_Twur/view?usp=drive_link" },
@@ -685,9 +685,9 @@ useEffect(() => {
       let agni_agent_id2 = agni_agent_id || "019db4d9-c997-771a-8fc6-2d3d1dae2ff0";
       let apiKey = "";
       if (!agni_agent_id) {
-        apiKey = "ak_5aa76f4079a6c02d87ce95a48468935d5d466aa3d12dbb73e073e12c7985294d";
+        apiKey = "ak_a579c7540418ffa23147b97a01d984d21a023319cf51aad5c0950da3f26cb965";
       } else {
-        apiKey = "ak_5aa76f4079a6c02d87ce95a48468935d5d466aa3d12dbb73e073e12c7985294d";
+        apiKey = "ak_4c3101cbcf7ceaebf2c461b405ed7cd025d50a202915ab28e79c1c50e3caf5d2";
       }
       try {
         const res = await axios.get(toolsUrl, {
@@ -807,8 +807,8 @@ useEffect(() => {
     };
   }, []);
   useEffect(() => {
-  manualDisconnectRef.current = false;
-}, []);
+    manualDisconnectRef.current = false;
+  }, []);
 
 
 
@@ -883,41 +883,41 @@ useEffect(() => {
     }
   };
 
-const handleClose = async () => {
-  try {
-    manualDisconnectRef.current = true;   
+  const handleClose = async () => {
+    try {
+      manualDisconnectRef.current = true;
 
-    if (audioTrackRef.current) {
-      audioTrackRef.current.stop();
-      audioTrackRef.current = null;
+      if (audioTrackRef.current) {
+        audioTrackRef.current.stop();
+        audioTrackRef.current = null;
+      }
+
+      await room.disconnect();
+
+      setIsRecording(false);
+      setIsGlowing(false);
+      setMuted(false);
+      setTranscripts("");
+      setExpanded(false);
+      setLatestEvent(null);
+      setMessages([]);
+      transcriptionSegmentIdMapRef.current.clear();
+      wasConnectedRef.current = false;
+
+      localStorage.removeItem("callId");
+    } catch (err) {
+      console.error("Error closing:", err);
     }
-
-    await room.disconnect();
-
-    setIsRecording(false);
-    setIsGlowing(false);
-    setMuted(false);
-    setTranscripts("");
-    setExpanded(false);
-    setLatestEvent(null);
-    setMessages([]);
-    transcriptionSegmentIdMapRef.current.clear();
-    wasConnectedRef.current = false;
-
-    localStorage.removeItem("callId");
-  } catch (err) {
-    console.error("Error closing:", err);
-  }
-};
+  };
   // ── UPDATED: doStart uses requestMicAccess ──
   const doStart = async (payload: Record<string, unknown>) => {
     let agni_agent_id2 = agni_agent_id || "019db4d9-c997-771a-8fc6-2d3d1dae2ff0";
     let apiKey = "";
-      if (!agni_agent_id) {
-        apiKey = "ak_5aa76f4079a6c02d87ce95a48468935d5d466aa3d12dbb73e073e12c7985294d";
-      } else {
-        apiKey = "ak_5aa76f4079a6c02d87ce95a48468935d5d466aa3d12dbb73e073e12c7985294d";
-      }
+    if (!agni_agent_id) {
+      apiKey = "ak_a579c7540418ffa23147b97a01d984d21a023319cf51aad5c0950da3f26cb965";
+    } else {
+      apiKey = "ak_4c3101cbcf7ceaebf2c461b405ed7cd025d50a202915ab28e79c1c50e3caf5d2";
+    }
     try {
       // Check mic permission BEFORE making the API call
       const permState = await checkMicPermission();
@@ -926,16 +926,16 @@ const handleClose = async () => {
         return;
       }
 
-      const res = await axios.post(`${baseUrl}`,{
-        agent_id: agni_agent_id2,  
+      const res = await axios.post(`${baseUrl}`, {
+        agent_id: agni_agent_id2,
         metadata: {},
         prompt_dynamic_variables: {},
         type: "web_call",
         caller_name: payload.caller_name,
         caller_email: payload.caller_email,
         to_phone_number: payload.to_phone_number,
-      },{
-        headers:{
+      }, {
+        headers: {
           "X-Api-Key": apiKey
         }
       });
@@ -1052,7 +1052,7 @@ const handleClose = async () => {
   }
   if (domainStatus === "loading") return null;
 
-if (domainStatus !== "active") return null;
+  if (domainStatus !== "active") return null;
   if (isWidget && colors) {
     return (
       <div
@@ -1288,8 +1288,8 @@ if (domainStatus !== "active") return null;
               widgetTheme?.bot_show_form && showform
                 ? "min(90vh, 550px)"
                 : tool === "whatsapp"
-                ? "min(90vh, 680px)"
-                : "min(90vh, 600px)",
+                  ? "min(90vh, 680px)"
+                  : "min(90vh, 600px)",
             backgroundColor: widgetTheme?.is_transparent
               ? undefined
               : widgetTheme?.bot_background_color || "#ffffff",
@@ -1359,9 +1359,9 @@ if (domainStatus !== "active") return null;
           {/* Main Content */}
           <div className="flex flex-col h-[calc(100%-64px)] overflow-hidden">
             {widgetTheme?.bot_show_form && showform ? (
-              <div className="flex-1 p-6 flex flex-col items-center justify-start overflow-y-auto">
+              <div className="flex-1 p-6 flex flex-col items-center justify-center overflow-y-auto">
                 <h3
-                  className="text-lg font-semibold mb-6"
+                  className="text-lg font-semibold mb-6 text-center w-full"
                   style={{ color: widgetTheme?.bot_text_color || "#1f2937" }}
                 >
                   {widgetTheme.widget_heading}
@@ -1686,9 +1686,8 @@ if (domainStatus !== "active") return null;
               }}
             >
               <div
-                className={`text-white flex items-center justify-center overflow-hidden ${
-                  botIcon || widgetTheme?.bot_logo ? "w-full h-full" : "w-8 h-8"
-                }`}
+                className={`text-white flex items-center justify-center overflow-hidden ${botIcon || widgetTheme?.bot_logo ? "w-full h-full" : "w-8 h-8"
+                  }`}
               >
                 {renderIcon("w-6 h-6")}
               </div>
