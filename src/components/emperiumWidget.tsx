@@ -544,9 +544,9 @@ const EmpRetellaiAgent = ({
 
   useEffect(() => {
     const initialData: Record<string, string> = {
-      CallerName: "",
-      CallerEmail: "",
-      ToPhoneNumber: "",
+      caller_name: "",
+      caller_email: "",
+      to_phone_number: "",
     };
     if (widgetTheme?.custom_form_fields) {
       widgetTheme.custom_form_fields.forEach((field) => {
@@ -931,9 +931,9 @@ const handleClose = async () => {
         metadata: {},
         prompt_dynamic_variables: {},
         type: "web_call",
-        CallerName: payload.CallerName,
-        CallerEmail: payload.CallerEmail,
-        ToPhoneNumber: payload.ToPhoneNumber
+        caller_name: payload.caller_name,
+        caller_email: payload.caller_email,
+        to_phone_number: payload.to_phone_number,
       },{
         headers:{
           "X-Api-Key": apiKey
@@ -1375,8 +1375,8 @@ if (domainStatus !== "active") return null;
                     <input
                       type="text"
                       required
-                      value={formData["CallerName"] || ""}
-                      onChange={(e) => setFormData({ ...formData, CallerName: e.target.value })}
+                      value={formData["caller_name"] || ""}
+                      onChange={(e) => setFormData({ ...formData, caller_name: e.target.value })}
                       className="w-full h-11 text-sm px-4 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all"
                       placeholder="Enter your name"
                     />
@@ -1389,8 +1389,8 @@ if (domainStatus !== "active") return null;
                     <input
                       type="email"
                       required
-                      value={formData["CallerEmail"] || ""}
-                      onChange={(e) => setFormData({ ...formData, CallerEmail: e.target.value })}
+                      value={formData["caller_email"] || ""}
+                      onChange={(e) => setFormData({ ...formData, caller_email: e.target.value })}
                       className="w-full h-11 text-sm px-4 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all"
                       placeholder="Enter your email"
                     />
@@ -1402,8 +1402,8 @@ if (domainStatus !== "active") return null;
                     </label>
                     <PhoneInput
                       country={localStorage.getItem("continentcode")?.toLowerCase() || "us"}
-                      value={formData["ToPhoneNumber"] || ""}
-                      onChange={(phone) => setFormData({ ...formData, ToPhoneNumber: phone })}
+                      value={formData["to_phone_number"] || ""}
+                      onChange={(phone) => setFormData({ ...formData, to_phone_number: phone })}
                       inputProps={{ required: true }}
                       containerClass="w-full"
                       inputClass="!w-full !h-11 !text-sm !rounded-xl !border !border-gray-200 !pl-12 !text-gray-700 !bg-gray-50 focus:!ring-2 focus:!border-transparent"
