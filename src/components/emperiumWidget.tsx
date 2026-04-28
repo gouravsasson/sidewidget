@@ -12,6 +12,7 @@ import {
   MicOff,
   Download,
   FileText,
+  ChevronDown,
 } from "lucide-react";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
@@ -343,8 +344,9 @@ const EmpRetellaiAgent = ({
 
   // ── NEW: mic denied modal state ──
   const [showMicDeniedModal, setShowMicDeniedModal] = useState(false);
+  const [showScrollButton, setShowScrollButton] = useState(false);
 
-  const baseUrl = "https://api.ravan.ai/api/v1/calling/create-call";
+  const baseUrl = "https://jxczr0vz-80.inc1.devtunnels.ms/api/v1/calling/create-call";
   const settingsBaseUrl = "https://app.snowie.ai";
 
   const capitalize = (s: string) =>
@@ -541,13 +543,17 @@ const EmpRetellaiAgent = ({
   }, []);
 
   useEffect(() => {
+    const initialData: Record<string, string> = {
+      CallerName: "",
+      CallerEmail: "",
+      ToPhoneNumber: "",
+    };
     if (widgetTheme?.custom_form_fields) {
-      const initialData: Record<string, string> = {};
       widgetTheme.custom_form_fields.forEach((field) => {
         initialData[field.label.toLowerCase()] = "";
       });
-      setFormData(initialData);
     }
+    setFormData(initialData);
   }, [widgetTheme?.custom_form_fields]);
 
   useEffect(() => {
@@ -607,7 +613,7 @@ useEffect(() => {
     // Clear on each run so handler logic updates are picked up
     registeredToolsRef.current.clear();
 
-    const toolsUrl = "https://api.ravan.ai/api/v1/tools";
+    const toolsUrl = "https://jxczr0vz-80.inc1.devtunnels.ms/api/v1/tools";
 
     const BROCHURES: Array<{ project_name: string; name: string; url: string }> = [
       { project_name: "emperium_casa_villas", name: "EMPERIUM CASA VILLAS BROCHURE (1).pdf", url: "https://drive.google.com/file/d/110xpDypyX7LKzDT4oJmLHdZcZI8_Twur/view?usp=drive_link" },
@@ -679,9 +685,9 @@ useEffect(() => {
       let agni_agent_id2 = agni_agent_id || "019db4d9-c997-771a-8fc6-2d3d1dae2ff0";
       let apiKey = "";
       if (!agni_agent_id) {
-        apiKey = "ak_a579c7540418ffa23147b97a01d984d21a023319cf51aad5c0950da3f26cb965";
+        apiKey = "ak_5aa76f4079a6c02d87ce95a48468935d5d466aa3d12dbb73e073e12c7985294d";
       } else {
-        apiKey = "ak_4c3101cbcf7ceaebf2c461b405ed7cd025d50a202915ab28e79c1c50e3caf5d2";
+        apiKey = "ak_5aa76f4079a6c02d87ce95a48468935d5d466aa3d12dbb73e073e12c7985294d";
       }
       try {
         const res = await axios.get(toolsUrl, {
@@ -908,9 +914,9 @@ const handleClose = async () => {
     let agni_agent_id2 = agni_agent_id || "019db4d9-c997-771a-8fc6-2d3d1dae2ff0";
     let apiKey = "";
       if (!agni_agent_id) {
-        apiKey = "ak_a579c7540418ffa23147b97a01d984d21a023319cf51aad5c0950da3f26cb965";
+        apiKey = "ak_5aa76f4079a6c02d87ce95a48468935d5d466aa3d12dbb73e073e12c7985294d";
       } else {
-        apiKey = "ak_4c3101cbcf7ceaebf2c461b405ed7cd025d50a202915ab28e79c1c50e3caf5d2";
+        apiKey = "ak_5aa76f4079a6c02d87ce95a48468935d5d466aa3d12dbb73e073e12c7985294d";
       }
     try {
       // Check mic permission BEFORE making the API call
@@ -924,7 +930,10 @@ const handleClose = async () => {
         agent_id: agni_agent_id2,  
         metadata: {},
         prompt_dynamic_variables: {},
-        type: "web_call"
+        type: "web_call",
+        CallerName: payload.CallerName,
+        CallerEmail: payload.CallerEmail,
+        ToPhoneNumber: payload.ToPhoneNumber
       },{
         headers:{
           "X-Api-Key": apiKey
@@ -1026,6 +1035,7 @@ const handleClose = async () => {
         Object.entries(formData).forEach(([key, value]) => {
           payload[key] = value;
         });
+        console.log(payload)
         await doStart(payload);
       } else {
         await handleClose();
@@ -1349,7 +1359,7 @@ if (domainStatus !== "active") return null;
           {/* Main Content */}
           <div className="flex flex-col h-[calc(100%-64px)] overflow-hidden">
             {widgetTheme?.bot_show_form && showform ? (
-              <div className="flex-1 p-6 flex flex-col items-center justify-center">
+              <div className="flex-1 p-6 flex flex-col items-center justify-start overflow-y-auto">
                 <h3
                   className="text-lg font-semibold mb-6"
                   style={{ color: widgetTheme?.bot_text_color || "#1f2937" }}
@@ -1357,7 +1367,52 @@ if (domainStatus !== "active") return null;
                   {widgetTheme.widget_heading}
                 </h3>
                 <form onSubmit={startFromForm} className="w-full space-y-3">
-                  {widgetTheme.custom_form_fields.map((field) => (
+                  {/* Default Fields */}
+                  <div className="w-full">
+                    <label className="block text-xs font-semibold mb-1 tracking-wide uppercase" style={{ color: widgetTheme?.bot_text_color || "#6b7280" }}>
+                      Name
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData["CallerName"] || ""}
+                      onChange={(e) => setFormData({ ...formData, CallerName: e.target.value })}
+                      className="w-full h-11 text-sm px-4 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all"
+                      placeholder="Enter your name"
+                    />
+                  </div>
+
+                  <div className="w-full">
+                    <label className="block text-xs font-semibold mb-1 tracking-wide uppercase" style={{ color: widgetTheme?.bot_text_color || "#6b7280" }}>
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      value={formData["CallerEmail"] || ""}
+                      onChange={(e) => setFormData({ ...formData, CallerEmail: e.target.value })}
+                      className="w-full h-11 text-sm px-4 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all"
+                      placeholder="Enter your email"
+                    />
+                  </div>
+
+                  <div className="w-full">
+                    <label className="block text-xs font-semibold mb-1 tracking-wide uppercase" style={{ color: widgetTheme?.bot_text_color || "#6b7280" }}>
+                      Phone Number
+                    </label>
+                    <PhoneInput
+                      country={localStorage.getItem("continentcode")?.toLowerCase() || "us"}
+                      value={formData["ToPhoneNumber"] || ""}
+                      onChange={(phone) => setFormData({ ...formData, ToPhoneNumber: phone })}
+                      inputProps={{ required: true }}
+                      containerClass="w-full"
+                      inputClass="!w-full !h-11 !text-sm !rounded-xl !border !border-gray-200 !pl-12 !text-gray-700 !bg-gray-50 focus:!ring-2 focus:!border-transparent"
+                      buttonClass="!rounded-l-xl !border-gray-200 !bg-gray-50"
+                    />
+                  </div>
+
+                  {/* Custom Fields */}
+                  {widgetTheme.custom_form_fields.filter(field => !["name", "email", "phone", "number"].some(k => field.label.toLowerCase().includes(k))).map((field) => (
                     <div key={field.id} className="w-full">
                       <label
                         className="block text-xs font-semibold mb-1 tracking-wide uppercase"
@@ -1475,7 +1530,12 @@ if (domainStatus !== "active") return null;
                     </div>
                     <div
                       ref={containerRef}
-                      className={`transcript-box rounded-lg p-4 overflow-y-auto text-sm ${tool === "whatsapp" ? "h-56" : "h-32"}`}
+                      onScroll={(e) => {
+                        const target = e.currentTarget;
+                        const isAtBottom = target.scrollHeight - target.scrollTop <= target.clientHeight + 50;
+                        setShowScrollButton(!isAtBottom);
+                      }}
+                      className={`transcript-box rounded-lg p-4 overflow-y-auto text-sm relative ${tool === "whatsapp" ? "h-56" : "h-32"}`}
                     >
                       {messages.length > 0 ? (
                         messages.map((msg) =>
@@ -1513,6 +1573,21 @@ if (domainStatus !== "active") return null;
                         <div className="text-gray-400 italic">
                           Your conversation will appear here...
                         </div>
+                      )}
+                      {showScrollButton && (
+                        <button
+                          onClick={() => {
+                            if (containerRef.current) {
+                              containerRef.current.scrollTo({
+                                top: containerRef.current.scrollHeight,
+                                behavior: "smooth",
+                              });
+                            }
+                          }}
+                          className="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-white shadow-lg flex items-center justify-center text-gray-600 hover:bg-gray-50 transition-all z-20 border border-gray-100"
+                        >
+                          <ChevronDown className="w-5 h-5" />
+                        </button>
                       )}
                     </div>
                   </div>
