@@ -253,7 +253,7 @@ const checkMicPermission = async (): Promise<PermissionState | null> => {
       });
       return result.state; // 'granted' | 'denied' | 'prompt'
     }
-  } catch (_) {}
+  } catch (_) { }
   return null;
 };
 
@@ -280,7 +280,7 @@ const RetellaiAgent = ({
 
   const [speech, setSpeech] = useState("");
   const [isGlowing, setIsGlowing] = useState(false);
-  const [domainStatus,setDomainStatus] =useState("active")
+  const [domainStatus, setDomainStatus] = useState("active")
   useEffect(() => {
     const getAgentData = async () => {
       try {
@@ -292,10 +292,10 @@ const RetellaiAgent = ({
         const host = window.location.hostname;
 
         const status = allowed_domain?.[host];
-        if(status) {
-          setDomainStatus(status); 
+        if (status) {
+          setDomainStatus(status);
         }
-      } catch(_){}
+      } catch (_) { }
     };
 
     getAgentData();
@@ -514,18 +514,18 @@ const RetellaiAgent = ({
     audioTrackRef.current = audioTrack;
   };
 
-useEffect(() => {
-  if (!widgetTheme?.bot_auto_start) return;
-  if (manualDisconnectRef.current) return;   // ⭐ STOP LOOP
+  useEffect(() => {
+    if (!widgetTheme?.bot_auto_start) return;
+    if (manualDisconnectRef.current) return;   // ⭐ STOP LOOP
 
-  const callId = localStorage.getItem("callId");
+    const callId = localStorage.getItem("callId");
 
-  if (!callId && status === "disconnected") {
-    setExpanded(true);
-    handleSubmit();
-    audio();
-  }
-}, [widgetTheme?.bot_auto_start, status]);
+    if (!callId && status === "disconnected") {
+      setExpanded(true);
+      handleSubmit();
+      audio();
+    }
+  }, [widgetTheme?.bot_auto_start, status]);
 
   useEffect(() => {
     const transcriptEmitter = transcriptEmitterRef.current;
@@ -609,8 +609,8 @@ useEffect(() => {
     };
   }, []);
   useEffect(() => {
-  manualDisconnectRef.current = false;
-}, []);
+    manualDisconnectRef.current = false;
+  }, []);
 
 
 
@@ -685,30 +685,30 @@ useEffect(() => {
     }
   };
 
-const handleClose = async () => {
-  try {
-    manualDisconnectRef.current = true;   
+  const handleClose = async () => {
+    try {
+      manualDisconnectRef.current = true;
 
-    if (audioTrackRef.current) {
-      audioTrackRef.current.stop();
-      audioTrackRef.current = null;
+      if (audioTrackRef.current) {
+        audioTrackRef.current.stop();
+        audioTrackRef.current = null;
+      }
+
+      await room.disconnect();
+
+      setIsRecording(false);
+      setIsGlowing(false);
+      setMuted(false);
+      setTranscripts("");
+      setExpanded(false);
+      setLatestEvent(null);
+      wasConnectedRef.current = false;
+
+      localStorage.removeItem("callId");
+    } catch (err) {
+      console.error("Error closing:", err);
     }
-
-    await room.disconnect();
-
-    setIsRecording(false);
-    setIsGlowing(false);
-    setMuted(false);
-    setTranscripts("");
-    setExpanded(false);
-    setLatestEvent(null);
-    wasConnectedRef.current = false;
-
-    localStorage.removeItem("callId");
-  } catch (err) {
-    console.error("Error closing:", err);
-  }
-};
+  };
   // ── UPDATED: doStart uses requestMicAccess ──
   const doStart = async (payload: Record<string, any>) => {
     try {
@@ -777,25 +777,25 @@ const handleClose = async () => {
     let payload: Record<string, any> = {};
     if (agent_type === "thunderemotion") {
       payload = {
-      agent_code: agent_id,
-      schema_name: schema,
-      provider: agent_type,
-      session_id: getSessionId(),
-    };
-  } else if (agent_type === "thunderemotionlite") {
-    payload = {
-      agent_code: agent_id,
-      schema_name: schema,
-      provider: "thunderemotionlite",
-      requested_domains: `https://${window.location.hostname}`,
-      session_id: getSessionId(),
-    };
-  }
-  if (tool) {
-    payload.tool_list = tool;
-  }
+        agent_code: agent_id,
+        schema_name: schema,
+        provider: agent_type,
+        session_id: getSessionId(),
+      };
+    } else if (agent_type === "thunderemotionlite") {
+      payload = {
+        agent_code: agent_id,
+        schema_name: schema,
+        provider: "thunderemotionlite",
+        requested_domains: `https://${window.location.hostname}`,
+        session_id: getSessionId(),
+      };
+    }
+    if (tool) {
+      payload.tool_list = tool;
+    }
 
-  await doStart(payload);
+    await doStart(payload);
   };
 
   const startFromForm = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -831,7 +831,7 @@ const handleClose = async () => {
   }
   if (domainStatus === "loading") return null;
 
-if (domainStatus !== "active") return null;
+  if (domainStatus !== "active") return null;
   if (isWidget && colors) {
     return (
       <div
@@ -1112,7 +1112,7 @@ if (domainStatus !== "active") return null;
             {widgetTheme?.bot_show_form && showform ? (
               <div className="flex-1 p-6 flex flex-col items-center justify-center">
                 <h3
-                  className="text-lg font-semibold mb-6"
+                  className="text-lg font-semibold mb-6 text-center w-full"
                   style={{ color: widgetTheme?.bot_text_color || "#1f2937" }}
                 >
                   {widgetTheme.widget_heading}
@@ -1357,9 +1357,8 @@ if (domainStatus !== "active") return null;
               }}
             >
               <div
-                className={`text-white flex items-center justify-center overflow-hidden ${
-                  botIcon || widgetTheme?.bot_logo ? "w-full h-full" : "w-8 h-8"
-                }`}
+                className={`text-white flex items-center justify-center overflow-hidden ${botIcon || widgetTheme?.bot_logo ? "w-full h-full" : "w-8 h-8"
+                  }`}
               >
                 {renderIcon("w-6 h-6")}
               </div>

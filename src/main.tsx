@@ -7,10 +7,11 @@ import { WidgetProvider } from "./constexts/WidgetContext.tsx";
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <WidgetProvider
-      agent_id="019db4d9-c997-771a-8fc6-2d3d1dae2ff0"
-      schema="abf30a87-7e52-4d37-a386-a0f0820fc2f5"
+      agent_id="c82c91c5-b8a2-4a80-b43b-5e4908981b27"
+      schema="6af30ad4-a50c-4acc-8996-d5f562b6987f"
       type="thunderemotionlite"
       tool="whatsapp"
+      agni_agent_id="019da353-fed1-73ae-bb3b-d2276836adc6"
     >
       <App />
     </WidgetProvider>
