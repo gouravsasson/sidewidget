@@ -288,7 +288,7 @@ const EmpRetellaiAgent = ({
   const manualDisconnectRef = useRef(false);
 
   const [speech, setSpeech] = useState("");
-  const [isGlowing, setIsGlowing] = useState(false);
+  const [, setIsGlowing] = useState(false);
   const [domainStatus, setDomainStatus] = useState("active")
   useEffect(() => {
     const getAgentData = async () => {
@@ -1496,9 +1496,7 @@ const EmpRetellaiAgent = ({
                     }}
                   >
                     <div className="relative w-full h-full flex items-center justify-center">
-                      {isGlowing && (
-                        <div className="absolute inset-0 -m-5 bg-blue-400 opacity-50 rounded-full"></div>
-                      )}
+                      
                       {renderIcon(
                         botIcon || widgetTheme?.bot_logo
                           ? "w-full h-full"

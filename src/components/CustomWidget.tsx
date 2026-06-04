@@ -952,8 +952,8 @@ const CustomWidget = () => {
                   <button
                     onClick={handleMicClick}
                     disabled={widgetTheme?.bot_show_form && showform}
-                    className="w-40 h-40 rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-lg mb-6 mic-button overflow-hidden"
-                    style={{ backgroundColor: widgetTheme?.bot_button_color }}
+                    className="w-40 h-40 rounded-full flex items-center justify-center transition-all hover:scale-105 mb-6 mic-button overflow-hidden"
+                    style={{ backgroundColor: widgetTheme?.bot_button_color, boxShadow: "none" }}
                   >
                     {renderIcon("w-full h-full icon")}
                   </button>
