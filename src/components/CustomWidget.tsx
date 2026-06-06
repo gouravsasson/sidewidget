@@ -634,7 +634,7 @@ const CustomWidget = () => {
     if (type === "tel") return <Phone className="h-5 w-5 text-gray-400" />;
     return <User className="h-5 w-5 text-gray-400" />;
   };
-
+//custom wedget icon rendering with fallback to mic icon and color from theme
   const renderIcon = (className: string) => {
     if (widgetTheme?.bot_logo) {
       return (
