@@ -301,9 +301,9 @@ const Autostart = () => {
               {isRecording && pulseEffects.large && (
                 <div className="absolute inset-0 -m-12 bg-blue-600 opacity-10 rounded-full animate-pulse"></div>
               )}
-              {isGlowing && (
+              {/* {isGlowing && (
                 <div className="absolute inset-0 -m-5 bg-blue-400 opacity-50 rounded-full animate-ping"></div>
-              )}
+              )} */}
               {isGlowing && (
                 <div className="absolute inset-0 -m-10 bg-blue-400 opacity-30 rounded-full animate-pulse"></div>
               )}
