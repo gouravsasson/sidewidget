@@ -10,6 +10,7 @@ import CustomWidget from "./components/CustomWidget";
 import { WidgetTheme } from "./components/CustomWidget";
 import { LiveKitRoom } from "@livekit/components-react";
 import EmpRetellaiAgent from "./components/emperiumWidget";
+import AgniCompanyWidget, { COMPANY_SNOWIE_AGENT_ID } from "./components/AgniCompanyWidget";
 import { Room } from "livekit-client";
 
 
@@ -19,7 +20,7 @@ import Whatsapp from "./components/Whatsapp";
 
 function App() {
   const [showPopup, setShowPopup] = useState(false);
-  const { agent_id, schema, type,tool } = useWidgetContext();
+  const { agent_id, schema, type, tool } = useWidgetContext();
   const [room] = useState(() => new Room({}))
 
   useEffect(() => {
@@ -64,7 +65,11 @@ function App() {
         room={room}
         connect={false}
       >
-        <EmpRetellaiAgent />
+        {agent_id === COMPANY_SNOWIE_AGENT_ID ? (
+          <AgniCompanyWidget />
+        ) : (
+          <EmpRetellaiAgent />
+        )}
       </LiveKitRoom>
     ) : (
       widgetMap[type] || null
