@@ -281,6 +281,7 @@ const RetellaiAgent = ({
   const [speech, setSpeech] = useState("");
   const [isGlowing, setIsGlowing] = useState(false);
   const [domainStatus, setDomainStatus] = useState("active")
+  const [showPoweredBy, setShowPoweredBy] = useState(false);
   useEffect(() => {
     const getAgentData = async () => {
       try {
@@ -295,11 +296,27 @@ const RetellaiAgent = ({
         if (status) {
           setDomainStatus(status);
         }
+
+        setShowPoweredBy(Boolean(res.data?.show_powered_by));
       } catch (_) { }
     };
 
     getAgentData();
   }, []);
+
+  // Build the Ravan link with UTM params carrying the host site the widget is embedded on
+  const getRavanUrl = () => {
+    const host =
+      typeof window !== "undefined" ? window.location.hostname : "";
+    const params = new URLSearchParams({
+      utm_source: host || "snowie_widget",
+      utm_medium: "widget",
+      utm_campaign: "snowie_widget",
+      utm_content: "powered_by_ravan",
+      ref: host,
+    });
+    return `https://www.ravan.ai/?${params.toString()}`;
+  };
   const [latestEvent, setLatestEvent] = useState<{
     type: "transcription" | "chat";
     text: string;
@@ -849,7 +866,7 @@ const RetellaiAgent = ({
         <div className="flex flex-col items-center justify-center py-8 flex-1">
           <button
             onClick={isRecording ? handleClose : handleSubmit}
-            className="w-40 h-40 rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-lg mb-6 overflow-hidden"
+            className="w-40 h-40 shrink-0 aspect-square rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-lg mb-6 overflow-hidden"
             style={{ backgroundColor: colors.buttonColor }}
           >
             {botIcon ? (
@@ -1190,9 +1207,9 @@ const RetellaiAgent = ({
               </div>
             ) : (
               <>
-                <div className="flex-1 flex flex-col items-center p-6 overflow-y-auto">
+                <div className="flex-1 min-h-0 flex flex-col items-center p-6 overflow-hidden">
                   <button
-                    className="w-40 h-40 rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-lg mb-6 overflow-hidden"
+                    className="w-40 h-40 shrink-0 aspect-square rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-lg mb-6 overflow-hidden"
                     style={{
                       backgroundColor:
                         widgetTheme?.bot_button_color || "#2563eb",
@@ -1226,7 +1243,7 @@ const RetellaiAgent = ({
                   </div>
 
 
-                  <div className="w-full px-4 mb-4">
+                  <div className="w-full px-4 mb-4 flex-1 min-h-0 flex flex-col">
                     <div
                       className="text-sm font-medium mb-2"
                       style={{
@@ -1237,7 +1254,7 @@ const RetellaiAgent = ({
                     </div>
                     <div
                       ref={containerRef}
-                      className="transcript-box rounded-lg p-4 h-32 overflow-y-auto text-sm"
+                      className="transcript-box rounded-lg p-4 flex-1 min-h-0 overflow-y-auto text-sm"
                     >
                       {latestEvent ? (
                         <div
@@ -1263,7 +1280,7 @@ const RetellaiAgent = ({
                     </div>
                   </div>
 
-                  <div className="w-full px-4">
+                  <div className="w-full px-4 shrink-0">
                     <div className="flex gap-2">
                       <input
                         type="text"
@@ -1293,6 +1310,20 @@ const RetellaiAgent = ({
                   </div>
                 </div>
               </>
+            )}
+
+            {showPoweredBy && (
+              <div className="w-full py-2 flex items-center justify-center">
+                <a
+                  href={getRavanUrl()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs opacity-70 hover:opacity-100 transition-opacity"
+                  style={{ color: widgetTheme?.bot_text_color || "#374151" }}
+                >
+                  Powered by <span className="font-semibold">Ravan Ai</span>
+                </a>
+              </div>
             )}
           </div>
         </div>
