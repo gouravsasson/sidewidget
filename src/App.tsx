@@ -10,7 +10,7 @@ import CustomWidget from "./components/CustomWidget";
 import { WidgetTheme } from "./components/CustomWidget";
 import { LiveKitRoom } from "@livekit/components-react";
 import EmpRetellaiAgent from "./components/emperiumWidget";
-import AgniCompanyWidget, { COMPANY_SNOWIE_AGENT_ID } from "./components/AgniCompanyWidget";
+import AgniCompanyWidget, { isAgniCompanyAgent } from "./components/AgniCompanyWidget";
 import { Room } from "livekit-client";
 
 
@@ -56,6 +56,16 @@ function App() {
     
   };
 
+  // Agents migrated to the new Agni API always render AgniCompanyWidget,
+  // regardless of the `tool` attribute on the embed.
+  if (isAgniCompanyAgent(agent_id)) {
+    return (
+      <LiveKitRoom token="" serverUrl="" room={room} connect={false}>
+        <AgniCompanyWidget />
+      </LiveKitRoom>
+    );
+  }
+
   return (
   <>
     {(type === "thunderemotion" || type === "thunderemotionlite") && tool === "whatsapp" ? (
@@ -65,11 +75,7 @@ function App() {
         room={room}
         connect={false}
       >
-        {agent_id === COMPANY_SNOWIE_AGENT_ID ? (
-          <AgniCompanyWidget />
-        ) : (
-          <EmpRetellaiAgent />
-        )}
+        <EmpRetellaiAgent />
       </LiveKitRoom>
     ) : (
       widgetMap[type] || null

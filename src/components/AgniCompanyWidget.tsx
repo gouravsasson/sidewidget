@@ -13,6 +13,9 @@ import {
   Download,
   FileText,
   ChevronDown,
+  Mail,
+  Phone,
+  User,
 } from "lucide-react";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
@@ -35,17 +38,85 @@ import axios from "axios";
 
 // ─────────────────────────────────────────────
 // Company-specific config
-// This widget runs ONLY when the incoming Snowie agent_id matches
-// COMPANY_SNOWIE_AGENT_ID (see the check in App.tsx).
+// This widget runs ONLY when the incoming Snowie agent_id is one of the
+// keys below (see the check in App.tsx). Those agents are migrated off the
+// old app.snowie.ai/create-room API and onto the new Agni API
+// (api.ravan.ai) — the CSS/theme is still read from the Snowie agent_id.
 //
-// The Agni agent id is taken from the embed (agni_agent_id attribute)
-// when present; otherwise it falls back to COMPANY_AGNI_AGENT_ID.
-// The API key must belong to that same Agni account, otherwise
-// api.ravan.ai will reject the requests.
+// agniAgentId is the hardcoded Agni agent used for the start call.
+// apiKey must belong to that same Agni account, otherwise api.ravan.ai
+// will reject the requests.
+// leadWebhookUrl (optional) receives the form's name/email/phone on submit.
 // ─────────────────────────────────────────────
+type AgniCompanyConfig = {
+  agniAgentId: string;
+  apiKey: string;
+  leadWebhookUrl?: string;
+  /** Overrides the `type` query param on the Snowie widget-settings call. */
+  settingsType?: string;
+  /**
+   * Copy overrides so a migrated agent keeps the wording its live site
+   * already used. Anything omitted falls back to the Snowie theme values.
+   */
+  copy?: {
+    headerTitle?: string;
+    formHeading?: string;
+    formSubheading?: string;
+    submitText?: string;
+    connectingText?: string;
+  };
+  /**
+   * Opt-in form restyle: inline field icons on white inputs. Off by default,
+   * so agents without it keep the original form look.
+   */
+  iconFields?: boolean;
+  /**
+   * Form heading/label color. Defaults to the theme's bot_text_color — set
+   * this only when that color is unreadable on the form background (e.g. a
+   * white bot_text_color over a light bot_background_color).
+   */
+  formTextColor?: string;
+};
+
+export const AGNI_COMPANY_CONFIGS: Record<string, AgniCompanyConfig> = {
+  // Company 1 — original Agni migration
+  "514e1c5a-72c8-4670-a2f7-3851f7b49bae": {
+    agniAgentId: "019e9315-e11e-7580-a785-5dc14877d996",
+    apiKey:
+      "ak_7457bc2caf4b0f1c612e1356f1b8bc68030c865861114d39c0381eaf3ef835b5",
+  },
+  // Company 2 — form enabled, leads pushed to GoHighLevel
+  "c95a3759-bb70-4463-a3b1-390910ed46e8": {
+    agniAgentId: "019ff206-1c8a-7a23-b22e-33a33901c38b",
+    apiKey:
+      "ak_ef9dcb8ed96c5014c447ab5a8e5397ca684316f7a982d542852d78bf6ec1275a",
+    leadWebhookUrl:
+      "https://services.leadconnectorhq.com/hooks/OtX5NYGUzUeSo2a5G57J/webhook-trigger/e222f048-6c9d-4569-a685-fb1a57d3c026",
+    // This agent's Snowie type is "UltraVoxVoice", but the widget-settings
+    // endpoint only serves it under type=thunder (passing UltraVoxVoice
+    // returns 400 "schema_name and agent_code are required").
+    settingsType: "thunder",
+    // Matches the wording the client's live site already shows (Whatsapp.tsx),
+    // since the Snowie theme leaves widget_heading/submit_btn_text null.
+    copy: {
+      headerTitle: "Talk to Our Team",
+      formHeading: "Got Questions?",
+      formSubheading:
+        "Enter your details and we'll assist you right away on packages, prices, bookings, clinic timing and more.",
+      submitText: "Start The Call Now",
+      connectingText: "Connecting To Dr. Jwan Murad's Team",
+    },
+    iconFields: true,
+    // This agent's bot_text_color is #ffffff, which is invisible on its
+    // #f5f5f5 form background — the header still uses the theme color.
+    formTextColor: "#1f2937",
+  },
+};
+
 export const COMPANY_SNOWIE_AGENT_ID = "514e1c5a-72c8-4670-a2f7-3851f7b49bae";
-const COMPANY_AGNI_AGENT_ID = "019e9315-e11e-7580-a785-5dc14877d996"; // fallback Agni agent id
-const COMPANY_AGNI_API_KEY = "ak_7457bc2caf4b0f1c612e1356f1b8bc68030c865861114d39c0381eaf3ef835b5"; // TODO: paste this company's Agni API key
+
+export const isAgniCompanyAgent = (agentId: string) =>
+  Object.prototype.hasOwnProperty.call(AGNI_COMPANY_CONFIGS, agentId);
 
 export interface WidgetTheme {
   bot_auto_start: boolean;
@@ -363,6 +434,32 @@ const AgniCompanyWidget = ({
   const baseUrl = "https://api.ravan.ai/api/v1/calling/create-call";
   const settingsBaseUrl = "https://app.snowie.ai";
 
+  // Per-company Agni config, keyed by the Snowie agent_id. The hardcoded
+  // config wins over the embed's agni_agent_id attribute so a stale embed
+  // can't point a migrated agent at the wrong Agni agent.
+  const companyConfig = AGNI_COMPANY_CONFIGS[agent_id];
+  const agniAgentId = companyConfig?.agniAgentId || agni_agent_id;
+  const agniApiKey = companyConfig?.apiKey || "";
+  const copy = companyConfig?.copy;
+
+  // Form styling. Everything falls back to the pre-existing look/theme colors,
+  // so agents that don't opt in render exactly as before.
+  const iconFields = !!companyConfig?.iconFields;
+  const formTextColor =
+    companyConfig?.formTextColor || widgetTheme?.bot_text_color;
+  const labelClass = iconFields
+    ? "block text-sm font-bold mb-1"
+    : "block text-xs font-semibold mb-1 tracking-wide uppercase";
+  const fieldInputClass = iconFields
+    ? "w-full p-3 pl-10 rounded-xl border bg-white border-gray-300 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent"
+    : "w-full h-11 text-sm px-4 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all";
+  const phoneInputClass = iconFields
+    ? "!w-full !h-12 !text-base !rounded-xl !border !border-gray-300 !pl-12 !text-gray-700 !bg-white focus:!ring-2 focus:!border-transparent"
+    : "!w-full !h-11 !text-sm !rounded-xl !border !border-gray-200 !pl-12 !text-gray-700 !bg-gray-50 focus:!ring-2 focus:!border-transparent";
+  const phoneButtonClass = iconFields
+    ? "!rounded-l-xl !border-gray-300 !bg-white"
+    : "!rounded-l-xl !border-gray-200 !bg-gray-50";
+
   const capitalize = (s: string) =>
     s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 
@@ -512,7 +609,9 @@ const AgniCompanyWidget = ({
   }, [chatMessages]);
 
   const getFieldIcon = (type: string) => {
-    return <svg className="h-5 w-5 text-gray-400" />;
+    if (type === "email") return <Mail className="h-5 w-5 text-gray-400" />;
+    if (type === "tel") return <Phone className="h-5 w-5 text-gray-400" />;
+    return <User className="h-5 w-5 text-gray-400" />;
   };
 
   const renderIcon = (className: string) => {
@@ -541,8 +640,13 @@ const AgniCompanyWidget = ({
     const getWidgetTheme = async () => {
       try {
         console.log("hello 2222 ")
+        const settingsType =
+          companyConfig?.settingsType ||
+          (agent_type === "thunderemotionlite"
+            ? "thunder_emotion_lite"
+            : "thunder_emotion");
         const response = await axios.get(
-          `${settingsBaseUrl}/api/thunder-widget-settings/${schema}/${agent_id}/?type=${agent_type === "thunderemotionlite" ? "thunder_emotion_lite" : "thunder_emotion"}`,
+          `${settingsBaseUrl}/api/thunder-widget-settings/${schema}/${agent_id}/?type=${settingsType}`,
         );
         console.log(response);
         const data = response.data.response;
@@ -656,12 +760,10 @@ const AgniCompanyWidget = ({
     };
 
     const registerClientTools = async () => {
-      const agni_agent_id2 = agni_agent_id || COMPANY_AGNI_AGENT_ID;
-      const apiKey = COMPANY_AGNI_API_KEY;
       try {
         const res = await axios.get(toolsUrl, {
-          headers: { "X-Api-Key": apiKey },
-          params: { limit: 100, offset: 0, agent_id: agni_agent_id2 },
+          headers: { "X-Api-Key": agniApiKey },
+          params: { limit: 100, offset: 0, agent_id: agniAgentId },
         });
 
         const tools: Array<{ name: string; type: string }> = res.data.data ?? [];
@@ -861,8 +963,6 @@ const AgniCompanyWidget = ({
   };
   // ── UPDATED: doStart uses requestMicAccess ──
   const doStart = async (payload: Record<string, unknown>) => {
-    const agni_agent_id2 = agni_agent_id || COMPANY_AGNI_AGENT_ID;
-    const apiKey = COMPANY_AGNI_API_KEY;
     try {
       // Check mic permission BEFORE making the API call
       const permState = await checkMicPermission();
@@ -872,7 +972,7 @@ const AgniCompanyWidget = ({
       }
 
       const res = await axios.post(`${baseUrl}`, {
-        agent_id: agni_agent_id2,
+        agent_id: agniAgentId,
         metadata: {},
         prompt_dynamic_variables: {},
         type: "web_call",
@@ -881,7 +981,7 @@ const AgniCompanyWidget = ({
         to_phone_number: payload.to_phone_number,
       }, {
         headers: {
-          "X-Api-Key": apiKey
+          "X-Api-Key": agniApiKey
         }
       });
       console.log("API response:", res);
@@ -939,6 +1039,30 @@ const AgniCompanyWidget = ({
 
   const getSessionId = () => localStorage.getItem("snowie_session_id") || undefined;
 
+  // Push the form's name / email / phone to this company's lead webhook.
+  // Only fires for agents whose config declares a leadWebhookUrl.
+  // Fire-and-forget: a webhook failure must never block the call.
+  const sendLeadToWebhook = async (data: Record<string, string>) => {
+    const webhookUrl = companyConfig?.leadWebhookUrl;
+    if (!webhookUrl) return;
+
+    const rawPhone = (data.to_phone_number || "").trim();
+    const phone = rawPhone && !rawPhone.startsWith("+") ? `+${rawPhone}` : rawPhone;
+
+    try {
+      await axios.post(webhookUrl, {
+        name: data.caller_name || "",
+        email: data.caller_email || "",
+        phone,
+        agent_id,
+        schema_name: schema,
+        source_url: window.location.href,
+      });
+    } catch (err) {
+      console.error("Failed to send lead to webhook:", err);
+    }
+  };
+
   const handleSubmit = async () => {
     let payload: Record<string, unknown> = {};
     if (agent_type === "thunderemotion") {
@@ -981,6 +1105,9 @@ const AgniCompanyWidget = ({
           payload[key] = value;
         });
         console.log(payload)
+        // Send the lead out before starting the call so a slow/failing
+        // webhook can't be skipped, but don't await it blocking the call.
+        void sendLeadToWebhook(formData);
         await doStart(payload);
       } else {
         await handleClose();
@@ -1256,7 +1383,7 @@ const AgniCompanyWidget = ({
                 {renderIcon("w-full h-full")}
               </div>
               <span className="font-semibold text-lg">
-                {widgetTheme?.bot_name || "AI Assistant"}
+                {copy?.headerTitle || widgetTheme?.bot_name || "AI Assistant"}
               </span>
             </div>
             <div className="flex items-center space-x-2">
@@ -1306,44 +1433,80 @@ const AgniCompanyWidget = ({
             {widgetTheme?.bot_show_form && showform ? (
               <div className="flex-1 p-6 flex flex-col items-center justify-center overflow-y-auto">
                 <h3
-                  className="text-lg font-semibold mb-6 text-center w-full"
-                  style={{ color: widgetTheme?.bot_text_color || "#1f2937" }}
+                  className={`text-lg font-semibold text-center w-full ${copy?.formSubheading ? "mb-2" : "mb-6"}`}
+                  style={{ color: formTextColor || "#1f2937" }}
                 >
-                  {widgetTheme.widget_heading}
+                  {copy?.formHeading ||
+                    widgetTheme.widget_heading ||
+                    "Talk to our AI Assistant"}
                 </h3>
-                <form onSubmit={startFromForm} className="w-full space-y-3">
+                {copy?.formSubheading && (
+                  <p
+                    className="pb-3 text-sm text-center"
+                    style={{ color: formTextColor || "#4b5563" }}
+                  >
+                    {copy.formSubheading}
+                  </p>
+                )}
+                <form
+                  onSubmit={startFromForm}
+                  className={`w-full ${iconFields ? "space-y-4" : "space-y-3"}`}
+                >
                   {/* Default Fields */}
                   <div className="w-full">
-                    <label className="block text-xs font-semibold mb-1 tracking-wide uppercase" style={{ color: widgetTheme?.bot_text_color || "#6b7280" }}>
+                    <label
+                      className={labelClass}
+                      style={{ color: formTextColor || "#6b7280" }}
+                    >
                       Name
                     </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData["caller_name"] || ""}
-                      onChange={(e) => setFormData({ ...formData, caller_name: e.target.value })}
-                      className="w-full h-11 text-sm px-4 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all"
-                      placeholder="Enter your name"
-                    />
+                    <div className="relative">
+                      {iconFields && (
+                        <div className="absolute inset-y-0 left-2 flex items-center pointer-events-none">
+                          {getFieldIcon("text")}
+                        </div>
+                      )}
+                      <input
+                        type="text"
+                        required
+                        value={formData["caller_name"] || ""}
+                        onChange={(e) => setFormData({ ...formData, caller_name: e.target.value })}
+                        className={fieldInputClass}
+                        placeholder="Enter your name"
+                      />
+                    </div>
                   </div>
 
                   <div className="w-full">
-                    <label className="block text-xs font-semibold mb-1 tracking-wide uppercase" style={{ color: widgetTheme?.bot_text_color || "#6b7280" }}>
+                    <label
+                      className={labelClass}
+                      style={{ color: formTextColor || "#6b7280" }}
+                    >
                       Email
                     </label>
-                    <input
-                      type="email"
-                      required
-                      value={formData["caller_email"] || ""}
-                      onChange={(e) => setFormData({ ...formData, caller_email: e.target.value })}
-                      className="w-full h-11 text-sm px-4 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all"
-                      placeholder="Enter your email"
-                    />
+                    <div className="relative">
+                      {iconFields && (
+                        <div className="absolute inset-y-0 left-2 flex items-center pointer-events-none">
+                          {getFieldIcon("email")}
+                        </div>
+                      )}
+                      <input
+                        type="email"
+                        required
+                        value={formData["caller_email"] || ""}
+                        onChange={(e) => setFormData({ ...formData, caller_email: e.target.value })}
+                        className={fieldInputClass}
+                        placeholder="Enter your email"
+                      />
+                    </div>
                   </div>
 
                   <div className="w-full">
-                    <label className="block text-xs font-semibold mb-1 tracking-wide uppercase" style={{ color: widgetTheme?.bot_text_color || "#6b7280" }}>
-                      Phone Number
+                    <label
+                      className={labelClass}
+                      style={{ color: formTextColor || "#6b7280" }}
+                    >
+                      {iconFields ? "Phone number" : "Phone Number"}
                     </label>
                     <PhoneInput
                       country={localStorage.getItem("continentcode")?.toLowerCase() || "us"}
@@ -1351,8 +1514,8 @@ const AgniCompanyWidget = ({
                       onChange={(phone) => setFormData({ ...formData, to_phone_number: phone })}
                       inputProps={{ required: true }}
                       containerClass="w-full"
-                      inputClass="!w-full !h-11 !text-sm !rounded-xl !border !border-gray-200 !pl-12 !text-gray-700 !bg-gray-50 focus:!ring-2 focus:!border-transparent"
-                      buttonClass="!rounded-l-xl !border-gray-200 !bg-gray-50"
+                      inputClass={phoneInputClass}
+                      buttonClass={phoneButtonClass}
                     />
                   </div>
 
@@ -1360,10 +1523,8 @@ const AgniCompanyWidget = ({
                   {widgetTheme.custom_form_fields.filter(field => !["name", "email", "phone", "number"].some(k => field.label.toLowerCase().includes(k))).map((field) => (
                     <div key={field.id} className="w-full">
                       <label
-                        className="block text-xs font-semibold mb-1 tracking-wide uppercase"
-                        style={{
-                          color: widgetTheme?.bot_text_color || "#6b7280",
-                        }}
+                        className={labelClass}
+                        style={{ color: formTextColor || "#6b7280" }}
                       >
                         {capitalize(field.label)}
                       </label>
@@ -1384,32 +1545,36 @@ const AgniCompanyWidget = ({
                           }
                           inputProps={{ required: true }}
                           containerClass="w-full"
-                          inputClass="!w-full !h-11 !text-sm !rounded-xl !border !border-gray-200 !pl-12 !text-gray-700 !bg-gray-50 focus:!ring-2 focus:!border-transparent"
-                          buttonClass="!rounded-l-xl !border-gray-200 !bg-gray-50"
+                          inputClass={phoneInputClass}
+                          buttonClass={phoneButtonClass}
                         />
                       ) : (
-                        <input
-                          type={field.type}
-                          required
-                          value={formData[field.label.toLowerCase()] || ""}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              [field.label.toLowerCase()]: e.target.value,
-                            })
-                          }
-                          className="w-full h-11 text-sm px-4 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all"
-                          style={{
-                            focusRingColor: widgetTheme?.bot_button_color,
-                          }}
-                          placeholder={`Enter your ${field.label.toLowerCase()}`}
-                        />
+                        <div className="relative">
+                          {iconFields && (
+                            <div className="absolute inset-y-0 left-2 flex items-center pointer-events-none">
+                              {getFieldIcon(field.type)}
+                            </div>
+                          )}
+                          <input
+                            type={field.type}
+                            required
+                            value={formData[field.label.toLowerCase()] || ""}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                [field.label.toLowerCase()]: e.target.value,
+                              })
+                            }
+                            className={fieldInputClass}
+                            placeholder={`Enter your ${field.label.toLowerCase()}`}
+                          />
+                        </div>
                       )}
                     </div>
                   ))}
                   <button
                     type="submit"
-                    className="w-full p-3 rounded-lg text-white transition-colors hover:opacity-90"
+                    className={`w-full p-3 text-white transition-colors hover:opacity-90 ${iconFields ? "rounded-xl" : "rounded-lg"}`}
                     style={{
                       backgroundColor:
                         widgetTheme?.bot_button_color || "#2563eb",
@@ -1419,10 +1584,12 @@ const AgniCompanyWidget = ({
                     {formSubmitting ? (
                       <div className="flex items-center justify-center">
                         <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                        Connecting to AI Assistant
+                        {copy?.connectingText || "Connecting to AI Assistant"}
                       </div>
                     ) : (
-                      widgetTheme.widget_submit_btn_text
+                      copy?.submitText ||
+                      widgetTheme.widget_submit_btn_text ||
+                      "Start Call"
                     )}
                   </button>
                 </form>
@@ -1645,7 +1812,7 @@ const AgniCompanyWidget = ({
               color: "#ffffff",
             }}
           >
-            {`${widgetTheme?.bot_name || "Talk to AI Assistant"}`}
+            {copy?.headerTitle || widgetTheme?.bot_name || "Talk to AI Assistant"}
           </button>
         </div>
       )}
