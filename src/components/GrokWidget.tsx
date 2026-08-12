@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
+import WhatsappHandoff from "./WhatsappHandoff";
 import {
   RoomAudioRenderer,
   useConnectionState,
@@ -1289,6 +1290,9 @@ const RetellaiAgent = ({
                           <Send className="w-5 h-5 text-white" />
                         )}
                       </button>
+
+                      {/* WhatsApp Button */}
+                      <WhatsappHandoff agentId={agent_id} />
                     </div>
                   </div>
                 </div>
