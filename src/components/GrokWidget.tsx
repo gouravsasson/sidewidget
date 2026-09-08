@@ -306,7 +306,8 @@ const RetellaiAgent = ({
     text: string;
     isLocal: boolean;
   } | null>(null);
-  const serverUrl = "wss://agnibyravanai-sw47y5hk.livekit.cloud";
+  // Fallback only — the LiveKit server URL normally comes from the create-call response
+  const fallbackServerUrl = "wss://agnibyravanai-sw47y5hk.livekit.cloud";
   const audioTrackRef = useRef<MediaStreamTrack | null>(null);
   const [muted, setMuted] = useState(false);
   const [transcripts, setTranscripts] = useState("");
@@ -723,6 +724,10 @@ const RetellaiAgent = ({
       const res = await axios.post(`${baseUrl}`, payload);
       const decryptedPayload = res.data.response;
       const accessToken = decryptedPayload.token;
+      const serverUrl =
+        decryptedPayload.url ||
+        decryptedPayload.agni_data?.data?.url ||
+        fallbackServerUrl;
       const callId =
         decryptedPayload.call_id || decryptedPayload.room_id || "active";
       localStorage.setItem("callId", callId);

@@ -326,7 +326,8 @@ const EmpRetellaiAgent = ({
     }>
   >([]);
   const transcriptionSegmentIdMapRef = useRef<Map<string, string>>(new Map());
-  const serverUrl = "wss://agnibyravanai-sw47y5hk.livekit.cloud";
+  // Fallback only — the LiveKit server URL normally comes from the create-call response
+  const fallbackServerUrl = "wss://agnibyravanai-sw47y5hk.livekit.cloud";
   const audioTrackRef = useRef<MediaStreamTrack | null>(null);
   const [muted, setMuted] = useState(false);
   const [transcripts, setTranscripts] = useState("");
@@ -948,7 +949,9 @@ const EmpRetellaiAgent = ({
         decryptedPayload.call_id || decryptedPayload.room_id || "active";
       localStorage.setItem("callId", callId);
 
-      await room.connect(decryptedPayload.url, accessToken);
+      const serverUrl = decryptedPayload.url || fallbackServerUrl;
+
+      await room.connect(serverUrl, accessToken);
       await room.startAudio();
 
       const audioTrack = await requestMicAccess();
