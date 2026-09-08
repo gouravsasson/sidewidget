@@ -22,6 +22,7 @@ function App() {
   const [showPopup, setShowPopup] = useState(false);
   const { agent_id, schema, type, tool } = useWidgetContext();
   const [room] = useState(() => new Room({}))
+  const normalizedType = type.toLowerCase();
 
   useEffect(() => {
     const localCountryCode = localStorage.getItem("countryCode");
@@ -53,6 +54,9 @@ function App() {
     thunderemotionlite: <LiveKitRoom token="" serverUrl="" room={room} connect={false}>
       <RetellaiAgent />
     </LiveKitRoom>,
+    geminivoice: <LiveKitRoom token="" serverUrl="" room={room} connect={false}>
+      <RetellaiAgent />
+    </LiveKitRoom>,
     
   };
 
@@ -78,7 +82,7 @@ function App() {
         <EmpRetellaiAgent />
       </LiveKitRoom>
     ) : (
-      widgetMap[type] || null
+      widgetMap[normalizedType] || null
     )}
   </>
 );

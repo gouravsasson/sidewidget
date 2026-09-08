@@ -4,15 +4,18 @@ import "./index.css";
 import App from "./App.tsx";
 import { WidgetProvider } from "./constexts/WidgetContext.tsx";
 
+const params = new URLSearchParams(window.location.search);
+const widgetConfig = {
+  agent_id: params.get("agent_id") || params.get("widget_id") || "",
+  schema: params.get("schema") || "",
+  type: params.get("type") || "thunderemotionlite",
+  tool: params.get("tool") || "",
+  agni_agent_id: params.get("agni_agent_id") || "",
+};
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <WidgetProvider
-      agent_id="c95a3759-bb70-4463-a3b1-390910ed46e8"
-      schema="7a5a46c6-a08e-477c-93c8-5afd7565069c"
-      type="thunderemotionlite"
-      tool=""
-      agni_agent_id=""
-    >
+    <WidgetProvider {...widgetConfig}>
       <App />
     </WidgetProvider>
   </StrictMode>

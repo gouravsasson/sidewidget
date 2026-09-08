@@ -14,6 +14,15 @@ export default defineConfig({
     // Define process.env as an empty object to avoid needing window.process
     "process.env": {},
   },
+  server: {
+    host: "0.0.0.0",
+    port: 5173,
+    strictPort: true,
+    allowedHosts: [
+      ".trycloudflare.com",
+      ".devtunnels.ms",
+    ],
+  },
   build: {
     lib: {
       entry: path.resolve(__dirname, "src/widget.tsx"),

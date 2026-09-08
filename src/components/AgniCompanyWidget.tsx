@@ -41,18 +41,28 @@ import axios from "axios";
 // Company-specific config
 // This widget runs ONLY when the incoming Snowie agent_id is one of the
 // keys below (see the check in App.tsx). Those agents are migrated off the
-// old app.snowie.ai/create-room API and onto the new Agni API
-// (api.ravan.ai) — the CSS/theme is still read from the Snowie agent_id.
+// old app.snowie.ai/create-room API and onto the new Agni API — the
+// CSS/theme is still read from the Snowie agent_id.
 //
-// agniAgentId is the hardcoded Agni agent used for the start call.
-// apiKey must belong to that same Agni account, otherwise api.ravan.ai
-// will reject the requests.
-// leadWebhookUrl (optional) receives the form's name/email/phone on submit.
+// Only presentation lives here. The Agni agent id, API key and lead webhook
+// URL are in api/agni.ts, which runs on the server: anything in this file
+// ends up readable in the public react-widget-uv.iife.js bundle.
+//
+// Adding an agent means adding it BOTH here (for the UI + the App.tsx
+// routing check) and to AGENTS in api/agni.ts (for the credentials).
 // ─────────────────────────────────────────────
+/**
+ * Our own serverless proxy (api/agni.ts). The widget is embedded on customer
+ * domains, so this has to be absolute — it can't be a same-origin path.
+ *
+ * For local work run `npx vercel dev` and point the widget at it with
+ * VITE_AGNI_PROXY_URL=http://localhost:3000/api/agni in a .env file;
+ * otherwise `npm run dev` talks to the deployed proxy.
+ */
+const AGNI_PROXY_URL =
+  import.meta.env.VITE_AGNI_PROXY_URL || "https://sidewidget.vercel.app/api/agni";
+
 type AgniCompanyConfig = {
-  agniAgentId: string;
-  apiKey: string;
-  leadWebhookUrl?: string;
   /** Overrides the `type` query param on the Snowie widget-settings call. */
   settingsType?: string;
   /**
@@ -81,18 +91,9 @@ type AgniCompanyConfig = {
 
 export const AGNI_COMPANY_CONFIGS: Record<string, AgniCompanyConfig> = {
   // Company 1 — original Agni migration
-  "514e1c5a-72c8-4670-a2f7-3851f7b49bae": {
-    agniAgentId: "019e9315-e11e-7580-a785-5dc14877d996",
-    apiKey:
-      "ak_7457bc2caf4b0f1c612e1356f1b8bc68030c865861114d39c0381eaf3ef835b5",
-  },
+  "514e1c5a-72c8-4670-a2f7-3851f7b49bae": {},
   // Company 2 — form enabled, leads pushed to GoHighLevel
   "c95a3759-bb70-4463-a3b1-390910ed46e8": {
-    agniAgentId: "019ff206-1c8a-7a23-b22e-33a33901c38b",
-    apiKey:
-      "ak_ef9dcb8ed96c5014c447ab5a8e5397ca684316f7a982d542852d78bf6ec1275a",
-    leadWebhookUrl:
-      "https://services.leadconnectorhq.com/hooks/OtX5NYGUzUeSo2a5G57J/webhook-trigger/e222f048-6c9d-4569-a685-fb1a57d3c026",
     // This agent's Snowie type is "UltraVoxVoice", but the widget-settings
     // endpoint only serves it under type=thunder (passing UltraVoxVoice
     // returns 400 "schema_name and agent_code are required").
@@ -363,7 +364,13 @@ const AgniCompanyWidget = ({
 }: RetellaiAgentProps) => {
   const decoder = new TextDecoder();
   const containerRef = useRef<HTMLDivElement>(null);
-  const { agent_id, schema, type: agent_type, tool, agni_agent_id } = useWidgetContext();
+  // agni_agent_id is deliberately not read here — the server picks the Agni
+  // agent from agent_id so a stale embed attribute can't redirect the call.
+  const { agent_id, schema, type: agent_type, tool } = useWidgetContext();
+  const [commerceSessionId, setCommerceSessionId] = useState(
+    () => new URLSearchParams(window.location.search).get("commerce_session_id") || "",
+  );
+  const [storefrontPageContext, setStorefrontPageContext] = useState<Record<string, unknown>>({});
   const [widgetTheme, setWidgetTheme] = useState<WidgetTheme | null>(null);
   const onlyOnce = useRef(false);
   const [expanded, setExpanded] = useState(false);
@@ -376,6 +383,29 @@ const AgniCompanyWidget = ({
   const [speech, setSpeech] = useState("");
   const [, setIsGlowing] = useState(false);
   const [domainStatus, setDomainStatus] = useState("active")
+  useEffect(() => {
+    const receiveStorefrontContext = (event: MessageEvent) => {
+      if (event.source !== window.parent) return;
+      if (event.data?.type !== "snowie:storefront-context") return;
+      if (typeof event.data.sessionId === "string" && event.data.sessionId) {
+        setCommerceSessionId(event.data.sessionId);
+      }
+      if (event.data.pageContext && typeof event.data.pageContext === "object") {
+        setStorefrontPageContext(event.data.pageContext);
+      }
+    };
+    window.addEventListener("message", receiveStorefrontContext);
+    const requestContext = () =>
+      window.parent.postMessage({ type: "snowie:request-context" }, "*");
+    requestContext();
+    const retryTimer = window.setInterval(requestContext, 500);
+    const stopTimer = window.setTimeout(() => window.clearInterval(retryTimer), 10000);
+    return () => {
+      window.removeEventListener("message", receiveStorefrontContext);
+      window.clearInterval(retryTimer);
+      window.clearTimeout(stopTimer);
+    };
+  }, []);
   useEffect(() => {
     const getAgentData = async () => {
       try {
@@ -432,15 +462,12 @@ const AgniCompanyWidget = ({
   const [showMicDeniedModal, setShowMicDeniedModal] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
 
-  const baseUrl = "https://api.ravan.ai/api/v1/calling/create-call";
   const settingsBaseUrl = "https://app.snowie.ai";
 
-  // Per-company Agni config, keyed by the Snowie agent_id. The hardcoded
-  // config wins over the embed's agni_agent_id attribute so a stale embed
-  // can't point a migrated agent at the wrong Agni agent.
+  // Per-company config, keyed by the Snowie agent_id. Only UI concerns live
+  // here now — the Agni agent id, API key and lead webhook moved server-side
+  // into api/agni.ts so they never ship in the public bundle.
   const companyConfig = AGNI_COMPANY_CONFIGS[agent_id];
-  const agniAgentId = companyConfig?.agniAgentId || agni_agent_id;
-  const agniApiKey = companyConfig?.apiKey || "";
   const copy = companyConfig?.copy;
 
   // Form styling. Everything falls back to the pre-existing look/theme colors,
@@ -732,8 +759,6 @@ const AgniCompanyWidget = ({
     // Clear on each run so handler logic updates are picked up
     registeredToolsRef.current.clear();
 
-    const toolsUrl = "https://api.ravan.ai/api/v1/tools";
-
     // Dynamic handler builder — matches tool by name pattern, falls back to a no-op
     const buildHandler = (toolName: string): ((data: RpcInvocationData) => Promise<string>) => {
       if (toolName.includes("location")) {
@@ -762,13 +787,14 @@ const AgniCompanyWidget = ({
 
     const registerClientTools = async () => {
       try {
-        const res = await axios.get(toolsUrl, {
-          headers: { "X-Api-Key": agniApiKey },
-          params: { limit: 100, offset: 0, agent_id: agniAgentId },
+        // The proxy already filters to client tools.
+        const res = await axios.post(AGNI_PROXY_URL, {
+          action: "tools",
+          agent_id,
         });
 
-        const tools: Array<{ name: string; type: string }> = res.data.data ?? [];
-        const clientTools = tools.filter((t) => t.type === "client");
+        const clientTools: Array<{ name: string; type: string }> =
+          res.data.data ?? [];
         console.log(`[registerClientTools] found ${clientTools.length} client tools:`, clientTools.map((t) => t.name));
 
         for (const clientTool of clientTools) {
@@ -972,18 +998,14 @@ const AgniCompanyWidget = ({
         return;
       }
 
-      const res = await axios.post(`${baseUrl}`, {
-        agent_id: agniAgentId,
-        metadata: {},
-        prompt_dynamic_variables: {},
-        type: "web_call",
+      // Goes through our own proxy — the Agni key and agent id stay on the
+      // server (api/agni.ts) instead of shipping in this bundle.
+      const res = await axios.post(AGNI_PROXY_URL, {
+        action: "create-call",
+        agent_id,
         caller_name: payload.caller_name,
         caller_email: payload.caller_email,
         to_phone_number: payload.to_phone_number,
-      }, {
-        headers: {
-          "X-Api-Key": agniApiKey
-        }
       });
       console.log("API response:", res);
       const decryptedPayload = res.data.data;
@@ -1038,24 +1060,23 @@ const AgniCompanyWidget = ({
     }
   };
 
-  const getSessionId = () => localStorage.getItem("snowie_session_id") || undefined;
+  const getSessionId = () =>
+    commerceSessionId ||
+    new URLSearchParams(window.location.search).get("commerce_session_id") ||
+    localStorage.getItem("snowie_session_id") ||
+    undefined;
 
   // Push the form's name / email / phone to this company's lead webhook.
-  // Only fires for agents whose config declares a leadWebhookUrl.
+  // The proxy holds the webhook URL and no-ops for agents without one.
   // Fire-and-forget: a webhook failure must never block the call.
   const sendLeadToWebhook = async (data: Record<string, string>) => {
-    const webhookUrl = companyConfig?.leadWebhookUrl;
-    if (!webhookUrl) return;
-
-    const rawPhone = (data.to_phone_number || "").trim();
-    const phone = rawPhone && !rawPhone.startsWith("+") ? `+${rawPhone}` : rawPhone;
-
     try {
-      await axios.post(webhookUrl, {
-        name: data.caller_name || "",
-        email: data.caller_email || "",
-        phone,
+      await axios.post(AGNI_PROXY_URL, {
+        action: "lead",
         agent_id,
+        caller_name: data.caller_name || "",
+        caller_email: data.caller_email || "",
+        to_phone_number: data.to_phone_number || "",
         schema_name: schema,
         source_url: window.location.href,
       });
@@ -1065,13 +1086,19 @@ const AgniCompanyWidget = ({
   };
 
   const handleSubmit = async () => {
+    const storefrontSessionId = getSessionId();
+    if (!storefrontSessionId) {
+      alert("Snowie is still connecting to this storefront. Please wait a moment and try again.");
+      return;
+    }
     let payload: Record<string, unknown> = {};
     if (agent_type === "thunderemotion") {
       payload = {
         agent_code: agent_id,
         schema_name: schema,
         provider: agent_type,
-        session_id: getSessionId(),
+        snowie_session_id: storefrontSessionId,
+        page_context: storefrontPageContext,
       };
     } else {
       payload = {
@@ -1079,7 +1106,8 @@ const AgniCompanyWidget = ({
         schema_name: schema,
         provider: "thunderemotionlite",
         requested_domains: `https://${window.location.hostname}`,
-        session_id: getSessionId(),
+        snowie_session_id: storefrontSessionId,
+        page_context: storefrontPageContext,
       };
     }
     if (tool) {
@@ -1097,7 +1125,8 @@ const AgniCompanyWidget = ({
           agent_code: agent_id,
           schema_name: schema,
           provider: agent_type,
-          session_id: getSessionId(),
+          snowie_session_id: getSessionId(),
+          page_context: storefrontPageContext,
         };
         if (tool) {
           payload.tool_list = tool;

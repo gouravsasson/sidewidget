@@ -12,6 +12,12 @@ dist
 dist-ssr
 *.local
 
+# Secrets — API keys for api/agni.ts live here locally, never in git
+.env
+.env.*
+!.env.example
+.vercel
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

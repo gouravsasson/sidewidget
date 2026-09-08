@@ -1,6 +1,23 @@
 (function () {
   "use strict";
 
+  // Backward-compatible entrypoint. Existing installs that reference the old
+  // Shopify-only bridge are upgraded to the platform-neutral SDK.
+  var legacyScript = document.currentScript;
+  if (!window.SnowieCommerce && legacyScript) {
+    var sdk = document.createElement("script");
+    sdk.async = true;
+    sdk.src = legacyScript.src.replace(/snowie-bridge(?:\.min)?\.js(?:\?.*)?$/, "sdk.js");
+    ["schema", "tenant", "widget-id", "agent-id", "base-url", "widget-src", "poll-interval"].forEach(
+      function (name) {
+        var value = legacyScript.getAttribute("data-" + name);
+        if (value) sdk.setAttribute("data-" + name, value);
+      }
+    );
+    document.head.appendChild(sdk);
+  }
+  return;
+
   // ─── Config ──────────────────────────────────────────────────────────────────
   var scriptTag =
     document.currentScript ||

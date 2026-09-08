@@ -29,6 +29,10 @@ import {
 } from "livekit-client";
 import axios from "axios";
 
+const SNOWIE_API_URL = (
+  import.meta.env.VITE_SNOWIE_API_URL || "https://app.snowie.ai"
+).replace(/\/$/, "");
+
 export interface WidgetTheme {
   bot_auto_start: boolean;
   bot_position: string;
@@ -270,6 +274,10 @@ const RetellaiAgent = ({
   const decoder = new TextDecoder();
   const containerRef = useRef<HTMLDivElement>(null);
   const { agent_id, schema, type: agent_type, tool } = useWidgetContext();
+  const [commerceSessionId, setCommerceSessionId] = useState(
+    () => new URLSearchParams(window.location.search).get("commerce_session_id") || "",
+  );
+  const [storefrontPageContext, setStorefrontPageContext] = useState<Record<string, unknown>>({});
   const [widgetTheme, setWidgetTheme] = useState<WidgetTheme | null>(null);
   const onlyOnce = useRef(false);
   const [expanded, setExpanded] = useState(false);
@@ -283,10 +291,33 @@ const RetellaiAgent = ({
   const [isGlowing, setIsGlowing] = useState(false);
   const [domainStatus, setDomainStatus] = useState("active")
   useEffect(() => {
+    const receiveStorefrontContext = (event: MessageEvent) => {
+      if (event.source !== window.parent) return;
+      if (event.data?.type !== "snowie:storefront-context") return;
+      if (typeof event.data.sessionId === "string" && event.data.sessionId) {
+        setCommerceSessionId(event.data.sessionId);
+      }
+      if (event.data.pageContext && typeof event.data.pageContext === "object") {
+        setStorefrontPageContext(event.data.pageContext);
+      }
+    };
+    window.addEventListener("message", receiveStorefrontContext);
+    const requestContext = () =>
+      window.parent.postMessage({ type: "snowie:request-context" }, "*");
+    requestContext();
+    const retryTimer = window.setInterval(requestContext, 500);
+    const stopTimer = window.setTimeout(() => window.clearInterval(retryTimer), 10000);
+    return () => {
+      window.removeEventListener("message", receiveStorefrontContext);
+      window.clearInterval(retryTimer);
+      window.clearTimeout(stopTimer);
+    };
+  }, []);
+  useEffect(() => {
     const getAgentData = async () => {
       try {
         const res = await axios.get(
-          `https://app.snowie.ai/api/get-agent/${agent_id}/?schema_name=${schema}`,
+          `${SNOWIE_API_URL}/api/get-agent/${agent_id}/?schema_name=${schema}`,
         );
 
         const allowed_domain = res.data.allowed_domains;
@@ -306,7 +337,6 @@ const RetellaiAgent = ({
     text: string;
     isLocal: boolean;
   } | null>(null);
-  const serverUrl = "wss://agnibyravanai-sw47y5hk.livekit.cloud";
   const audioTrackRef = useRef<MediaStreamTrack | null>(null);
   const [muted, setMuted] = useState(false);
   const [transcripts, setTranscripts] = useState("");
@@ -323,8 +353,8 @@ const RetellaiAgent = ({
   // ── NEW: mic denied modal state ──
   const [showMicDeniedModal, setShowMicDeniedModal] = useState(false);
 
-  const baseUrl = "https://app.snowie.ai/api/create-room/";
-  const settingsBaseUrl = "https://app.snowie.ai";
+  const baseUrl = `${SNOWIE_API_URL}/api/create-room/`;
+  const settingsBaseUrl = SNOWIE_API_URL;
 
   const capitalize = (s: string) =>
     s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
@@ -723,6 +753,10 @@ const RetellaiAgent = ({
       const res = await axios.post(`${baseUrl}`, payload);
       const decryptedPayload = res.data.response;
       const accessToken = decryptedPayload.token;
+      const serverUrl = decryptedPayload?.agni_data?.data?.url;
+      if (!serverUrl) {
+        throw new Error("Create-room response did not include an Agni server URL");
+      }
       const callId =
         decryptedPayload.call_id || decryptedPayload.room_id || "active";
       localStorage.setItem("callId", callId);
@@ -772,24 +806,37 @@ const RetellaiAgent = ({
     }
   };
 
-  const getSessionId = () => localStorage.getItem("snowie_session_id") || undefined;
+  const getSessionId = () =>
+    commerceSessionId ||
+    new URLSearchParams(window.location.search).get("commerce_session_id") ||
+    localStorage.getItem("snowie_session_id") ||
+    undefined;
 
   const handleSubmit = async () => {
+    const storefrontSessionId = getSessionId();
+    if (!storefrontSessionId) {
+      alert("Snowie is still connecting to this storefront. Please wait a moment and try again.");
+      return;
+    }
     let payload: Record<string, any> = {};
     if (agent_type === "thunderemotion") {
       payload = {
         agent_code: agent_id,
         schema_name: schema,
         provider: agent_type,
-        session_id: getSessionId(),
+        snowie_session_id: storefrontSessionId,
+        page_context: storefrontPageContext,
       };
-    } else if (agent_type === "thunderemotionlite") {
+    } else if (
+      agent_type === "thunderemotionlite" ||
+      agent_type.toLowerCase() === "geminivoice"
+    ) {
       payload = {
         agent_code: agent_id,
         schema_name: schema,
         provider: "thunderemotionlite",
-        requested_domains: `https://${window.location.hostname}`,
-        session_id: getSessionId(),
+        snowie_session_id: storefrontSessionId,
+        page_context: storefrontPageContext,
       };
     }
     if (tool) {
@@ -803,12 +850,18 @@ const RetellaiAgent = ({
     e.preventDefault();
     try {
       if (status === "disconnected") {
+        const storefrontSessionId = getSessionId();
+        if (!storefrontSessionId) {
+          alert("Snowie is still connecting to this storefront. Please wait a moment and try again.");
+          return;
+        }
         setFormSubmitting(true);
         const payload: Record<string, any> = {
           agent_code: agent_id,
           schema_name: schema,
           provider: agent_type,
-          session_id: getSessionId(),
+          snowie_session_id: storefrontSessionId,
+          page_context: storefrontPageContext,
         };
         if (tool) {
           payload.tool_list = tool;
