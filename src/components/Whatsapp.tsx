@@ -23,6 +23,7 @@ import "react-phone-input-2/lib/style.css";
 import { useWidgetContext } from "../constexts/WidgetContext";
 import { WhatsAppIcon } from "./whatsappicon";
 import whatsappIcon from "../assets/whatsapp-svgrepo-com.svg";
+import PoweredByRavan from "./PoweredByRavan";
 
 export interface WidgetTheme {
   widget_theme: {
@@ -52,6 +53,7 @@ export interface WidgetTheme {
     bot_tagline: string;
     is_glowing: boolean;
     is_transparent: boolean; // ← new field
+    show_is_power_by?: boolean;
     custom_form_fields: Array<{
       id: number;
       type: "text" | "email" | "tel" | "number" | "textarea";
@@ -1101,6 +1103,9 @@ const Whatsapp = () => {
                 {/* Microphone Permission Overlay */}
                 
               </>)}
+            {widgetTheme?.show_is_power_by && (
+              <PoweredByRavan textColor={widgetTheme?.bot_text_color} />
+            )}
           </div>
         </div>
       ) : (

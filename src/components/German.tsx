@@ -20,6 +20,7 @@ import logo from "../assets/logo.png";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import { useWidgetContext } from "../constexts/WidgetContext";
+import PoweredByRavan from "./PoweredByRavan";
 
 export interface WidgetTheme {
   widget_theme: {
@@ -47,6 +48,7 @@ export interface WidgetTheme {
     bot_name: string;
     bot_show_form: boolean;
     bot_tagline: string;
+    show_is_power_by?: boolean;
   };
 }
 
@@ -918,6 +920,9 @@ const German = () => {
                   </div>
                 )}
               </>
+            )}
+            {widgetTheme?.show_is_power_by && (
+              <PoweredByRavan textColor={widgetTheme?.bot_text_color} />
             )}
           </div>
         </div>

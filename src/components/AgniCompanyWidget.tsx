@@ -36,6 +36,7 @@ import {
   Track,
 } from "livekit-client";
 import axios from "axios";
+import PoweredByRavan from "./PoweredByRavan";
 
 // ─────────────────────────────────────────────
 // Company-specific config
@@ -148,6 +149,7 @@ export interface WidgetTheme {
   bot_tagline: string;
   is_glowing: boolean;
   is_transparent: boolean;
+  show_is_power_by?: boolean;
   widget_submit_btn_text: string;
   custom_form_fields: Array<{
     id: number;
@@ -1739,6 +1741,9 @@ const AgniCompanyWidget = ({
                   </div>
                 </div>
               </>
+            )}
+            {widgetTheme?.show_is_power_by && (
+              <PoweredByRavan textColor={widgetTheme?.bot_text_color} />
             )}
           </div>
         </div>
