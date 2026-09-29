@@ -792,7 +792,7 @@ const CustomWidget = () => {
       </style>
       {expanded ? (
         <div
-          className={`rounded-3xl shadow-2xl overflow-hidden widget-container ${
+          className={`rounded-3xl shadow-2xl overflow-hidden flex flex-col widget-container ${
             isTransparent ? "transparent-background" : ""
           }`}
           style={{
@@ -813,7 +813,7 @@ const CustomWidget = () => {
           {" "}
           {/* Header */}
           <div
-            className="px-6 py-4 flex justify-between items-center header"
+            className="px-6 py-4 flex justify-between items-center header shrink-0"
             style={{ backgroundColor: widgetTheme?.bot_bubble_color }}
           >
             <div className="flex items-center space-x-3">
@@ -869,9 +869,8 @@ const CustomWidget = () => {
           </div>
           {/* Main Content */}
           <div
-            className="flex flex-col h-full"
+            className="flex flex-col flex-1 min-h-0"
             style={{
-              height: "calc(100% - 80px)",
               backgroundColor: isTransparent
                 ? "transparent"
                 : widgetTheme?.bot_background_color || "#f3f4f6",

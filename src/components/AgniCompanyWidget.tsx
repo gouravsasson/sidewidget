@@ -1359,7 +1359,7 @@ const AgniCompanyWidget = ({
 
       {expanded ? (
         <div
-          className={`rounded-3xl shadow-2xl overflow-hidden widget-container ${widgetTheme?.is_transparent ? "transparent-background transparent-widget" : ""}`}
+          className={`rounded-3xl shadow-2xl overflow-hidden flex flex-col widget-container ${widgetTheme?.is_transparent ? "transparent-background transparent-widget" : ""}`}
           style={{
             width: "min(90vw, 400px)",
             height:
@@ -1375,7 +1375,7 @@ const AgniCompanyWidget = ({
         >
           {/* Header */}
           <div
-            className="px-6 py-4 flex justify-between items-center"
+            className="px-6 py-4 flex justify-between items-center shrink-0"
             style={{
               backgroundColor: widgetTheme?.bot_bubble_color || "#2563eb",
               color: widgetTheme?.bot_text_color || "#ffffff",
@@ -1435,9 +1435,9 @@ const AgniCompanyWidget = ({
           </div>
 
           {/* Main Content */}
-          <div className="flex flex-col h-[calc(100%-64px)] overflow-hidden">
+          <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
             {widgetTheme?.bot_show_form && showform ? (
-              <div className="flex-1 p-6 flex flex-col items-center justify-center overflow-y-auto">
+              <div className="flex-1 min-h-0 p-6 flex flex-col items-center justify-center overflow-y-auto">
                 <h3
                   className={`text-lg font-semibold text-center w-full ${copy?.formSubheading ? "mb-2" : "mb-6"}`}
                   style={{ color: formTextColor || "#1f2937" }}
@@ -1602,7 +1602,7 @@ const AgniCompanyWidget = ({
               </div>
             ) : (
               <>
-                <div className="flex-1 flex flex-col items-center p-6 overflow-y-auto">
+                <div className="flex-1 min-h-0 flex flex-col items-center p-6 overflow-y-auto">
                   <button
                     className={`${tool === "whatsapp" ? "w-28 h-28 mb-4" : "w-40 h-40 mb-6"} rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-lg overflow-hidden`}
                     style={{

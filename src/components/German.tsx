@@ -692,7 +692,7 @@ const German = () => {
       </style>
       {expanded ? (
         <div
-          className="bg-white rounded-3xl shadow-2xl overflow-hidden widget-container"
+          className="bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col widget-container"
           style={{
             width: "min(90vw, 400px)",
             height:
@@ -703,7 +703,7 @@ const German = () => {
         >
           {/* Header */}
           <div
-            className="px-6 py-4 flex justify-between items-center header"
+            className="px-6 py-4 flex justify-between items-center header shrink-0"
             style={{ backgroundColor: widgetTheme?.bot_bubble_color }}
           >
             <div className="flex items-center space-x-3">
@@ -760,8 +760,7 @@ const German = () => {
 
           {/* Main Content */}
           <div
-            className="flex flex-col h-full bg-gray-50"
-            style={{ height: "calc(100% - 80px)" }}
+            className="flex flex-col flex-1 min-h-0 bg-gray-50"
           >
             {widgetTheme?.bot_show_form && showform ? (
               <div className="flex flex-col items-center justify-center h-full p-6 form-container">
