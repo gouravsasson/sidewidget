@@ -21,6 +21,7 @@ import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import { useWidgetContext } from "../constexts/WidgetContext";
 
+import { SNOWIE_API_ORIGIN } from "../config";
 export interface WidgetTheme {
   widget_theme: {
     bot_auto_start: boolean;
@@ -88,7 +89,7 @@ const German = () => {
     status,
     setStatus,
   } = useUltravoxStore();
-  const baseurl = "https://app.snowie.ai";
+  const baseurl = SNOWIE_API_ORIGIN;
   const { agent_id, schema } = useWidgetContext();
   // const agent_id = "ea19892e-09cc-44a9-9fc0-586abecf1dc6";
   // const schema = "ed6a8f90-9d20-4eff-866c-8ecc7b2b8502";

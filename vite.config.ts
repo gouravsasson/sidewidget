@@ -10,6 +10,18 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    // Vite blocks requests with an unrecognized Host header by default (DNS
+    // rebinding protection). A Cloudflare quick tunnel forwards the public
+    // *.trycloudflare.com hostname straight through, so it gets rejected
+    // with 403 unless explicitly allowed. Dev-only, never ships in a build.
+    allowedHosts: [".trycloudflare.com"],
+  },
+  // `server.allowedHosts` does not apply to `vite preview`, which is what
+  // serves the built widget bundle over the tunnel.
+  preview: {
+    allowedHosts: [".trycloudflare.com"],
+  },
   define: {
     // Define process.env as an empty object to avoid needing window.process
     "process.env": {},

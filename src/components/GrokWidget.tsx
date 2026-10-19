@@ -22,12 +22,33 @@ import {
   useChat,
 } from "@livekit/components-react";
 import {
+  ConnectionState,
   DataPacket_Kind,
   RemoteParticipant,
   RoomEvent,
   Track,
 } from "livekit-client";
 import axios from "axios";
+
+import { SNOWIE_API_ORIGIN } from "../config";
+import {
+  clearActiveCall,
+  readActiveCall,
+  readWidgetOpen,
+  shopperId,
+  writeActiveCall,
+  writeWidgetOpen,
+  type ActiveCall,
+} from "../callSession";
+
+declare global {
+  interface Window {
+    SnowieCommerce?: {
+      setCall?: (roomName: string, callId?: string) => void;
+      clearCall?: () => void;
+    };
+  }
+}
 
 export interface WidgetTheme {
   bot_auto_start: boolean;
@@ -42,6 +63,7 @@ export interface WidgetTheme {
   bot_show_chat: boolean;
   bot_mute_on_tab_change: boolean;
   bot_mute_on_minimize: boolean;
+  resume_call_on_refresh?: boolean;
   bot_bubble_color: string;
   bot_background_color: string;
   bot_icon_color: string;
@@ -278,6 +300,15 @@ const RetellaiAgent = ({
   const status = useConnectionState(room);
   const [micMute, setMicMute] = useState(false);
   const manualDisconnectRef = useRef(false);
+  const recoveringRef = useRef(false);
+  const replacingRef = useRef(false);
+  const leavingRef = useRef(false);
+  const attemptRef = useRef(0);
+  const resumeOnRef = useRef(false);
+  const credentialsRef = useRef<ActiveCall | null>(null);
+  const [resumeOn, setResumeOn] = useState(false);
+  const [callPhase, setCallPhase] = useState<"idle" | "reconnecting" | "live">("idle");
+  const [rejoinError, setRejoinError] = useState("");
 
   const [speech, setSpeech] = useState("");
   const [isGlowing, setIsGlowing] = useState(false);
@@ -286,7 +317,7 @@ const RetellaiAgent = ({
     const getAgentData = async () => {
       try {
         const res = await axios.get(
-          `https://app.snowie.ai/api/get-agent/${agent_id}/?schema_name=${schema}`,
+          `${SNOWIE_API_ORIGIN}/api/get-agent/${agent_id}/?schema_name=${schema}`,
         );
 
         const allowed_domain = res.data.allowed_domains;
@@ -324,8 +355,8 @@ const RetellaiAgent = ({
   // ── NEW: mic denied modal state ──
   const [showMicDeniedModal, setShowMicDeniedModal] = useState(false);
 
-  const baseUrl = "https://app.snowie.ai/api/create-room/";
-  const settingsBaseUrl = "https://app.snowie.ai";
+  const baseUrl = `${SNOWIE_API_ORIGIN}/api/create-room/`;
+  const settingsBaseUrl = SNOWIE_API_ORIGIN;
 
   const capitalize = (s: string) =>
     s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
@@ -364,6 +395,10 @@ const RetellaiAgent = ({
   };
 
   useEffect(() => {
+    if (callPhase === "reconnecting" || recoveringRef.current) {
+      setSpeech("Rejoining your active call…");
+      return;
+    }
     if (status === "disconnected") {
       setSpeech(widgetTheme?.bot_tagline || "Talk To AI Assistant");
     } else if (status === "connecting") {
@@ -373,30 +408,36 @@ const RetellaiAgent = ({
     } else {
       setSpeech("");
     }
-  }, [status, widgetTheme?.bot_name, widgetTheme?.bot_tagline]);
+  }, [status, callPhase, widgetTheme?.bot_name, widgetTheme?.bot_tagline]);
 
   useEffect(() => {
     if (status === "connected") {
       wasConnectedRef.current = true;
+      if (!recoveringRef.current) setCallPhase("live");
     }
 
     if (status === "disconnected" && wasConnectedRef.current) {
+      if (recoveringRef.current || replacingRef.current || leavingRef.current) return;
       wasConnectedRef.current = false;
 
-      // Clean up audio track if it's still alive
       if (audioTrackRef.current) {
         audioTrackRef.current.stop();
         audioTrackRef.current = null;
       }
 
-      // Reset all UI state
       setIsRecording(false);
       setIsGlowing(false);
       setLatestEvent(null);
       setTranscripts("");
       setMuted(false);
-      setExpanded(false);
+      if (!resumeOnRef.current) setExpanded(false);
       localStorage.removeItem("callId");
+      if (resumeOnRef.current && !manualDisconnectRef.current) {
+        clearActiveCall();
+        credentialsRef.current = null;
+        setCallPhase("idle");
+        setRejoinError("That call ended. Press start to begin a new one.");
+      }
     }
   }, [status]);
 
@@ -452,7 +493,6 @@ const RetellaiAgent = ({
   };
 
   useEffect(() => {
-    localStorage.removeItem("callId");
     if (onlyOnce.current) return;
     const getWidgetTheme = async () => {
       try {
@@ -461,6 +501,13 @@ const RetellaiAgent = ({
         );
         const data = response.data.response;
         setWidgetTheme(data);
+        const resume =
+          agent_type === "thunderemotionlite" &&
+          Boolean(data?.resume_call_on_refresh);
+        resumeOnRef.current = resume;
+        setResumeOn(resume);
+        if (resume && readWidgetOpen()) setExpanded(true);
+        if (!resume) localStorage.removeItem("callId");
         onlyOnce.current = true;
       } catch (error) {
         console.error("Failed to fetch widget theme:", error);
@@ -519,6 +566,8 @@ const RetellaiAgent = ({
   useEffect(() => {
     if (!widgetTheme?.bot_auto_start) return;
     if (manualDisconnectRef.current) return;   // ⭐ STOP LOOP
+
+    if (resumeOnRef.current && readActiveCall()) return;
 
     const callId = localStorage.getItem("callId");
 
@@ -614,6 +663,70 @@ const RetellaiAgent = ({
     manualDisconnectRef.current = false;
   }, []);
 
+  useEffect(() => {
+    if (agent_type !== "thunderemotionlite" || !resumeOn) return;
+    if (room.state === ConnectionState.Connected) return;
+    const saved = readActiveCall();
+    if (!saved) return;
+
+    const attempt = ++attemptRef.current;
+    recoveringRef.current = true;
+    setCallPhase("reconnecting");
+    setRejoinError("");
+    if (readWidgetOpen()) setExpanded(true);
+
+    const rejoin = async () => {
+      try {
+        if (room.state !== ConnectionState.Disconnected) {
+          replacingRef.current = true;
+          await room.disconnect();
+          replacingRef.current = false;
+        }
+        if (!isCurrentAttempt(attempt)) return;
+        await room.connect(saved.livekitUrl, saved.token);
+        await new Promise((resolve) => setTimeout(resolve, 750));
+        if (!isCurrentAttempt(attempt)) return;
+        if (room.state !== ConnectionState.Connected) {
+          throw new Error("Saved call is no longer connected");
+        }
+        window.SnowieCommerce?.setCall?.(room.name, saved.callSessionId);
+        credentialsRef.current = saved;
+        await publishMicrophone(attempt);
+        if (!isCurrentAttempt(attempt)) return;
+        recoveringRef.current = false;
+        setCallPhase("live");
+      } catch (err) {
+        if (!isCurrentAttempt(attempt)) return;
+        recoveringRef.current = false;
+        replacingRef.current = false;
+        credentialsRef.current = null;
+        clearActiveCall();
+        setCallPhase("idle");
+        setRejoinError("That call ended. Press start to begin a new one.");
+        console.error("Could not rejoin call", err);
+      }
+    };
+    rejoin();
+  }, [resumeOn, agent_type]);
+
+  useEffect(() => {
+    const onHide = () => {
+      attemptRef.current += 1;
+      if (resumeOnRef.current) {
+        leavingRef.current = true;
+        return;
+      }
+      room.disconnect();
+    };
+    window.addEventListener("pagehide", onHide);
+    window.addEventListener("beforeunload", onHide);
+    return () => {
+      window.removeEventListener("pagehide", onHide);
+      window.removeEventListener("beforeunload", onHide);
+      attemptRef.current += 1;
+    };
+  }, [room]);
+
 
 
   const resumeAudioContext = async (): Promise<void> => {
@@ -664,15 +777,17 @@ const RetellaiAgent = ({
   const toggleExpand = () => {
     if (!expanded) {
       setExpanded(true);
-      if (status === "disconnected") {
+      if (resumeOnRef.current) writeWidgetOpen(true);
+      window.SnowieCommerce?.setWidgetOpen?.(true);
+      if (status === "disconnected" && callPhase !== "reconnecting") {
         if (widgetTheme?.bot_show_form) {
           setShowform(true);
-        } else {
+        } else if (!resumeOnRef.current || !readActiveCall()) {
           startRecordingWithAudio();
         }
       }
     } else {
-      setExpanded(false);
+      hidePanel();
     }
   };
 
@@ -687,9 +802,46 @@ const RetellaiAgent = ({
     }
   };
 
+  const publishMicrophone = async (attempt: number) => {
+    if (room.state !== ConnectionState.Connected) return;
+    await room.startAudio();
+    const audioTrack = await requestMicAccess();
+    if (!isCurrentAttempt(attempt)) return;
+    if (!audioTrack) {
+      setShowMicDeniedModal(true);
+      return;
+    }
+    await room.localParticipant.publishTrack(audioTrack, {
+      name: "microphone",
+      source: Track.Source.Microphone,
+    });
+    if (!isCurrentAttempt(attempt)) {
+      audioTrack.stop();
+      return;
+    }
+    audioTrackRef.current = audioTrack;
+    setMuted(false);
+    setIsRecording(true);
+    setIsGlowing(true);
+  };
+
+  const isCurrentAttempt = (attempt: number) => attempt === attemptRef.current;
+
+  const rememberCall = (call: ActiveCall) => {
+    credentialsRef.current = call;
+    if (resumeOnRef.current) writeActiveCall(call);
+  };
+
+  const hidePanel = () => {
+    setExpanded(false);
+    if (resumeOnRef.current) writeWidgetOpen(false);
+  };
+
   const handleClose = async () => {
     try {
       manualDisconnectRef.current = true;
+      attemptRef.current += 1;
+      recoveringRef.current = false;
 
       if (audioTrackRef.current) {
         audioTrackRef.current.stop();
@@ -704,17 +856,23 @@ const RetellaiAgent = ({
       setTranscripts("");
       setExpanded(false);
       setLatestEvent(null);
+      setCallPhase("idle");
+      setRejoinError("");
       wasConnectedRef.current = false;
+      credentialsRef.current = null;
 
-      localStorage.removeItem("callId");
+      clearActiveCall();
+      window.SnowieCommerce?.clearCall?.();
     } catch (err) {
       console.error("Error closing:", err);
     }
   };
   // ── UPDATED: doStart uses requestMicAccess ──
   const doStart = async (payload: Record<string, any>) => {
+    const attempt = ++attemptRef.current;
+    recoveringRef.current = false;
+    setRejoinError("");
     try {
-      // Check mic permission BEFORE making the API call
       const permState = await checkMicPermission();
       if (permState === "denied") {
         setShowMicDeniedModal(true);
@@ -722,6 +880,7 @@ const RetellaiAgent = ({
       }
 
       const res = await axios.post(`${baseUrl}`, payload);
+      if (!isCurrentAttempt(attempt)) return;
       const decryptedPayload = res.data.response;
       const accessToken = decryptedPayload.token;
       const serverUrl =
@@ -732,31 +891,54 @@ const RetellaiAgent = ({
         decryptedPayload.call_id || decryptedPayload.room_id || "active";
       localStorage.setItem("callId", callId);
 
-      await room.connect(serverUrl, accessToken);
-      await room.startAudio();
-
-      const audioTrack = await requestMicAccess();
-      if (!audioTrack) {
-        // Mic denied — modal already shown, disconnect cleanly
+      if (room.state !== ConnectionState.Disconnected) {
+        replacingRef.current = true;
         await room.disconnect();
-        localStorage.removeItem("callId");
+        replacingRef.current = false;
+      }
+      if (!isCurrentAttempt(attempt)) return;
+
+      await room.connect(serverUrl, accessToken);
+      if (!isCurrentAttempt(attempt)) return;
+      if (room.state !== ConnectionState.Connected) {
+        throw new Error("Room did not connect");
+      }
+
+      const agniData = decryptedPayload.agni_data?.data || {};
+      const roomName =
+        decryptedPayload.room_name ||
+        agniData.room_id ||
+        agniData.room_name ||
+        room.name ||
+        "";
+      window.SnowieCommerce?.setCall?.(roomName, callId);
+      rememberCall({
+        livekitUrl: serverUrl,
+        token: accessToken,
+        callSessionId: callId,
+        startedAt: Date.now(),
+      });
+      if (resumeOnRef.current) writeWidgetOpen(true);
+      window.SnowieCommerce?.setWidgetOpen?.(true);
+
+      await publishMicrophone(attempt);
+      if (!audioTrackRef.current) {
+        await room.disconnect();
+        clearActiveCall();
+        credentialsRef.current = null;
+        window.SnowieCommerce?.clearCall?.();
         return;
       }
 
-      await room.localParticipant.publishTrack(audioTrack, {
-        name: "microphone",
-        source: Track.Source.Microphone,
-      });
-
-      audioTrackRef.current = audioTrack;
-      setMuted(false);
-      setIsRecording(true);
-      setIsGlowing(true);
       localStorage.setItem("formshow", "false");
       setTranscripts("");
       setShowform(false);
+      setCallPhase("live");
     } catch (err: any) {
+      if (!isCurrentAttempt(attempt)) return;
       console.error("Form error:", err);
+      clearActiveCall();
+      credentialsRef.current = null;
 
       if (
         err?.name === "NotAllowedError" ||
@@ -777,7 +959,7 @@ const RetellaiAgent = ({
     }
   };
 
-  const getSessionId = () => localStorage.getItem("snowie_session_id") || undefined;
+  const getSessionId = () => shopperId();
 
   const handleSubmit = async () => {
     let payload: Record<string, any> = {};
@@ -1099,14 +1281,15 @@ const RetellaiAgent = ({
                 )}
               </button>
               <button
-                onClick={() => setExpanded(false)}
+                onClick={hidePanel}
                 className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors"
               >
                 <Minimize2 className="w-5 h-5" />
               </button>
               <button
-                onClick={handleClose}
+                onClick={() => (resumeOn ? hidePanel() : handleClose())}
                 className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors"
+                aria-label={resumeOn ? "Hide" : "End call"}
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1230,6 +1413,30 @@ const RetellaiAgent = ({
                   >
                     {speech}
                   </div>
+
+                  {agent_type === "thunderemotionlite" && resumeOn && (
+                    <div className="w-full px-2 mb-3 text-center">
+                      {rejoinError && (
+                        <p className="text-xs text-red-600 mb-2">{rejoinError}</p>
+                      )}
+                      {callPhase === "reconnecting" ? (
+                        <p className="text-xs text-gray-500">Reconnecting…</p>
+                      ) : (
+                        <p className="text-xs text-gray-500">
+                          This call continues after a refresh. End call is the only way to stop it.
+                        </p>
+                      )}
+                      {callPhase === "live" && (
+                        <button
+                          type="button"
+                          onClick={handleClose}
+                          className="mt-2 text-xs underline text-red-600"
+                        >
+                          End call
+                        </button>
+                      )}
+                    </div>
+                  )}
 
 
                   <div className="w-full px-4 mb-4">

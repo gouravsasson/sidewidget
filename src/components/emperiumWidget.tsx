@@ -34,6 +34,7 @@ import {
 } from "livekit-client";
 import axios from "axios";
 
+import { SNOWIE_API_ORIGIN } from "../config";
 export interface WidgetTheme {
   bot_auto_start: boolean;
   bot_position: string;
@@ -295,7 +296,7 @@ const EmpRetellaiAgent = ({
     const getAgentData = async () => {
       try {
         const res = await axios.get(
-          `https://app.snowie.ai/api/get-agent/${agent_id}/?schema_name=${schema}`,
+          `${SNOWIE_API_ORIGIN}/api/get-agent/${agent_id}/?schema_name=${schema}`,
         );
 
         const allowed_domain = res.data.allowed_domains;
@@ -349,7 +350,7 @@ const EmpRetellaiAgent = ({
   const [showScrollButton, setShowScrollButton] = useState(false);
 
   const baseUrl = "https://api.ravan.ai/api/v1/calling/create-call";
-  const settingsBaseUrl = "https://app.snowie.ai";
+  const settingsBaseUrl = SNOWIE_API_ORIGIN;
 
   const capitalize = (s: string) =>
     s ? s.charAt(0).toUpperCase() + s.slice(1) : s;

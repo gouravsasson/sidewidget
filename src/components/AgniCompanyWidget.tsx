@@ -37,6 +37,7 @@ import {
 } from "livekit-client";
 import axios from "axios";
 
+import { SNOWIE_API_ORIGIN } from "../config";
 // ─────────────────────────────────────────────
 // Company-specific config
 // This widget runs ONLY when the incoming Snowie agent_id is one of the
@@ -380,7 +381,7 @@ const AgniCompanyWidget = ({
     const getAgentData = async () => {
       try {
         const res = await axios.get(
-          `https://app.snowie.ai/api/get-agent/${agent_id}/?schema_name=${schema}`,
+          `${SNOWIE_API_ORIGIN}/api/get-agent/${agent_id}/?schema_name=${schema}`,
         );
 
         const allowed_domain = res.data.allowed_domains;
@@ -434,7 +435,7 @@ const AgniCompanyWidget = ({
   const [showScrollButton, setShowScrollButton] = useState(false);
 
   const baseUrl = "https://api.ravan.ai/api/v1/calling/create-call";
-  const settingsBaseUrl = "https://app.snowie.ai";
+  const settingsBaseUrl = SNOWIE_API_ORIGIN;
 
   // Per-company Agni config, keyed by the Snowie agent_id. The hardcoded
   // config wins over the embed's agni_agent_id attribute so a stale embed
@@ -899,7 +900,7 @@ const AgniCompanyWidget = ({
       } else {
         await handleSubmit();
       }
-    } catch (err) {
+    } catch (err) { 
       console.error("Error starting recording:", err);
     }
   };
