@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <title>AI assistant</title>
+    <style>
+      html,
+      body,
+      #snowie-widget-root {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        background: transparent;
+      }
+
+      #snowie-widget-error {
+        box-sizing: border-box;
+        display: none;
+        min-height: 100%;
+        place-items: center;
+        padding: 24px;
+        color: #374151;
+        font: 14px/1.5 system-ui, sans-serif;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="snowie-widget-root"></div>
+    <div id="snowie-widget-error" role="alert">
+      This AI assistant could not be loaded.
+    </div>
+
+    <script>
+      (() => {
+        const variants = {
+          vision: {
+            tag: "react-widget",
+            css: "https://vision.voiceaiservice.com/react-widget.css",
+            script: "https://vision.voiceaiservice.com/react-widget.iife.js",
+            react: true,
+          },
+          speech: {
+            tag: "react-widget-spe",
+            css: "https://speech.voiceaiservice.com/react-widget-spe.css",
+            script: "https://speech.voiceaiservice.com/react-widget-spe.iife.js",
+            react: true,
+          },
+          tavus: {
+            tag: "react-widget-rvw",
+            css: "https://ravanvideo-wedgit.vercel.app/react-widget-uv.css",
+            script: "https://ravanvideo-wedgit.vercel.app/react-widget-uv.iife.js",
+            attributes: { type: "snowie" },
+          },
+          custom: {
+            tag: "react-widget-uv",
+            css: "https://widget.voiceaiservice.com/react-widget-uv.css",
+            script: "https://widget.voiceaiservice.com/react-widget-uv.iife.js",
+            attributes: { type: "customwidget" },
+          },
+          grok: {
+            tag: "react-widget-uv",
+            css: "/react-widget-uv.css",
+            script: "/react-widget-uv.iife.js",
+            attributes: { type: "thunderemotion" },
+          },
+          gemini: {
+            tag: "react-widget-uv",
+            css: "/react-widget-uv.css",
+            script: "/react-widget-uv.iife.js",
+            attributes: { type: "thunderemotionlite" },
+          },
+        };
+
+        const params = new URLSearchParams(window.location.search);
+        const agentId = params.get("agent_id") || "";
+        const schema = params.get("schema") || "";
+        const variant = variants[params.get("variant") || ""];
+        const root = document.getElementById("snowie-widget-root");
+        const error = document.getElementById("snowie-widget-error");
+
+        const fail = () => {
+          root.style.display = "none";
+          error.style.display = "grid";
+        };
+
+        const loadScript = (src) =>
+          new Promise((resolve, reject) => {
+            const script = document.createElement("script");
+            script.src = src;
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+          });
+
+        const start = async () => {
+          if (!agentId || !schema || !variant) {
+            fail();
+            return;
+          }
+
+          const stylesheet = document.createElement("link");
+          stylesheet.rel = "stylesheet";
+          stylesheet.href = variant.css;
+          document.head.appendChild(stylesheet);
+
+          try {
+            if (variant.react) {
+              await loadScript(
+                "https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js",
+              );
+              await loadScript(
+                "https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js",
+              );
+            }
+
+            window.process = window.process || { env: {} };
+            await loadScript(variant.script);
+
+            const widget = document.createElement(variant.tag);
+            widget.setAttribute("agent_id", agentId);
+            widget.setAttribute("schema", schema);
+            Object.entries(variant.attributes || {}).forEach(([key, value]) =>
+              widget.setAttribute(key, value),
+            );
+            root.appendChild(widget);
+          } catch {
+            fail();
+          }
+        };
+
+        start();
+      })();
+    </script>
+  </body>
+</html>

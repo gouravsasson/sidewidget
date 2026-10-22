@@ -13,6 +13,14 @@
       "headers": {
         "Cache-Control": "public, max-age=0, must-revalidate"
       }
+    },
+    {
+      "src":"/widget-embed.html",
+      "dest": "/widget-embed.html",
+      "headers": {
+        "Cache-Control": "public, max-age=0, must-revalidate",
+        "Content-Security-Policy": "frame-ancestors *"
+      }
     }
   ]
 }

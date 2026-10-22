@@ -127,7 +127,7 @@
         ? '<div style="font-weight:700;font-size:17px;margin-bottom:8px;">' +
           action.title +
           "</div>"
-        : "") +
+        : "") + 
       '<div style="font-size:14px;color:#444;">' +
       (action.message || "") +
       "</div>";
