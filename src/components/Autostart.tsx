@@ -367,12 +367,12 @@ const Autostart = () => {
                     }
                   }}
                   placeholder="Type your message..."
-                  className="flex-1 bg-white text-black p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400/80 placeholder-gray-500 border border-gray-700"
+                  className="flex-1 min-w-0 bg-white text-black p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400/80 placeholder-gray-500 border border-gray-700"
                 />
                 <button
                   type="button"
                   onClick={handleSubmit}
-                  className="p-3 bg-gradient-to-r from-blue-500 to-blue-400 rounded-xl hover:from-blue-400 hover:to-blue-300 transition-colors shadow-md hover:shadow-blue-400/30"
+                  className="p-3 flex-shrink-0 bg-gradient-to-r from-blue-500 to-blue-400 rounded-xl hover:from-blue-400 hover:to-blue-300 transition-colors shadow-md hover:shadow-blue-400/30"
                 >
                   <Send size={20} className="text-black" />
                 </button>

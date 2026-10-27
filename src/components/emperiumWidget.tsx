@@ -1076,7 +1076,7 @@ const EmpRetellaiAgent = ({
         <div className="flex flex-col items-center justify-center py-8 flex-1">
           <button
             onClick={isRecording ? handleClose : handleSubmit}
-            className="w-40 h-40 rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-lg mb-6 overflow-hidden"
+            className="w-28 h-28 sm:w-40 sm:h-40 rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-lg mb-4 sm:mb-6 overflow-hidden"
             style={{ backgroundColor: colors.buttonColor }}
           >
             {botIcon ? (
@@ -1170,14 +1170,14 @@ const EmpRetellaiAgent = ({
               }}
               placeholder="Type your message..."
               disabled={status !== "connected"}
-              className="flex-1 bg-white text-gray-700 p-3 rounded-xl focus:outline-none focus:ring-2 placeholder-gray-400 border border-gray-200"
+              className="flex-1 min-w-0 bg-white text-gray-700 p-3 rounded-xl focus:outline-none focus:ring-2 placeholder-gray-400 border border-gray-200"
               style={{ borderColor: colors.borderColor }}
             />
             <button
               type="button"
               onClick={handleSendChat}
               disabled={status !== "connected" || isSendingChat}
-              className="w-12 h-12 rounded-xl flex items-center justify-center transition-colors shadow-md"
+              className="w-12 h-12 flex-shrink-0 rounded-xl flex items-center justify-center transition-colors shadow-md"
               style={{ backgroundColor: colors.buttonColor }}
             >
               {isSendingChat ? (
@@ -1490,9 +1490,9 @@ const EmpRetellaiAgent = ({
               </div>
             ) : (
               <>
-                <div className="flex-1 min-h-0 flex flex-col items-center p-6 overflow-y-auto">
+                <div className="flex-1 min-h-0 flex flex-col items-center p-4 sm:p-6 overflow-y-auto">
                   <button
-                    className={`${tool === "whatsapp" ? "w-28 h-28 mb-4" : "w-40 h-40 mb-6"} rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-lg overflow-hidden`}
+                    className={`${tool === "whatsapp" ? "w-24 h-24 sm:w-28 sm:h-28 mb-4" : "w-28 h-28 sm:w-40 sm:h-40 mb-4 sm:mb-6"} rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-lg overflow-hidden`}
                     style={{
                       backgroundColor:
                         widgetTheme?.bot_button_color || "#2563eb",
@@ -1523,7 +1523,7 @@ const EmpRetellaiAgent = ({
                     {speech}
                   </div>
 
-                  <div className="w-full px-4 mb-4">
+                  <div className="w-full px-0 sm:px-4 mb-4">
                     <div
                       className="text-sm font-medium mb-2"
                       style={{
@@ -1596,7 +1596,7 @@ const EmpRetellaiAgent = ({
                     </div>
                   </div>
 
-                  <div className="w-full px-4">
+                  <div className="w-full px-0 sm:px-4">
                     <div className="flex gap-2">
                       <input
                         type="text"
@@ -1605,12 +1605,12 @@ const EmpRetellaiAgent = ({
                         onKeyDown={(e) => e.key === "Enter" && handleSendChat()}
                         placeholder="Type your message..."
                         disabled={status !== "connected"}
-                        className="chat-input flex-1 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
+                        className="chat-input flex-1 min-w-0 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
                       />
                       <button
                         onClick={handleSendChat}
                         disabled={status !== "connected" || isSendingChat}
-                        className="w-12 h-12 rounded-lg flex items-center justify-center transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-12 h-12 flex-shrink-0 rounded-lg flex items-center justify-center transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                         style={{
                           backgroundColor:
                             widgetTheme?.bot_button_color || "#2563eb",

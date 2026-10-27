@@ -997,12 +997,12 @@ const CustomWidget = () => {
                         disabled={
                           status === "disconnected" || status === "connecting"
                         }
-                        className="flex-1 bg-white text-gray-700 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 placeholder-gray-400 border border-gray-200 chat-input"
+                        className="flex-1 min-w-0 bg-white text-gray-700 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 placeholder-gray-400 border border-gray-200 chat-input"
                       />
                       <button
                         type="button"
                         onClick={handleSubmit}
-                        className="w-12 h-12 rounded-xl flex items-center justify-center transition-colors shadow-md"
+                        className="w-12 h-12 flex-shrink-0 rounded-xl flex items-center justify-center transition-colors shadow-md"
                         style={{
                           backgroundColor: widgetTheme?.bot_button_color,
                         }}
