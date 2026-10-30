@@ -256,9 +256,11 @@ const VoiceAIWidget = () => {
               </button>
               <button
                 onClick={handleClose}
+                aria-label="Close"
+                title="Close"
                 className="text-gray-300 hover:text-yellow-400 transition-colors"
               >
-                <X size={18} />
+                <X aria-hidden="true" size={18} />
               </button>
             </div>
           </div>

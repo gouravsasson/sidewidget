@@ -88,7 +88,7 @@
       '<div style="padding:14px 16px;font-weight:700;font-size:15px;' +
       'border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;">' +
       "<span>Suggested Products</span>" +
-      '<button id="snowie-drawer-close" style="background:none;border:none;font-size:20px;cursor:pointer;">×</button>' +
+      '<button id="snowie-drawer-close" type="button" aria-label="Close" title="Close" style="background:none;border:none;font-size:20px;cursor:pointer;"><span aria-hidden="true">×</span></button>' +
       '</div><div style="overflow-y:auto;max-height:340px;">' +
       items +
       "</div>";
@@ -121,8 +121,8 @@
       "z-index:2147483641;padding:28px 24px;max-width:360px;width:90%;font-family:sans-serif;text-align:center;";
 
     popup.innerHTML =
-      '<button id="snowie-popup-close" style="position:absolute;top:12px;right:14px;' +
-      'background:none;border:none;font-size:22px;cursor:pointer;">×</button>' +
+      '<button id="snowie-popup-close" type="button" aria-label="Close" title="Close" style="position:absolute;top:12px;right:14px;' +
+      'background:none;border:none;font-size:22px;cursor:pointer;"><span aria-hidden="true">×</span></button>' +
       (action.title
         ? '<div style="font-weight:700;font-size:17px;margin-bottom:8px;">' +
           action.title +

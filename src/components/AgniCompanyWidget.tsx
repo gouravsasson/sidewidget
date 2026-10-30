@@ -262,9 +262,11 @@ const MicDeniedModal = ({
         {/* Close button */}
         <button
           onClick={onClose}
+          aria-label="Close"
+          title="Close"
           className="absolute top-4 right-4 w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
         >
-          <X className="w-4 h-4 text-gray-500" />
+          <X aria-hidden="true" className="w-4 h-4 text-gray-500" />
         </button>
 
         {/* Icon */}
@@ -1427,9 +1429,11 @@ const AgniCompanyWidget = ({
               </button>
               <button
                 onClick={handleClose}
+                aria-label="Close"
+                title="Close"
                 className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors"
               >
-                <X className="w-5 h-5" />
+                <X aria-hidden="true" className="w-5 h-5" />
               </button>
             </div>
           </div>

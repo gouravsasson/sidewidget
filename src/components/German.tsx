@@ -748,9 +748,12 @@ const German = () => {
               </button>
               <button
                 onClick={handleClose}
+                aria-label="Close"
+                title="Close"
                 className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-black/10 transition-colors header-button"
               >
                 <X
+                  aria-hidden="true"
                   className="w-5 h-5 icon"
                   style={{ color: widgetTheme?.bot_text_color }}
                 />

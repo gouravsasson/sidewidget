@@ -278,9 +278,11 @@ const Autostart = () => {
               </button>
               <button
                 onClick={handleClose}
+                aria-label="Close"
+                title="Close"
                 className="text-gray-300 hover:text-blue-400 transition-colors"
               >
-                <X size={18} />
+                <X aria-hidden="true" size={18} />
               </button>
             </div>
           </div>
