@@ -21,7 +21,14 @@ import Whatsapp from "./components/Whatsapp";
 function App() {
   const [showPopup, setShowPopup] = useState(false);
   const { agent_id, schema, type, tool } = useWidgetContext();
-  const [room] = useState(() => new Room({}))
+  const [room] = useState(
+    () =>
+      new Room({
+        // A commerce reload must look like a dropped socket, not a hang-up.
+        // Other widget types still leave the room when the document unloads.
+        disconnectOnPageLeave: type !== "thunderemotionlite",
+      }),
+  )
 
   useEffect(() => {
     const localCountryCode = localStorage.getItem("countryCode");

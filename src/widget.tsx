@@ -5,6 +5,17 @@ import App from "./App";
 import { WidgetProvider } from "./constexts/WidgetContext";
 import "./index.css";
 
+function widgetStylesheetHref() {
+  const scripts = document.querySelectorAll("script[src]");
+  for (let i = scripts.length - 1; i >= 0; i--) {
+    const src = scripts[i].getAttribute("src") || "";
+    if (src.includes("react-widget-uv")) {
+      return new URL("react-widget-uv.css", src).href;
+    }
+  }
+  return new URL("react-widget-uv.css", window.location.href).href;
+}
+
 class ReactWidget extends HTMLElement {
   private root: ReactDOM.Root | null = null;
 
@@ -17,7 +28,7 @@ class ReactWidget extends HTMLElement {
     const container = document.createElement("div");
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "https://sidewidget.vercel.app/react-widget-uv.css";
+    link.href = widgetStylesheetHref();
 
     // Append the stylesheet and container to the Shadow DOM
     this.shadowRoot?.appendChild(link);
