@@ -21,6 +21,7 @@ import logo from "../assets/logo.png";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import { useWidgetContext } from "../constexts/WidgetContext";
+import PoweredByRavan from "./PoweredByRavan";
 
 import { SNOWIE_API_ORIGIN } from "../config";
 export interface WidgetTheme {
@@ -51,6 +52,7 @@ export interface WidgetTheme {
     bot_tagline: string;
     is_glowing: boolean;
     is_transparent: boolean; // ← new field
+    show_is_power_by?: boolean;
     custom_form_fields: Array<{
       id: number;
       type: "text" | "email" | "tel" | "number" | "textarea";
@@ -791,7 +793,7 @@ const CustomWidget = () => {
       </style>
       {expanded ? (
         <div
-          className={`rounded-3xl shadow-2xl overflow-hidden widget-container ${
+          className={`rounded-3xl shadow-2xl overflow-hidden flex flex-col widget-container ${
             isTransparent ? "transparent-background" : ""
           }`}
           style={{
@@ -812,7 +814,7 @@ const CustomWidget = () => {
           {" "}
           {/* Header */}
           <div
-            className="px-6 py-4 flex justify-between items-center header"
+            className="px-6 py-4 flex justify-between items-center header shrink-0"
             style={{ backgroundColor: widgetTheme?.bot_bubble_color }}
           >
             <div className="flex items-center space-x-3">
@@ -857,9 +859,12 @@ const CustomWidget = () => {
               </button>
               <button
                 onClick={handleClose}
+                aria-label="Close"
+                title="Close"
                 className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-black/10 transition-colors header-button"
               >
                 <X
+                  aria-hidden="true"
                   className="w-5 h-5 icon"
                   style={{ color: widgetTheme?.bot_text_color }}
                 />
@@ -868,9 +873,8 @@ const CustomWidget = () => {
           </div>
           {/* Main Content */}
           <div
-            className="flex flex-col h-full"
+            className="flex flex-col flex-1 min-h-0"
             style={{
-              height: "calc(100% - 80px)",
               backgroundColor: isTransparent
                 ? "transparent"
                 : widgetTheme?.bot_background_color || "#f3f4f6",
@@ -997,12 +1001,12 @@ const CustomWidget = () => {
                         disabled={
                           status === "disconnected" || status === "connecting"
                         }
-                        className="flex-1 bg-white text-gray-700 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 placeholder-gray-400 border border-gray-200 chat-input"
+                        className="flex-1 min-w-0 bg-white text-gray-700 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 placeholder-gray-400 border border-gray-200 chat-input"
                       />
                       <button
                         type="button"
                         onClick={handleSubmit}
-                        className="w-12 h-12 rounded-xl flex items-center justify-center transition-colors shadow-md"
+                        className="w-12 h-12 flex-shrink-0 rounded-xl flex items-center justify-center transition-colors shadow-md"
                         style={{
                           backgroundColor: widgetTheme?.bot_button_color,
                         }}
@@ -1016,6 +1020,9 @@ const CustomWidget = () => {
                   </div>
                 )}
               </>
+            )}
+            {widgetTheme?.show_is_power_by && (
+              <PoweredByRavan textColor={widgetTheme?.bot_text_color} />
             )}
           </div>
         </div>

@@ -148,9 +148,11 @@ const GrokWidget: React.FC<GrokWidgetProps> = ({
                             </button>
                             <button
                                 onClick={() => setExpanded(false)}
+                                aria-label="Close"
+                                title="Close"
                                 className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-black/10 transition-colors"
                             >
-                                <X className="w-5 h-5" style={{ color: colors.textColor }} />
+                                <X aria-hidden="true" className="w-5 h-5" style={{ color: colors.textColor }} />
                             </button>
                         </div>
                     </div>

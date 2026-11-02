@@ -29,6 +29,7 @@ import {
   Track,
 } from "livekit-client";
 import axios from "axios";
+import PoweredByRavan from "./PoweredByRavan";
 
 import { SNOWIE_API_ORIGIN } from "../config";
 import {
@@ -80,6 +81,7 @@ export interface WidgetTheme {
   bot_tagline: string;
   is_glowing: boolean;
   is_transparent: boolean;
+  show_is_power_by?: boolean;
   widget_submit_btn_text: string;
   custom_form_fields: Array<{
     id: number;
@@ -192,9 +194,11 @@ const MicDeniedModal = ({
         {/* Close button */}
         <button
           onClick={onClose}
+          aria-label="Close"
+          title="Close"
           className="absolute top-4 right-4 w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
         >
-          <X className="w-4 h-4 text-gray-500" />
+          <X aria-hidden="true" className="w-4 h-4 text-gray-500" />
         </button>
 
         {/* Icon */}
@@ -1037,7 +1041,7 @@ const RetellaiAgent = ({
         <div className="flex flex-col items-center justify-center py-8 flex-1">
           <button
             onClick={isRecording ? handleClose : handleSubmit}
-            className="w-40 h-40 rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-lg mb-6 overflow-hidden"
+            className="w-28 h-28 sm:w-40 sm:h-40 rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-lg mb-4 sm:mb-6 overflow-hidden"
             style={{ backgroundColor: colors.buttonColor }}
           >
             {botIcon ? (
@@ -1108,14 +1112,14 @@ const RetellaiAgent = ({
               }}
               placeholder="Type your message..."
               disabled={status !== "connected"}
-              className="flex-1 bg-white text-gray-700 p-3 rounded-xl focus:outline-none focus:ring-2 placeholder-gray-400 border border-gray-200"
+              className="flex-1 min-w-0 bg-white text-gray-700 p-3 rounded-xl focus:outline-none focus:ring-2 placeholder-gray-400 border border-gray-200"
               style={{ borderColor: colors.borderColor }}
             />
             <button
               type="button"
               onClick={handleSendChat}
               disabled={status !== "connected" || isSendingChat}
-              className="w-12 h-12 rounded-xl flex items-center justify-center transition-colors shadow-md"
+              className="w-12 h-12 flex-shrink-0 rounded-xl flex items-center justify-center transition-colors shadow-md"
               style={{ backgroundColor: colors.buttonColor }}
             >
               {isSendingChat ? (
@@ -1222,7 +1226,7 @@ const RetellaiAgent = ({
 
       {expanded ? (
         <div
-          className={`rounded-3xl shadow-2xl overflow-hidden widget-container ${widgetTheme?.is_transparent ? "transparent-background transparent-widget" : ""}`}
+          className={`rounded-3xl shadow-2xl overflow-hidden flex flex-col widget-container ${widgetTheme?.is_transparent ? "transparent-background transparent-widget" : ""}`}
           style={{
             width: "min(90vw, 400px)",
             height:
@@ -1236,7 +1240,7 @@ const RetellaiAgent = ({
         >
           {/* Header */}
           <div
-            className="px-6 py-4 flex justify-between items-center"
+            className="px-6 py-4 flex justify-between items-center shrink-0"
             style={{
               backgroundColor: widgetTheme?.bot_bubble_color || "#2563eb",
               color: widgetTheme?.bot_text_color || "#ffffff",
@@ -1290,14 +1294,15 @@ const RetellaiAgent = ({
                 onClick={() => (resumeOn ? hidePanel() : handleClose())}
                 className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors"
                 aria-label={resumeOn ? "Hide" : "End call"}
+                title={resumeOn ? "Hide" : "End call"}
               >
-                <X className="w-5 h-5" />
+                <X aria-hidden="true" className="w-5 h-5" />
               </button>
             </div>
           </div>
 
           {/* Main Content */}
-          <div className="flex flex-col h-[calc(100%-64px)] overflow-hidden">
+          <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
             {widgetTheme?.bot_show_form && showform ? (
               <div className="flex-1 p-6 flex flex-col items-center justify-center">
                 <h3
@@ -1379,9 +1384,9 @@ const RetellaiAgent = ({
               </div>
             ) : (
               <>
-                <div className="flex-1 flex flex-col items-center p-6 overflow-y-auto">
+                <div className="flex-1 min-h-0 flex flex-col items-center p-4 sm:p-6 overflow-y-auto">
                   <button
-                    className="w-40 h-40 rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-lg mb-6 overflow-hidden"
+                    className="w-28 h-28 sm:w-40 sm:h-40 rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-lg mb-4 sm:mb-6 overflow-hidden"
                     style={{
                       backgroundColor:
                         widgetTheme?.bot_button_color || "#2563eb",
@@ -1439,7 +1444,7 @@ const RetellaiAgent = ({
                   )}
 
 
-                  <div className="w-full px-4 mb-4">
+                  <div className="w-full px-0 sm:px-4 mb-4">
                     <div
                       className="text-sm font-medium mb-2"
                       style={{
@@ -1476,7 +1481,7 @@ const RetellaiAgent = ({
                     </div>
                   </div>
 
-                  <div className="w-full px-4">
+                  <div className="w-full px-0 sm:px-4">
                     <div className="flex gap-2">
                       <input
                         type="text"
@@ -1485,12 +1490,12 @@ const RetellaiAgent = ({
                         onKeyDown={(e) => e.key === "Enter" && handleSendChat()}
                         placeholder="Type your message..."
                         disabled={status !== "connected"}
-                        className="chat-input flex-1 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
+                        className="chat-input flex-1 min-w-0 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
                       />
                       <button
                         onClick={handleSendChat}
                         disabled={status !== "connected" || isSendingChat}
-                        className="w-12 h-12 rounded-lg flex items-center justify-center transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-12 h-12 flex-shrink-0 rounded-lg flex items-center justify-center transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                         style={{
                           backgroundColor:
                             widgetTheme?.bot_button_color || "#2563eb",
@@ -1509,6 +1514,9 @@ const RetellaiAgent = ({
                   </div>
                 </div>
               </>
+            )}
+            {widgetTheme?.show_is_power_by && (
+              <PoweredByRavan textColor={widgetTheme?.bot_text_color} />
             )}
           </div>
         </div>
