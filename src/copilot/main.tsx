@@ -74,8 +74,11 @@ async function startPanelCall(): Promise<StartResult> {
   return status === 200 ? { ok: true, session: data } : { ok: false, message: errorMessage(status, data) };
 }
 
-/** Opens the top-level voice page with a one-time, 60-second handoff token. */
-async function talkByVoice(endCall: () => Promise<void>) {
+/**
+ * Opens the top-level voice page with a one-time, 60-second handoff token. Resolves to
+ * what to tell the merchant when it could not (shown in the panel, not an alert).
+ */
+async function talkByVoice(endCall: () => Promise<void>): Promise<string | null> {
   const tab = window.open("about:blank", "_blank"); // inside the click, so it is not blocked
   if (tab) tab.opener = null;
   try {
@@ -87,11 +90,12 @@ async function talkByVoice(endCall: () => Promise<void>) {
     if (status !== 200) throw new Error(errorMessage(status, data));
     // In the fragment, so the token never reaches a server log or a Referer header.
     const url = `${window.location.origin}/copilot-voice.html#${encodeURIComponent(data.handoff_token)}`;
-    if (tab) tab.location.href = url;
-    else window.alert("Allow pop-ups for this page to talk by voice.");
+    if (!tab) return "Allow pop-ups for this page to talk by voice.";
+    tab.location.href = url;
+    return null;
   } catch (error) {
     tab?.close();
-    window.alert(error instanceof Error && error.message ? error.message : OFFLINE);
+    return error instanceof Error && error.message ? error.message : OFFLINE;
   }
 }
 
@@ -144,7 +148,9 @@ function App() {
 
   return (
     <main className="mx-auto max-w-xl p-6 text-slate-800">
-      <h1 className="mb-3 text-xl font-semibold">Snowie Copilot</h1>
+      <h1 className="mb-3 rounded-xl bg-gradient-to-r from-brand-700 to-brand-violet px-4 py-3 text-xl font-semibold text-white">
+        Snowie Copilot
+      </h1>
       {view.kind === "loading" && <p role="status">Loading…</p>}
       {view.kind === "error" && (
         <p role="alert" className="text-red-700">
@@ -152,7 +158,7 @@ function App() {
         </p>
       )}
       {view.kind === "connect" && (
-        <section className="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
+        <section className="space-y-3 rounded-xl border border-brand-100 bg-white p-4">
           <h2 className="font-medium">Connect to your Snowie account</h2>
           {view.ownerOnly ? (
             <p>Only the store owner can connect this store. Ask the store owner to connect it.</p>
@@ -169,7 +175,7 @@ function App() {
                 type="button"
                 onClick={confirm}
                 disabled={confirming}
-                className="rounded-md bg-teal-700 px-4 py-2 text-white hover:bg-teal-800 disabled:opacity-60"
+                className="rounded-md bg-brand-700 px-4 py-2 text-white hover:bg-brand-800 disabled:opacity-60"
               >
                 {confirming ? "Connecting…" : "Confirm"}
               </button>

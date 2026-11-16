@@ -1,5 +1,6 @@
 import { FormEvent, ReactNode, useEffect, useRef, useState } from "react";
 import { Mic, MicOff, Send, Volume2 } from "lucide-react";
+import ProductCards, { useProductCards } from "./ProductCards";
 import type { Connection, CopilotVoice, Line } from "./voice";
 
 export interface SessionInfo extends Connection {
@@ -16,10 +17,13 @@ interface Props {
   micInline: boolean;
   /** Turn the mic on as soon as a call starts (the voice page). */
   autoMic?: boolean;
-  /** Where the mic is not allowed: open voice elsewhere, after ending this page's call. */
-  onTalkByVoice?: (endCall: () => Promise<void>) => void;
+  /** Where the mic is not allowed: open voice elsewhere, after ending this page's call.
+   *  Resolves to a message to show when that did not work. */
+  onTalkByVoice?: (endCall: () => Promise<void>) => Promise<string | null>;
   /** Shown under the header (the panel's proposed changes). */
   aside?: ReactNode;
+  /** How product links open: `_top` inside Shopify admin, `_blank` on the voice page. */
+  linkTarget?: "_top" | "_blank";
 }
 
 const ENDED: Record<string, string> = {
@@ -32,7 +36,15 @@ const ENDED: Record<string, string> = {
  * Transcript, text box and mic. Nothing starts (no call, no mic prompt) until
  * the merchant sends a message or taps the mic; each start is one call.
  */
-export default function Conversation({ title, start, micInline, autoMic, onTalkByVoice, aside }: Props) {
+export default function Conversation({
+  title,
+  start,
+  micInline,
+  autoMic,
+  onTalkByVoice,
+  aside,
+  linkTarget = "_top",
+}: Props) {
   const [connecting, setConnecting] = useState(false);
   const [live, setLive] = useState(false);
   const [lines, setLines] = useState<Line[]>([]);
@@ -42,9 +54,11 @@ export default function Conversation({ title, start, micInline, autoMic, onTalkB
   const [error, setError] = useState("");
   const [announcement, setAnnouncement] = useState("");
   const [agentName, setAgentName] = useState("");
+  const [call, setCall] = useState<string | null>(null);
   const voice = useRef<CopilotVoice | null>(null);
   const pending = useRef<Promise<CopilotVoice | null> | null>(null);
   const transcriptEnd = useRef<HTMLDivElement>(null);
+  const products = useProductCards(call, lines.filter((l) => l.fromAgent).length);
 
   useEffect(() => {
     transcriptEnd.current?.scrollIntoView({ block: "end" });
@@ -77,6 +91,7 @@ export default function Conversation({ title, start, micInline, autoMic, onTalkB
         onEnded: (reason) => {
           voice.current = null;
           setLive(false);
+          setCall(null);
           setMicOn(false);
           setAudioBlocked(false);
           setAnnouncement(ENDED[reason]);
@@ -84,6 +99,7 @@ export default function Conversation({ title, start, micInline, autoMic, onTalkB
       });
       voice.current = session;
       setAgentName(result.session.agent_name);
+      setCall(result.session.release_token);
       setLive(true);
       setAnnouncement("Connected.");
       if (autoMic) {
@@ -138,12 +154,18 @@ export default function Conversation({ title, start, micInline, autoMic, onTalkB
     await voice.current?.disconnect();
   };
 
+  const talkByVoice = async () => {
+    setError("");
+    const message = await onTalkByVoice?.(end);
+    if (message) setError(message);
+  };
+
   return (
     <main className="mx-auto flex h-screen max-w-2xl flex-col p-4 text-slate-800">
-      <header className="mb-3 flex items-center justify-between gap-2">
+      <header className="mb-3 flex items-center justify-between gap-3 rounded-xl bg-gradient-to-r from-brand-700 to-brand-violet px-4 py-3 text-white shadow-sm">
         <div>
           <h1 className="text-lg font-semibold">{title}</h1>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-white">
             Ask about sales, orders, stock or discounts, in your own words and language.
             Nothing in your store changes unless you approve it.
           </p>
@@ -152,7 +174,7 @@ export default function Conversation({ title, start, micInline, autoMic, onTalkB
           <button
             type="button"
             onClick={() => void end()}
-            className="rounded-md border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100"
+            className="shrink-0 rounded-md border border-white/70 px-3 py-1.5 text-sm font-medium hover:bg-white/15 focus-visible:outline-white"
           >
             End
           </button>
@@ -167,7 +189,7 @@ export default function Conversation({ title, start, micInline, autoMic, onTalkB
       <section
         aria-label="Conversation"
         aria-live="polite"
-        className="flex-1 space-y-2 overflow-y-auto rounded-lg border border-slate-200 bg-white p-3"
+        className="min-h-40 flex-1 space-y-2 overflow-y-auto rounded-xl border border-brand-100 bg-white p-3"
       >
         {lines.length === 0 && (
           <p className="text-sm text-slate-500">
@@ -181,7 +203,7 @@ export default function Conversation({ title, start, micInline, autoMic, onTalkB
           <p
             key={line.id}
             className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
-              line.fromAgent ? "bg-slate-100" : "ml-auto bg-teal-700 text-white"
+              line.fromAgent ? "bg-brand-50 text-slate-900" : "ml-auto bg-brand-700 text-white"
             }`}
           >
             <span className="sr-only">{line.fromAgent ? agentName || "Copilot" : "You"}: </span>
@@ -190,6 +212,8 @@ export default function Conversation({ title, start, micInline, autoMic, onTalkB
         ))}
         <div ref={transcriptEnd} />
       </section>
+
+      <ProductCards products={products} linkTarget={linkTarget} />
 
       {error && (
         <p role="alert" className="mt-2 text-sm text-red-700">
@@ -201,7 +225,7 @@ export default function Conversation({ title, start, micInline, autoMic, onTalkB
         <button
           type="button"
           onClick={() => void voice.current?.startAudio()}
-          className="mt-2 flex items-center gap-2 self-start rounded-md border border-teal-700 px-3 py-1.5 text-sm text-teal-800"
+          className="mt-2 flex items-center gap-2 self-start rounded-md border border-brand-700 px-3 py-1.5 text-sm text-brand-800 hover:bg-brand-50"
         >
           <Volume2 aria-hidden className="h-4 w-4" />
           Tap to turn on sound
@@ -216,8 +240,8 @@ export default function Conversation({ title, start, micInline, autoMic, onTalkB
             disabled={connecting}
             aria-pressed={micOn}
             aria-label="Microphone"
-            className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-white focus:outline-none focus-visible:ring-4 focus-visible:ring-teal-300 disabled:opacity-60 ${
-              micOn ? "bg-red-600 hover:bg-red-700" : "bg-teal-700 hover:bg-teal-800"
+            className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-white focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-300 disabled:opacity-60 ${
+              micOn ? "bg-red-600 hover:bg-red-700" : "bg-brand-700 hover:bg-brand-800"
             }`}
           >
             {micOn ? (
@@ -237,13 +261,13 @@ export default function Conversation({ title, start, micInline, autoMic, onTalkB
             onChange={(e) => setText(e.target.value)}
             placeholder="Type a question"
             autoComplete="off"
-            className="flex-1 rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-600"
+            className="flex-1 rounded-md border border-slate-300 px-3 py-2 focus:border-brand-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-600"
           />
           <button
             type="submit"
             disabled={connecting || !text.trim()}
             aria-label="Send"
-            className="rounded-md bg-teal-700 px-3 text-white hover:bg-teal-800 disabled:opacity-60"
+            className="rounded-md bg-brand-700 px-3 text-white hover:bg-brand-800 disabled:opacity-60"
           >
             <Send aria-hidden className="h-5 w-5" />
           </button>
@@ -252,8 +276,8 @@ export default function Conversation({ title, start, micInline, autoMic, onTalkB
       {onTalkByVoice && (
         <button
           type="button"
-          onClick={() => onTalkByVoice(end)}
-          className="mt-3 flex items-center justify-center gap-2 rounded-md border border-teal-700 px-4 py-2 text-teal-800 hover:bg-teal-50"
+          onClick={() => void talkByVoice()}
+          className="mt-3 flex items-center justify-center gap-2 rounded-md border border-brand-700 px-4 py-2 text-brand-800 hover:bg-brand-50"
         >
           <Mic aria-hidden className="h-5 w-5" />
           Talk by voice (opens a new tab)

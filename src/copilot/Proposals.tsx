@@ -170,7 +170,7 @@ export default function Proposals() {
           <button
             type="button"
             onClick={() => void turnOn()}
-            className="mt-2 rounded-md bg-teal-700 px-3 py-1.5 text-white hover:bg-teal-800"
+            className="mt-2 rounded-md bg-brand-700 px-3 py-1.5 text-white hover:bg-brand-800"
           >
             Turn on actions
           </button>
@@ -180,7 +180,7 @@ export default function Proposals() {
         <p role="alert" className="text-sm text-red-700">
           {error}
           {upgradeUrl && (
-            <a href={upgradeUrl} target="_top" className="ml-1 text-teal-700 underline">
+            <a href={upgradeUrl} target="_top" className="ml-1 text-brand-700 underline hover:text-brand-900">
               See plans
             </a>
           )}
@@ -244,8 +244,8 @@ function Card({
       id={`card-${p.id}`}
       aria-labelledby={`proposal-${p.id}`}
       aria-current={focused ? "true" : undefined}
-      className={`rounded-lg border bg-white p-3 text-sm ${
-        focused ? "border-teal-600 ring-2 ring-teal-600" : "border-slate-200"
+      className={`rounded-xl border bg-white p-3 text-sm shadow-sm ${
+        focused ? "border-brand-600 ring-2 ring-brand-600" : "border-brand-100"
       }`}
     >
       <header className="flex items-start justify-between gap-2">
@@ -253,7 +253,13 @@ function Card({
           {p.summary}
           {p.version > 1 && <span className="text-slate-500"> (version {p.version})</span>}
         </h2>
-        <span className="shrink-0 rounded bg-slate-100 px-2 py-0.5 text-xs">{STATUS[p.status] || p.status}</span>
+        <span
+          className={`shrink-0 rounded-full px-2 py-0.5 text-xs ${
+            p.status === "pending" ? "bg-brand-100 text-brand-900" : "bg-slate-100 text-slate-800"
+          }`}
+        >
+          {STATUS[p.status] || p.status}
+        </span>
       </header>
       {p.approved_via && VIA[p.approved_via] && <p className="text-xs text-slate-500">{VIA[p.approved_via]}</p>}
 
@@ -320,7 +326,7 @@ function Card({
             type="button"
             disabled={busy}
             onClick={() => onAct(p, "approve")}
-            className={`${button} bg-teal-700 text-white hover:bg-teal-800`}
+            className={`${button} bg-brand-700 text-white hover:bg-brand-800`}
           >
             {busy ? "Checking…" : "Approve"}
           </button>

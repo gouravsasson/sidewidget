@@ -34,6 +34,6 @@ async function startVoiceCall(): Promise<StartResult> {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <Conversation title="Snowie Copilot — voice" start={startVoiceCall} micInline autoMic />
+    <Conversation title="Snowie Copilot — voice" start={startVoiceCall} micInline autoMic linkTarget="_blank" />
   </StrictMode>,
 );

@@ -55,11 +55,12 @@ const button = "rounded-md px-3 py-1.5 disabled:opacity-60";
 export function PlanBadge({ plan }: { plan: Plan }) {
   return (
     <p className="mb-3 text-xs text-slate-600">
-      Plan: <span className="font-medium capitalize">{plan.plan}</span>
+      Plan:{" "}
+      <span className="rounded-full bg-brand-100 px-2 py-0.5 font-medium capitalize text-brand-900">{plan.plan}</span>
       {plan.plan !== "pro" && plan.upgrade_url && (
         <>
           {" · "}
-          <a href={plan.upgrade_url} target="_top" className="text-teal-700 underline">
+          <a href={plan.upgrade_url} target="_top" className="text-brand-700 underline hover:text-brand-900">
             See plans
           </a>
         </>
@@ -110,11 +111,12 @@ export function ApprovalModes({ state, onChange }: { state: SetupState; onChange
   );
 
   return (
-    <section aria-label="Approvals" className="mb-3 rounded-lg border border-slate-200 bg-white p-3 text-sm">
+    <section aria-label="Approvals" className="mb-3 rounded-xl border border-brand-100 bg-white p-3 text-sm">
       <h2 className="mb-2 font-medium">Approvals</h2>
       <label className="flex items-start gap-2">
         <input
           type="checkbox"
+          className="mt-0.5 accent-brand-700"
           checked={s.voice_approval}
           disabled={!edit}
           onChange={(e) => void save({ voice_approval: e.target.checked })}
@@ -127,6 +129,7 @@ export function ApprovalModes({ state, onChange }: { state: SetupState; onChange
       <label className="mt-2 flex items-start gap-2">
         <input
           type="checkbox"
+          className="mt-0.5 accent-brand-700"
           checked={s.auto_mode}
           disabled={!edit || (!s.auto_mode && !inPlan)}
           onChange={(e) => void save({ auto_mode: e.target.checked })}
@@ -221,10 +224,10 @@ export default function Setup({ state, onChange }: { state: SetupState; onChange
   );
 
   return (
-    <section aria-label="Get started" className="mb-3 rounded-lg border border-slate-200 bg-white p-3 text-sm">
+    <section aria-label="Get started" className="mb-3 rounded-xl border border-brand-100 bg-white p-3 text-sm">
       <h2 className="mb-2 font-medium">Get started</h2>
       {look && (
-        <p className="mb-3 rounded bg-slate-50 p-2">
+        <p className="mb-3 rounded bg-brand-50 p-2">
           {look.period.from} to {look.period.to}: {look.orders} orders, {look.net_sales.display} net
           sales, {look.average_order_value.display} average order. Ask the copilot anything about it.
         </p>
@@ -284,7 +287,7 @@ export default function Setup({ state, onChange }: { state: SetupState; onChange
           </select>
         </label>
         <div className="flex gap-2 sm:col-span-2">
-          <button type="submit" disabled={busy} className={`${button} bg-teal-700 text-white hover:bg-teal-800`}>
+          <button type="submit" disabled={busy} className={`${button} bg-brand-700 text-white hover:bg-brand-800`}>
             Save and finish
           </button>
           <button type="button" disabled={busy} onClick={skip} className={`${button} border border-slate-300`}>

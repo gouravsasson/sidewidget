@@ -1,1 +1,26 @@
 @import "tailwindcss" source(".");
+
+/*
+ * Snowie brand colours (the dashboard's purple-600 -> violet-600 gradient and its deep
+ * purple #441F65), for the copilot pages only: `bg-brand-700`, `text-brand-800`, ...
+ * Text colours used on white or brand-50 are 700 and darker (WCAG AA); white text sits
+ * on 600 and darker.
+ */
+@theme {
+  --color-brand-50: #faf5ff;
+  --color-brand-100: #f3e8ff;
+  --color-brand-200: #e9d5ff;
+  --color-brand-300: #d8b4fe;
+  --color-brand-600: #9333ea;
+  --color-brand-700: #7e22ce;
+  --color-brand-800: #6b21a8;
+  --color-brand-900: #441f65;
+  --color-brand-violet: #7c3aed;
+}
+
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--color-brand-600);
+    outline-offset: 2px;
+  }
+}
