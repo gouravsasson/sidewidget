@@ -1,0 +1,35 @@
+{
+  "buildCommand": "npm run build:copilot",
+  "outputDirectory": "dist-copilot",
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [{ "key": "Referrer-Policy", "value": "no-referrer" }]
+    },
+    {
+      "source": "/copilot.html",
+      "headers": [
+        { "key": "Content-Security-Policy", "value": "frame-ancestors https://admin.shopify.com" }
+      ]
+    },
+    {
+      "source": "/copilot.html",
+      "has": [
+        { "type": "query", "key": "shop", "value": "(?<shop>[a-z0-9][a-z0-9-]*\\.myshopify\\.com)" }
+      ],
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "frame-ancestors https://:shop https://admin.shopify.com"
+        }
+      ]
+    },
+    {
+      "source": "/copilot-voice.html",
+      "headers": [
+        { "key": "Content-Security-Policy", "value": "frame-ancestors 'none'" },
+        { "key": "X-Frame-Options", "value": "DENY" }
+      ]
+    }
+  ]
+}
