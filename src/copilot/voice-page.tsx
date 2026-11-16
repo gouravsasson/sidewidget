@@ -6,7 +6,8 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./copilot.css";
 import { SNOWIE_API_ORIGIN } from "../config";
-import Conversation, { SessionInfo, StartResult } from "./Conversation";
+import type { SessionInfo, StartResult } from "./Conversation";
+import VoiceView from "./VoiceView";
 
 const handoff = decodeURIComponent(window.location.hash.slice(1));
 history.replaceState(null, "", window.location.pathname); // not kept in history
@@ -34,6 +35,6 @@ async function startVoiceCall(): Promise<StartResult> {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <Conversation title="Snowie Copilot — voice" start={startVoiceCall} micInline autoMic linkTarget="_blank" />
+    <VoiceView title="Snowie Copilot — voice" start={startVoiceCall} />
   </StrictMode>,
 );

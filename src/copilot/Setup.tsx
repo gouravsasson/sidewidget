@@ -23,6 +23,8 @@ export interface SetupState {
     tax_rate_pct: string | null;
     language: string;
     voice_approval: boolean;
+    /** What that "yes" may approve. */
+    voice_approval_scope: "everyday" | "all";
     auto_mode: boolean;
     auto_max_discount_pct: number;
     auto_changes_per_day: number;
@@ -48,19 +50,28 @@ const LANGUAGES: [string, string][] = [
   ["ar", "Arabic"],
 ];
 
+const SCOPES: [SetupState["settings"]["voice_approval_scope"], string][] = [
+  ["everyday", "Everyday discounts only (safest)"],
+  ["all", "All changes (stock, prices, visibility, discounts) — ending a discount still needs a tap"],
+];
+
 const input = "w-full rounded-md border border-slate-300 px-2 py-1";
 const button = "rounded-md px-3 py-1.5 disabled:opacity-60";
 
 /** The plan line, with Shopify's plan page when there is more to get. */
-export function PlanBadge({ plan }: { plan: Plan }) {
+export function PlanBadge({ plan, onDark = false }: { plan: Plan; onDark?: boolean }) {
   return (
-    <p className="mb-3 text-xs text-slate-600">
+    <p className={`whitespace-nowrap text-xs ${onDark ? "text-white" : "text-slate-600"}`}>
       Plan:{" "}
       <span className="rounded-full bg-brand-100 px-2 py-0.5 font-medium capitalize text-brand-900">{plan.plan}</span>
       {plan.plan !== "pro" && plan.upgrade_url && (
         <>
           {" · "}
-          <a href={plan.upgrade_url} target="_top" className="text-brand-700 underline hover:text-brand-900">
+          <a
+            href={plan.upgrade_url}
+            target="_top"
+            className={onDark ? "text-white underline hover:text-brand-100 focus-visible:outline-white" : "text-brand-700 underline hover:text-brand-900"}
+          >
             See plans
           </a>
         </>
@@ -111,7 +122,7 @@ export function ApprovalModes({ state, onChange }: { state: SetupState; onChange
   );
 
   return (
-    <section aria-label="Approvals" className="mb-3 rounded-xl border border-brand-100 bg-white p-3 text-sm">
+    <section aria-label="Approvals" className="rounded-xl border border-brand-100 bg-white p-4 text-sm shadow-sm">
       <h2 className="mb-2 font-medium">Approvals</h2>
       <label className="flex items-start gap-2">
         <input
@@ -121,11 +132,31 @@ export function ApprovalModes({ state, onChange }: { state: SetupState; onChange
           disabled={!edit}
           onChange={(e) => void save({ voice_approval: e.target.checked })}
         />
-        <span>
-          Approve everyday discounts by saying or typing “yes” to the copilot. Prices, stock,
-          visibility and bigger changes always need a tap here.
-        </span>
+        <span>Approve changes by saying or typing “yes” to the copilot.</span>
       </label>
+      {s.voice_approval && (
+        <fieldset className="mt-2 space-y-1.5 pl-6" disabled={!edit}>
+          <legend className="sr-only">What a “yes” may approve</legend>
+          {SCOPES.map(([value, label]) => (
+            <label key={value} className="flex items-start gap-2">
+              <input
+                type="radio"
+                name="voice-approval-scope"
+                value={value}
+                className="mt-0.5 accent-brand-700"
+                checked={(s.voice_approval_scope ?? "everyday") === value}
+                onChange={() => void save({ voice_approval_scope: value })}
+              />
+              <span>{label}</span>
+            </label>
+          ))}
+          <p className="text-xs text-slate-500">
+            {s.voice_approval_scope === "all"
+              ? "Ending a discount and cart-recovery codes still need a tap here."
+              : "Prices, stock, visibility and bigger changes need a tap here."}
+          </p>
+        </fieldset>
+      )}
       <label className="mt-2 flex items-start gap-2">
         <input
           type="checkbox"
@@ -224,7 +255,7 @@ export default function Setup({ state, onChange }: { state: SetupState; onChange
   );
 
   return (
-    <section aria-label="Get started" className="mb-3 rounded-xl border border-brand-100 bg-white p-3 text-sm">
+    <section aria-label="Get started" className="rounded-xl border border-brand-300 bg-white p-4 text-sm shadow-sm">
       <h2 className="mb-2 font-medium">Get started</h2>
       {look && (
         <p className="mb-3 rounded bg-brand-50 p-2">
@@ -268,7 +299,7 @@ export default function Setup({ state, onChange }: { state: SetupState; onChange
         </div>
       )}
       {wa?.number && <p className="mb-3 text-slate-600">WhatsApp: {wa.number}</p>}
-      <form onSubmit={finish} className="grid gap-2 sm:grid-cols-2">
+      <form onSubmit={finish} className="grid gap-2 @md:grid-cols-2">
         {field("max_discount_pct", "Largest discount Snowie may suggest (%)")}
         {field("margin_floor_pct", "Never suggest below this margin (%)")}
         {field("tax_rate_pct", "Tax included in your prices (%)")}
@@ -286,7 +317,7 @@ export default function Setup({ state, onChange }: { state: SetupState; onChange
             ))}
           </select>
         </label>
-        <div className="flex gap-2 sm:col-span-2">
+        <div className="flex gap-2 @md:col-span-2">
           <button type="submit" disabled={busy} className={`${button} bg-brand-700 text-white hover:bg-brand-800`}>
             Save and finish
           </button>

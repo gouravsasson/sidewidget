@@ -12,6 +12,8 @@ export interface ProductCard {
   image: string | null;
   image_alt: string;
   url: string;
+  /** Set when the card shows a change just applied, e.g. "10% off · until 23 Nov". */
+  badge?: string;
 }
 
 const POLL_MS = 10000;
@@ -92,21 +94,26 @@ export default function ProductCards({
 }) {
   if (!products.length) return null;
   return (
-    <section aria-label="Products in the last answer" className="mt-3">
-      <ul className="flex snap-x gap-2 overflow-x-auto pb-1">
+    <section aria-label="Products in the last answer">
+      <ul className="grid grid-cols-[repeat(auto-fill,minmax(9.5rem,1fr))] gap-3">
         {products.map((p) => (
           <li
             key={p.id}
-            className="flex w-40 shrink-0 snap-start flex-col overflow-hidden rounded-lg border border-brand-100 bg-white text-xs shadow-sm"
+            className="flex min-w-0 flex-col overflow-hidden rounded-xl border border-brand-100 bg-white text-xs shadow-sm"
           >
             {p.image ? (
-              <img src={p.image} alt={p.image_alt} loading="lazy" className="h-24 w-full object-cover" />
+              <img src={p.image} alt={p.image_alt} loading="lazy" className="h-28 w-full object-cover" />
             ) : (
-              <div className="flex h-24 items-center justify-center bg-brand-50 text-brand-700">
+              <div className="flex h-28 items-center justify-center bg-brand-50 text-brand-700">
                 <Package aria-hidden className="h-8 w-8" />
               </div>
             )}
             <div className="flex flex-1 flex-col gap-1 p-2">
+              {p.badge && (
+                <span className="self-start rounded bg-brand-700 px-1.5 py-0.5 font-medium text-white">
+                  {p.badge}
+                </span>
+              )}
               <p className="line-clamp-2 font-medium text-slate-900">{p.title}</p>
               {p.price && <p className="text-slate-800">{p.price}</p>}
               <p className={p.stock !== null && p.stock <= 0 ? "text-red-700" : "text-slate-600"}>

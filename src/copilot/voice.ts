@@ -22,10 +22,22 @@ export interface Line {
   text: string;
 }
 
+/** What the voice agent reports it is doing (LiveKit agents' `lk.agent.state` attribute). */
+export type AgentState = "initializing" | "listening" | "thinking" | "speaking";
+
+/** Who is talking now, from LiveKit's active-speaker updates. */
+export interface Activity {
+  /** Null when the agent does not publish its state. */
+  agentState: AgentState | null;
+  agentSpeaking: boolean;
+  userSpeaking: boolean;
+}
+
 export interface Handlers {
   onLine(line: Line): void;
   onEnded(reason: "idle" | "hidden" | "closed"): void;
   onAudioBlocked(blocked: boolean): void;
+  onActivity?(activity: Activity): void;
 }
 
 export interface CopilotVoice {
@@ -33,6 +45,8 @@ export interface CopilotVoice {
   send(text: string): Promise<void>;
   startAudio(): Promise<void>;
   disconnect(): Promise<void>;
+  /** Current audio levels (0 to 1) for a visual; updated by LiveKit a few times a second. */
+  levels(): { user: number; agent: number };
 }
 
 function release(token: string): Promise<void> {
@@ -83,6 +97,24 @@ export async function connect(connection: Connection, handlers: Handlers): Promi
       handlers.onLine({ id: reader.info.id, fromAgent: true, text });
     }
   });
+  const agent = () => {
+    const remote = [...room.remoteParticipants.values()];
+    return remote.find((p) => p.isAgent) ?? remote[0];
+  };
+  const report = () => {
+    const a = agent();
+    const state = a?.attributes["lk.agent.state"];
+    handlers.onActivity?.({
+      agentState: state ? (state as AgentState) : null,
+      agentSpeaking: Boolean(a?.isSpeaking),
+      userSpeaking: room.localParticipant.isSpeaking,
+    });
+  };
+  room.on(RoomEvent.ActiveSpeakersChanged, report);
+  room.on(RoomEvent.ParticipantAttributesChanged, report);
+  room.on(RoomEvent.ParticipantConnected, report);
+  room.on(RoomEvent.ParticipantDisconnected, report);
+
   room.on(RoomEvent.TrackSubscribed, (track) => {
     if (track.kind !== Track.Kind.Audio) return;
     const element = track.attach();
@@ -111,6 +143,7 @@ export async function connect(connection: Connection, handlers: Handlers): Promi
   document.addEventListener("visibilitychange", onVisibility);
   onVisibility();
   touch();
+  report();
   try {
     await room.startAudio();
   } catch {
@@ -133,6 +166,9 @@ export async function connect(connection: Connection, handlers: Handlers): Promi
     async disconnect() {
       await room.disconnect();
       await released;
+    },
+    levels() {
+      return { user: room.localParticipant.audioLevel || 0, agent: agent()?.audioLevel || 0 };
     },
   };
 }

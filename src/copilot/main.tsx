@@ -103,6 +103,8 @@ function App() {
   const [view, setView] = useState<View>({ kind: "loading" });
   const [confirming, setConfirming] = useState(false);
   const [setup, setSetup] = useState<SetupState | null>(null);
+  const [setupFailed, setSetupFailed] = useState(false);
+  const [pending, setPending] = useState<string[]>([]);
 
   useEffect(() => {
     loadSession().then(setView, () => setView({ kind: "error", message: OFFLINE }));
@@ -111,8 +113,8 @@ function App() {
   useEffect(() => {
     if (view.kind !== "ready") return;
     get<SetupState>(SETUP_PATH)
-      .then(({ status, data }) => status === 200 && setSetup(data))
-      .catch(() => undefined); // the chat and proposals still work without it
+      .then(({ status, data }) => (status === 200 ? setSetup(data) : setSetupFailed(true)))
+      .catch(() => setSetupFailed(true)); // the chat and proposals still work without it
   }, [view.kind]);
 
   const confirm = async () => {
@@ -134,14 +136,23 @@ function App() {
         start={startPanelCall}
         micInline={micInline}
         onTalkByVoice={micInline ? undefined : talkByVoice}
-        aside={
-          <>
-            {setup && <PlanBadge plan={setup.plan} />}
-            {setup?.can_edit && !setup.onboarded && <Setup state={setup} onChange={setSetup} />}
-            {setup && <ApprovalModes state={setup} onChange={setSetup} />}
-            <Proposals />
-          </>
+        headerExtra={setup && <PlanBadge plan={setup.plan} onDark />}
+        settings={
+          setup ? (
+            <>
+              {setup.can_edit && !setup.onboarded && <Setup state={setup} onChange={setSetup} />}
+              <ApprovalModes state={setup} onChange={setSetup} />
+            </>
+          ) : (
+            <p className="p-2 text-sm text-slate-500">
+              {setupFailed ? "Settings could not be loaded. Reload the app to try again." : "Loading settings…"}
+            </p>
+          )
         }
+        settingsAttention={Boolean(setup?.can_edit && !setup.onboarded)}
+        changes={<Proposals onPending={setPending} />}
+        pending={pending}
+        startOnChanges={query.has("proposal")}
       />
     );
   }

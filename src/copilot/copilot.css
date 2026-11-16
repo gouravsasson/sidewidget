@@ -16,11 +16,42 @@
   --color-brand-800: #6b21a8;
   --color-brand-900: #441f65;
   --color-brand-violet: #7c3aed;
+
+  /* The voice page's orb (used with motion-safe: only). */
+  --animate-breathe: copilot-breathe 3.2s ease-in-out infinite;
+  --animate-ripple: copilot-ripple 1.8s ease-out infinite;
+  --animate-ripple-late: copilot-ripple 1.8s ease-out 0.9s infinite;
+
+  @keyframes copilot-breathe {
+    0%,
+    100% {
+      transform: scale(0.96);
+    }
+    50% {
+      transform: scale(1.04);
+    }
+  }
+  @keyframes copilot-ripple {
+    0% {
+      transform: scale(0.8);
+      opacity: 0.9;
+    }
+    100% {
+      transform: scale(1.45);
+      opacity: 0;
+    }
+  }
 }
 
 @layer base {
   :focus-visible {
     outline: 2px solid var(--color-brand-600);
     outline-offset: 2px;
+  }
+}
+
+@layer base {
+  body {
+    background-color: var(--color-slate-50);
   }
 }

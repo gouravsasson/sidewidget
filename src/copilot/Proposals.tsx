@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ExternalLink } from "lucide-react";
 import { get, post } from "./api";
 
 const IN_FLIGHT = ["approved", "applying", "undoing"];
@@ -53,6 +54,8 @@ interface Proposal {
   codes: string[];
   /** Cart recovery: how many codes the proposal makes (shown or not to this staff member). */
   code_count?: number | null;
+  /** Once applied: the changed products, to open in Shopify admin. */
+  products?: { id: string; title: string; url: string }[];
 }
 
 type Action = "approve" | "reject" | "undo";
@@ -76,7 +79,7 @@ const undoText = (p: Proposal) =>
  * Changes the copilot proposed. Nothing is written to the store until a staff
  * member taps Approve here; Undo puts back what Snowie changed.
  */
-export default function Proposals() {
+export default function Proposals({ onPending }: { onPending?: (ids: string[]) => void }) {
   const [list, setList] = useState<Proposal[]>([]);
   const [missing, setMissing] = useState<string[]>([]);
   const [error, setError] = useState("");
@@ -88,6 +91,11 @@ export default function Proposals() {
   const focused = useRef(false);
   // Granted in this session: the server's record catches up when Shopify reports it.
   const granted = useRef(false);
+  // Ids seen so far: a pending one not among them is new, and is highlighted for a while.
+  const seen = useRef<Set<string> | null>(null);
+  const [fresh, setFresh] = useState<string[]>([]);
+  const [announcement, setAnnouncement] = useState("");
+  const reported = useRef<string | null>(null);
 
   const load = useCallback(async () => {
     const { status, data } = await get<{ proposals: Proposal[]; missing_action_scopes: string[] }>(
@@ -155,11 +163,41 @@ export default function Proposals() {
     }
   };
 
-  const shown = linked && !list.some((p) => p.id === linked.id) ? [linked, ...list] : list;
-  if (!shown.length && !missing.length && !error) return null;
+  const merged = linked && !list.some((p) => p.id === linked.id) ? [linked, ...list] : list;
+  // Waiting for approval first; otherwise as the server sent them (newest first).
+  const shown = [...merged].sort((a, b) => Number(b.status === "pending") - Number(a.status === "pending"));
+  const pendingKey = shown.filter((p) => p.status === "pending").map((p) => p.id).join(",");
+
+  useEffect(() => {
+    if (!loaded) return;
+    const ids = pendingKey ? pendingKey.split(",") : [];
+    if (reported.current !== pendingKey) {
+      reported.current = pendingKey;
+      onPending?.(ids);
+    }
+    const before = seen.current;
+    seen.current = new Set([...(before ?? []), ...ids]);
+    const added = before ? ids.filter((id) => !before.has(id)) : [];
+    if (!added.length) return;
+    setFresh((f) => [...f, ...added]);
+    const first = shown.find((p) => p.id === added[0]);
+    setAnnouncement(`New change waiting for approval: ${first?.summary ?? ""}`);
+    window.setTimeout(() => document.getElementById(`card-${added[0]}`)?.scrollIntoView({ block: "nearest" }), 0);
+    window.setTimeout(() => setFresh((f) => f.filter((id) => !added.includes(id))), 8000);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingKey, loaded]);
 
   return (
-    <section aria-label="Proposed changes" className="mb-3 max-h-[45vh] space-y-3 overflow-y-auto">
+    <section aria-label="Proposed changes" className="space-y-3">
+      <p role="status" className="sr-only">
+        {announcement}
+      </p>
+      {loaded && !shown.length && !error && (
+        <p className="rounded-xl border border-dashed border-brand-200 bg-white p-4 text-center text-sm text-slate-500">
+          No changes yet. Ask the copilot to prepare one.
+        </p>
+      )}
+      {!loaded && !error && <p className="p-2 text-sm text-slate-500">Loading changes…</p>}
       {missing.length > 0 && (
         <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm">
           <p>
@@ -187,7 +225,14 @@ export default function Proposals() {
         </p>
       )}
       {shown.map((p) => (
-        <Card key={p.id} proposal={p} busy={working === p.id} onAct={act} focused={p.id === FOCUS} />
+        <Card
+          key={p.id}
+          proposal={p}
+          busy={working === p.id}
+          onAct={act}
+          focused={p.id === FOCUS}
+          fresh={fresh.includes(p.id)}
+        />
       ))}
     </section>
   );
@@ -230,11 +275,13 @@ function Card({
   busy,
   onAct,
   focused = false,
+  fresh = false,
 }: {
   proposal: Proposal;
   busy: boolean;
   onAct: (p: Proposal, a: Action) => void;
   focused?: boolean;
+  fresh?: boolean;
 }) {
   const showMargin = p.changes.some((r) => r.margin_after);
   const problems = p.items.filter((i) => i.error || i.status === "sent");
@@ -244,12 +291,24 @@ function Card({
       id={`card-${p.id}`}
       aria-labelledby={`proposal-${p.id}`}
       aria-current={focused ? "true" : undefined}
-      className={`rounded-xl border bg-white p-3 text-sm shadow-sm ${
-        focused ? "border-brand-600 ring-2 ring-brand-600" : "border-brand-100"
+      tabIndex={-1}
+      className={`scroll-m-2 rounded-xl border bg-white p-4 text-sm shadow-sm transition-shadow ${
+        focused
+          ? "border-brand-600 ring-2 ring-brand-600"
+          : fresh
+            ? "border-brand-600 ring-4 ring-brand-200"
+            : p.status === "pending"
+              ? "border-brand-300"
+              : "border-brand-100"
       }`}
     >
       <header className="flex items-start justify-between gap-2">
-        <h2 id={`proposal-${p.id}`} className="font-medium">
+        <h2 id={`proposal-${p.id}`} className="font-medium text-slate-900">
+          {fresh && (
+            <span className="mr-1.5 rounded bg-brand-700 px-1.5 py-0.5 align-middle text-[10px] font-semibold uppercase tracking-wide text-white">
+              New
+            </span>
+          )}
           {p.summary}
           {p.version > 1 && <span className="text-slate-500"> (version {p.version})</span>}
         </h2>
@@ -263,37 +322,27 @@ function Card({
       </header>
       {p.approved_via && VIA[p.approved_via] && <p className="text-xs text-slate-500">{VIA[p.approved_via]}</p>}
 
-      <div className="mt-2 overflow-x-auto">
-        <table className="w-full text-left text-xs">
-          <caption className="sr-only">Changes: before and after</caption>
-          <thead className="text-slate-500">
-            <tr>
-              <th scope="col" className="pr-2 font-normal">Item</th>
-              <th scope="col" className="pr-2 font-normal">Field</th>
-              <th scope="col" className="pr-2 font-normal">Before</th>
-              <th scope="col" className="pr-2 font-normal">After</th>
-              {showMargin && <th scope="col" className="font-normal">Margin after</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {p.changes.map((r, i) => (
-              <tr key={i} className="border-t border-slate-100">
-                <td className="pr-2">
-                  {r.target}
-                  {r.detail && <span className="text-slate-500"> · {r.detail}</span>}
-                </td>
-                <td className="pr-2">{r.field}</td>
-                <td className="pr-2">{r.before}</td>
-                <td className="pr-2 font-medium">{r.after}</td>
-                {showMargin && <td>{r.margin_after || "unknown"}</td>}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <ul aria-label="Changes: before and after" className="mt-3 divide-y divide-slate-100 rounded-lg bg-slate-50 text-xs">
+        {p.changes.map((r, i) => (
+          <li key={i} className="px-3 py-2">
+            <p className="font-medium text-slate-900">
+              {r.target}
+              {r.detail && <span className="font-normal text-slate-500"> · {r.detail}</span>}
+            </p>
+            <p className="mt-0.5 text-slate-700">
+              {r.field}: <span className="sr-only">from </span>
+              <span className="text-slate-600">{r.before}</span>
+              <span aria-hidden> → </span>
+              <span className="sr-only"> to </span>
+              <strong className="font-semibold text-slate-900">{r.after}</strong>
+            </p>
+            {showMargin && <p className="mt-0.5 text-slate-600">Margin after: {r.margin_after || "unknown"}</p>}
+          </li>
+        ))}
+      </ul>
 
       {p.warnings.length > 0 && (
-        <ul className="mt-2 list-disc pl-5 text-amber-800">
+        <ul className="mt-3 list-disc rounded-lg bg-amber-50 py-2 pl-7 pr-3 text-amber-900">
           {p.warnings.map((w) => (
             <li key={w}>{w}</li>
           ))}
@@ -320,8 +369,26 @@ function Card({
 
       {p.codes.length > 0 && <Codes codes={p.codes} />}
 
+      {!!p.products?.length && (
+        <ul aria-label="Changed products" className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs">
+          {p.products.map((product) => (
+            <li key={product.id}>
+              <a
+                href={`shopify://admin/products/${product.id.split("/").pop()}`}
+                target="_top"
+                className="inline-flex items-center gap-1 font-medium text-brand-700 hover:text-brand-900 hover:underline"
+              >
+                {product.title}
+                <ExternalLink aria-hidden className="h-3 w-3" />
+                <span className="sr-only"> (open in Shopify)</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+
       {p.status === "pending" && (
-        <div className="mt-3 flex items-center gap-2">
+        <div className="mt-3 flex flex-wrap items-center gap-2">
           <button
             type="button"
             disabled={busy}
