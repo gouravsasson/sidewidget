@@ -76,6 +76,40 @@ const STATUS: Record<string, string> = {
   archived: "bg-amber-50 text-amber-900",
 };
 
+/** How long a card whose data just changed stays highlighted. */
+const HIGHLIGHT_MS = 6000;
+
+const signature = (p: ProductCard) => JSON.stringify([p.title, p.status, p.stock, p.price, p.image, p.badge]);
+
+/**
+ * Ids of cards whose data changed since the last list (a new `v` after a change was
+ * applied), or that newly carry a badge; each stays in the set for `HIGHLIGHT_MS`.
+ */
+function useUpdated(products: ProductCard[]): Set<string> {
+  const before = useRef<Map<string, string>>(new Map());
+  const [updated, setUpdated] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const prev = before.current;
+    const changed = products
+      .filter((p) => {
+        const was = prev.get(p.id);
+        return was ? was !== signature(p) : Boolean(p.badge);
+      })
+      .map((p) => p.id);
+    before.current = new Map(products.map((p) => [p.id, signature(p)]));
+    if (!changed.length) return;
+    setUpdated((u) => new Set([...u, ...changed]));
+    // Not cleared by a newer list: each highlight ends on its own time.
+    window.setTimeout(
+      () => setUpdated((u) => new Set([...u].filter((id) => !changed.includes(id)))),
+      HIGHLIGHT_MS,
+    );
+  }, [products]);
+
+  return updated;
+}
+
 function stockText(stock: number | null): string {
   if (stock === null) return "Stock not tracked";
   return stock <= 0 ? "Out of stock" : `${stock} in stock`;
@@ -92,15 +126,27 @@ export default function ProductCards({
   products: ProductCard[];
   linkTarget: "_top" | "_blank";
 }) {
+  const updated = useUpdated(products);
   if (!products.length) return null;
+  const announced = products.filter((p) => updated.has(p.id));
   return (
     <section aria-label="Products in the last answer">
-      <ul className="grid grid-cols-[repeat(auto-fill,minmax(9.5rem,1fr))] gap-3">
+      <p role="status" className="sr-only">
+        {announced.map((p) => `Updated: ${p.title}${p.badge ? `, ${p.badge}` : ""}.`).join(" ")}
+      </p>
+      <ul className="grid grid-cols-[repeat(auto-fill,minmax(9.5rem,1fr))] gap-3 p-1">
         {products.map((p) => (
           <li
             key={p.id}
-            className="flex min-w-0 flex-col overflow-hidden rounded-xl border border-brand-100 bg-white text-xs shadow-sm"
+            className={`flex min-w-0 flex-col overflow-hidden rounded-xl border bg-white text-xs shadow-sm transition-shadow duration-500 ${
+              updated.has(p.id) ? "border-brand-600 ring-4 ring-brand-300" : "border-brand-100"
+            }`}
           >
+            {p.badge && (
+              <p className="bg-brand-700 px-2 py-1 text-[13px] font-semibold leading-snug text-white">
+                {p.badge}
+              </p>
+            )}
             {p.image ? (
               <img src={p.image} alt={p.image_alt} loading="lazy" className="h-28 w-full object-cover" />
             ) : (
@@ -109,11 +155,6 @@ export default function ProductCards({
               </div>
             )}
             <div className="flex flex-1 flex-col gap-1 p-2">
-              {p.badge && (
-                <span className="self-start rounded bg-brand-700 px-1.5 py-0.5 font-medium text-white">
-                  {p.badge}
-                </span>
-              )}
               <p className="line-clamp-2 font-medium text-slate-900">{p.title}</p>
               {p.price && <p className="text-slate-800">{p.price}</p>}
               <p className={p.stock !== null && p.stock <= 0 ? "text-red-700" : "text-slate-600"}>

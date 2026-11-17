@@ -54,4 +54,20 @@
   body {
     background-color: var(--color-slate-50);
   }
+
+  /*
+   * The admin panel (Shopify admin's frame) and the voice page (its tab) fill the viewport
+   * exactly and only their columns scroll, so the page itself never does (no second
+   * scrollbar, the header stays put).
+   */
+  html:has(.copilot-fill),
+  html:has(.copilot-fill) body {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  /* Room at the bottom of each column for Shopify's floating Sidekick bar. */
+  .copilot-panel {
+    --copilot-overlay: 4.5rem;
+  }
 }

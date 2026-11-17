@@ -16,6 +16,13 @@ const STATUS: Record<string, string> = {
   undone: "Undone",
   undo_partial: "Partly undone",
 };
+/** Changes that did not (fully) go through: why, in a box right under the title. */
+const REASON: Record<string, { title: string; box: string }> = {
+  failed: { title: "Why it was not applied", box: "border-red-200 bg-red-50 text-red-900" },
+  partially_applied: { title: "Why it was only partly applied", box: "border-amber-300 bg-amber-50 text-amber-900" },
+  expired: { title: "Why it expired", box: "border-amber-300 bg-amber-50 text-amber-900" },
+  undo_partial: { title: "Why it was only partly undone", box: "border-amber-300 bg-amber-50 text-amber-900" },
+};
 /** How a proposal was approved, when not by a tap here. */
 const VIA: Record<string, string> = { voice: "Approved by a yes to the copilot", auto: "Applied by auto mode" };
 
@@ -238,9 +245,12 @@ export default function Proposals({ onPending }: { onPending?: (ids: string[]) =
   );
 }
 
+const CODES_SHOWN = 8;
+
 /** Single-use codes to hand to customers who agreed to hear from the store. */
 function Codes({ codes }: { codes: string[] }) {
   const [copied, setCopied] = useState(false);
+  const [all, setAll] = useState(false); // no scroll box inside a card: fold the long list
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(codes.join("\n"));
@@ -261,11 +271,21 @@ function Codes({ codes }: { codes: string[] }) {
           {copied ? "Copied" : "Copy all"}
         </button>
       </div>
-      <ul aria-label="Discount codes" className="mt-1 max-h-32 overflow-y-auto font-mono text-xs">
-        {codes.map((c) => (
+      <ul aria-label="Discount codes" className="mt-1 font-mono text-xs">
+        {(all ? codes : codes.slice(0, CODES_SHOWN)).map((c) => (
           <li key={c}>{c}</li>
         ))}
       </ul>
+      {codes.length > CODES_SHOWN && (
+        <button
+          type="button"
+          aria-expanded={all}
+          onClick={() => setAll(!all)}
+          className="mt-1 text-xs font-medium text-brand-700 hover:text-brand-900 hover:underline"
+        >
+          {all ? "Show fewer" : `Show all ${codes.length}`}
+        </button>
+      )}
     </div>
   );
 }
@@ -284,7 +304,12 @@ function Card({
   fresh?: boolean;
 }) {
   const showMargin = p.changes.some((r) => r.margin_after);
-  const problems = p.items.filter((i) => i.error || i.status === "sent");
+  // Item reasons already said in the proposal's own error are not repeated.
+  const problems = p.items.filter(
+    (i) => (i.error && !(p.error && p.error.includes(i.error))) || (!i.error && i.status === "sent"),
+  );
+  const why = REASON[p.status];
+  const showWhy = Boolean(why && (p.error || problems.length));
   const button = "rounded-md px-3 py-1.5 disabled:opacity-60";
   return (
     <article
@@ -322,6 +347,28 @@ function Card({
       </header>
       {p.approved_via && VIA[p.approved_via] && <p className="text-xs text-slate-500">{VIA[p.approved_via]}</p>}
 
+      {showWhy && why && (
+        <div className={`mt-2 rounded-lg border px-3 py-2 ${why.box}`}>
+          <p className="font-medium">{why.title}</p>
+          {p.error && <p className="mt-0.5 break-words">{p.error}</p>}
+          {problems.length > 0 && (
+            <ul className="mt-1 list-disc space-y-0.5 pl-5 break-words">
+              {problems.map((i) => (
+                <li key={i.idx}>
+                  {i.target}: {i.error || "Shopify may or may not have made this change; check it."}
+                  {i.verified === false && (
+                    <span className="ml-1 rounded bg-white/70 px-1 text-xs">Check in Shopify</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+          {p.status === "failed" && (
+            <p className="mt-1 text-xs opacity-90">To try again, ask the copilot to propose it again.</p>
+          )}
+        </div>
+      )}
+
       <ul aria-label="Changes: before and after" className="mt-3 divide-y divide-slate-100 rounded-lg bg-slate-50 text-xs">
         {p.changes.map((r, i) => (
           <li key={i} className="px-3 py-2">
@@ -353,8 +400,8 @@ function Card({
           {p.progress.applied} of {p.progress.total} changes applied…
         </p>
       )}
-      {p.error && <p className="mt-2 text-red-700">{p.error}</p>}
-      {problems.length > 0 && (
+      {!showWhy && p.error && <p className="mt-2 text-red-700">{p.error}</p>}
+      {!showWhy && problems.length > 0 && (
         <ul className="mt-1 list-disc pl-5 text-slate-700">
           {problems.map((i) => (
             <li key={i.idx}>

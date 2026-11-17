@@ -418,16 +418,15 @@ export default function Conversation({
   const pillShown = sideTab === "products" ? "flex" : sideTab === "settings" ? "flex xl:hidden" : "flex md:hidden";
 
   const col3 = hasSettings ? "xl:col-[3]" : "";
+  // The panel fills the frame exactly; only the columns scroll. Their bottom padding
+  // (--copilot-overlay) keeps the last card clear of Shopify's floating Sidekick bar.
+  const scroller = "min-h-0 overflow-y-auto overscroll-contain px-1 pt-1 pb-[var(--copilot-overlay)] scroll-pb-[var(--copilot-overlay)]";
   return (
-    <div
-      className={`mx-auto grid h-dvh max-w-[1440px] grid-cols-1 grid-rows-[auto_auto_minmax(0,1fr)] gap-3 p-3 text-slate-800 md:grid-cols-[minmax(0,1fr)_340px] md:gap-4 md:p-4 ${
-        hasSettings ? "xl:grid-cols-[300px_minmax(0,1fr)_360px]" : "lg:grid-cols-[minmax(0,1fr)_380px]"
-      }`}
-    >
-      <header className="col-[1/-1] row-[1] flex items-center justify-between gap-3 rounded-xl bg-gradient-to-r from-brand-700 to-brand-violet px-4 py-3 text-white shadow-sm">
+    <div className="copilot-fill copilot-panel mx-auto flex h-dvh max-w-[1440px] flex-col gap-2 overflow-hidden p-2 text-slate-800 md:gap-3 md:p-3">
+      <header className="flex shrink-0 items-center justify-between gap-3 rounded-xl bg-gradient-to-r from-brand-700 to-brand-violet px-4 py-2 text-white shadow-sm">
         <div className="min-w-0">
-          <h1 className="truncate text-lg font-semibold">{title}</h1>
-          <p className="text-xs text-white sm:text-sm">
+          <h1 className="truncate text-base font-semibold">{title}</h1>
+          <p className="hidden truncate text-xs text-white sm:block">
             Ask about sales, orders, stock or discounts, in your own words and language.
             Nothing in your store changes unless you approve it.
           </p>
@@ -438,7 +437,7 @@ export default function Conversation({
             <button
               type="button"
               onClick={() => void call.end()}
-              className="rounded-md border border-white/70 px-3 py-1.5 text-sm font-medium hover:bg-white/15 focus-visible:outline-white"
+              className="rounded-md border border-white/70 px-3 py-1 text-sm font-medium hover:bg-white/15 focus-visible:outline-white"
             >
               End
             </button>
@@ -451,7 +450,7 @@ export default function Conversation({
       </p>
 
       {/* Phones: one column at a time. */}
-      <nav aria-label="Panel sections" className={`col-[1] row-[2] flex md:hidden ${tabStrip}`}>
+      <nav aria-label="Panel sections" className={`flex shrink-0 md:hidden ${tabStrip}`}>
         <Tab pressed={phoneTab === "chat"} onClick={() => setPhoneTab("chat")} controls="copilot-chat">
           Chat
         </Tab>
@@ -471,88 +470,95 @@ export default function Conversation({
         )}
       </nav>
 
-      {hasSettings && (
-        <aside
-          id="copilot-settings"
-          aria-label="Settings"
-          className={`@container col-[1] row-[3] min-h-0 flex-col gap-3 overflow-y-auto md:col-[2] xl:col-[1] xl:row-[2/4] ${visibility(
-            phoneTab === "settings",
-            sideTab === "settings",
+      {/* The columns: they take the rest of the frame, down to its bottom edge. */}
+      <div
+        className={`grid min-h-0 flex-1 grid-cols-1 grid-rows-[minmax(0,1fr)] gap-3 md:grid-cols-[minmax(0,1fr)_340px] md:grid-rows-[auto_minmax(0,1fr)] md:gap-4 ${
+          hasSettings ? "xl:grid-cols-[300px_minmax(0,1fr)_360px]" : "lg:grid-cols-[minmax(0,1fr)_380px]"
+        }`}
+      >
+        {hasSettings && (
+          <aside
+            id="copilot-settings"
+            aria-label="Settings"
+            className={`@container col-[1] row-[1] flex-col gap-3 md:col-[2] md:row-[2] xl:col-[1] xl:row-[1/3] ${scroller} ${visibility(
+              phoneTab === "settings",
+              sideTab === "settings",
+            )}`}
+          >
+            {settings}
+          </aside>
+        )}
+
+        <main
+          id="copilot-chat"
+          className={`col-[1] row-[1] min-h-0 flex-col overflow-hidden rounded-xl border border-brand-100 bg-white shadow-sm md:row-[1/3] ${
+            hasSettings ? "xl:col-[2]" : ""
+          } ${visibility(phoneTab === "chat", true)}`}
+        >
+          <Transcript
+            call={call}
+            empty={micInline ? "Tap the mic or type a question to start." : "Type a question to start."}
+          />
+          <div className="flex shrink-0 flex-col border-t border-brand-100 bg-brand-50/50 p-3 pb-[calc(0.75rem+var(--copilot-overlay))]">
+            {hasChanges && waiting > 0 && (
+              <button
+                type="button"
+                onClick={showChanges}
+                className={`${pillShown} mb-2 items-center gap-2 self-center rounded-full bg-brand-700 px-3 py-1 text-sm font-medium text-white shadow-sm hover:bg-brand-800`}
+              >
+                <span className="h-2 w-2 rounded-full bg-white" aria-hidden />
+                {waiting === 1 ? "1 change waiting" : `${waiting} changes waiting`} for approval
+              </button>
+            )}
+            <CallNotices call={call} />
+            <Composer call={call} mic={micInline} />
+            {onTalkByVoice && (
+              <button
+                type="button"
+                onClick={() => void talkByVoice()}
+                className="mt-2 flex items-center justify-center gap-2 rounded-md border border-brand-700 bg-white px-4 py-2 text-sm font-medium text-brand-800 hover:bg-brand-50"
+              >
+                <Mic aria-hidden className="h-4 w-4" />
+                Talk by voice (opens a new tab)
+              </button>
+            )}
+          </div>
+        </main>
+
+        {/* Right column switcher (tablets and up). */}
+        <nav aria-label="Right column" className={`col-[2] row-[1] hidden md:flex ${col3} ${tabStrip}`}>
+          {hasChanges && (
+            <Tab pressed={sideTab === "changes"} onClick={() => setSideTab("changes")} controls="copilot-side">
+              Changes <Count n={waiting} strong label="waiting" />
+            </Tab>
+          )}
+          <Tab pressed={sideTab === "products"} onClick={() => setSideTab("products")} controls="copilot-side">
+            Products <Count n={products.length} label="products" />
+          </Tab>
+          {hasSettings && (
+            <Tab
+              pressed={sideTab === "settings"}
+              onClick={() => setSideTab("settings")}
+              controls="copilot-settings"
+              className="xl:hidden"
+            >
+              Settings
+              {settingsAttention && <span aria-label="needs setup" className="h-2 w-2 rounded-full bg-brand-600" />}
+            </Tab>
+          )}
+        </nav>
+
+        <div
+          id="copilot-side"
+          className={`col-[1] row-[1] flex-col md:col-[2] md:row-[2] ${col3} ${scroller} ${visibility(
+            phoneTab === "side",
+            sideTab !== "settings",
           )}`}
         >
-          {settings}
-        </aside>
-      )}
-
-      <main
-        id="copilot-chat"
-        className={`col-[1] row-[3] min-h-0 flex-col overflow-hidden rounded-xl border border-brand-100 bg-white shadow-sm md:row-[2/4] ${
-          hasSettings ? "xl:col-[2]" : ""
-        } ${visibility(phoneTab === "chat", true)}`}
-      >
-        <Transcript
-          call={call}
-          empty={micInline ? "Tap the mic or type a question to start." : "Type a question to start."}
-        />
-        <div className="flex flex-col border-t border-brand-100 bg-brand-50/50 p-3">
-          {hasChanges && waiting > 0 && (
-            <button
-              type="button"
-              onClick={showChanges}
-              className={`${pillShown} mb-2 items-center gap-2 self-center rounded-full bg-brand-700 px-3 py-1 text-sm font-medium text-white shadow-sm hover:bg-brand-800`}
-            >
-              <span className="h-2 w-2 rounded-full bg-white" aria-hidden />
-              {waiting === 1 ? "1 change waiting" : `${waiting} changes waiting`} for approval
-            </button>
-          )}
-          <CallNotices call={call} />
-          <Composer call={call} mic={micInline} />
-          {onTalkByVoice && (
-            <button
-              type="button"
-              onClick={() => void talkByVoice()}
-              className="mt-2 flex items-center justify-center gap-2 rounded-md border border-brand-700 bg-white px-4 py-2 text-sm font-medium text-brand-800 hover:bg-brand-50"
-            >
-              <Mic aria-hidden className="h-4 w-4" />
-              Talk by voice (opens a new tab)
-            </button>
-          )}
-        </div>
-      </main>
-
-      {/* Right column switcher (tablets and up). */}
-      <nav aria-label="Right column" className={`col-[2] row-[2] hidden md:flex ${col3} ${tabStrip}`}>
-        {hasChanges && (
-          <Tab pressed={sideTab === "changes"} onClick={() => setSideTab("changes")} controls="copilot-side">
-            Changes <Count n={waiting} strong label="waiting" />
-          </Tab>
-        )}
-        <Tab pressed={sideTab === "products"} onClick={() => setSideTab("products")} controls="copilot-side">
-          Products <Count n={products.length} label="products" />
-        </Tab>
-        {hasSettings && (
-          <Tab
-            pressed={sideTab === "settings"}
-            onClick={() => setSideTab("settings")}
-            controls="copilot-settings"
-            className="xl:hidden"
-          >
-            Settings
-            {settingsAttention && <span aria-label="needs setup" className="h-2 w-2 rounded-full bg-brand-600" />}
-          </Tab>
-        )}
-      </nav>
-
-      <div
-        id="copilot-side"
-        className={`col-[1] row-[3] min-h-0 flex-col overflow-y-auto md:col-[2] ${col3} ${visibility(
-          phoneTab === "side",
-          sideTab !== "settings",
-        )}`}
-      >
-        {hasChanges && <div className={showingChanges ? "" : "hidden"}>{changes}</div>}
-        <div className={showingChanges ? "hidden" : ""}>
-          <ProductsPanel products={products} linkTarget={linkTarget} />
+          {hasChanges && <div className={showingChanges ? "" : "hidden"}>{changes}</div>}
+          <div className={showingChanges ? "hidden" : ""}>
+            <ProductsPanel products={products} linkTarget={linkTarget} />
+          </div>
         </div>
       </div>
     </div>

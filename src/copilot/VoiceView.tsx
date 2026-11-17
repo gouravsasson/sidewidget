@@ -115,12 +115,13 @@ export default function VoiceView({ title, start }: { title: string; start: () =
   const phase = phaseOf(call);
   const products = call.products;
 
+  // The page fills the tab exactly; only the transcript and the products scroll.
   return (
-    <div className="mx-auto grid h-dvh max-w-[1440px] grid-cols-1 grid-rows-[auto_auto_auto_minmax(0,1fr)] gap-3 p-3 text-slate-800 md:grid-cols-[minmax(0,1fr)_340px] md:grid-rows-[auto_auto_minmax(0,1fr)] md:gap-4 md:p-4 lg:grid-cols-[minmax(300px,360px)_minmax(0,1fr)_380px] lg:grid-rows-[auto_minmax(0,1fr)]">
-      <header className="col-[1/-1] row-[1] flex items-center justify-between gap-3 rounded-xl bg-gradient-to-r from-brand-700 to-brand-violet px-4 py-3 text-white shadow-sm">
+    <div className="copilot-fill mx-auto flex h-dvh max-w-[1440px] flex-col gap-2 overflow-hidden p-2 text-slate-800 md:gap-3 md:p-3">
+      <header className="flex shrink-0 items-center justify-between gap-3 rounded-xl bg-gradient-to-r from-brand-700 to-brand-violet px-4 py-2 text-white shadow-sm">
         <div className="min-w-0">
-          <h1 className="truncate text-lg font-semibold">{title}</h1>
-          <p className="text-xs text-white sm:text-sm">
+          <h1 className="truncate text-base font-semibold">{title}</h1>
+          <p className="hidden truncate text-xs text-white sm:block">
             Talk in your own words and language. Nothing in your store changes unless you approve it.
           </p>
         </div>
@@ -130,79 +131,81 @@ export default function VoiceView({ title, start }: { title: string; start: () =
         {call.announcement}
       </p>
 
-      <section
-        aria-label="Voice"
-        className="col-[1] row-[2] flex flex-col items-center justify-center gap-3 rounded-xl border border-brand-100 bg-gradient-to-b from-brand-50 to-white p-4 shadow-sm md:flex-row md:gap-6 lg:row-[2] lg:flex-col lg:gap-5"
-      >
-        <Orb call={call} phase={phase} />
-        <div className="flex flex-col items-center gap-3">
-          <p className="text-center text-base font-medium text-brand-900">{LABEL[phase]}</p>
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => void call.toggleMic()}
-              disabled={call.connecting}
-              aria-pressed={call.micOn}
-              aria-label="Microphone"
-              className={`flex h-16 w-16 items-center justify-center rounded-full text-white shadow-md focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-300 disabled:opacity-60 sm:h-20 sm:w-20 ${
-                call.micOn ? "bg-red-600 hover:bg-red-700" : "bg-brand-700 hover:bg-brand-800"
-              }`}
-            >
-              {call.micOn ? <MicOff aria-hidden className="h-8 w-8" /> : <Mic aria-hidden className="h-8 w-8" />}
-            </button>
-            {call.live && (
+      <div className="grid min-h-0 flex-1 grid-cols-1 grid-rows-[auto_auto_minmax(0,1fr)] gap-2 md:grid-cols-[minmax(0,1fr)_340px] md:grid-rows-[auto_minmax(0,1fr)] md:gap-4 lg:grid-cols-[minmax(300px,360px)_minmax(0,1fr)_380px] lg:grid-rows-[minmax(0,1fr)]">
+        <section
+          aria-label="Voice"
+          className="col-[1] row-[1] flex flex-col items-center justify-center gap-3 rounded-xl border border-brand-100 bg-gradient-to-b from-brand-50 to-white p-3 shadow-sm md:flex-row md:gap-6 lg:min-h-0 lg:flex-col lg:justify-start lg:gap-5 lg:overflow-y-auto lg:p-4 lg:pt-[8vh]"
+        >
+          <Orb call={call} phase={phase} />
+          <div className="flex flex-col items-center gap-3">
+            <p className="text-center text-base font-medium text-brand-900">{LABEL[phase]}</p>
+            <div className="flex items-center gap-3">
               <button
                 type="button"
-                onClick={() => void call.end()}
-                className="flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-100"
+                onClick={() => void call.toggleMic()}
+                disabled={call.connecting}
+                aria-pressed={call.micOn}
+                aria-label="Microphone"
+                className={`flex h-16 w-16 items-center justify-center rounded-full text-white shadow-md focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-300 disabled:opacity-60 sm:h-20 sm:w-20 ${
+                  call.micOn ? "bg-red-600 hover:bg-red-700" : "bg-brand-700 hover:bg-brand-800"
+                }`}
               >
-                <PhoneOff aria-hidden className="h-4 w-4" />
-                End
+                {call.micOn ? <MicOff aria-hidden className="h-8 w-8" /> : <Mic aria-hidden className="h-8 w-8" />}
               </button>
-            )}
+              {call.live && (
+                <button
+                  type="button"
+                  onClick={() => void call.end()}
+                  className="flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-100"
+                >
+                  <PhoneOff aria-hidden className="h-4 w-4" />
+                  End
+                </button>
+              )}
+            </div>
+            <div className="flex flex-col items-center">
+              <CallNotices call={call} />
+            </div>
           </div>
-          <div className="flex flex-col items-center">
-            <CallNotices call={call} />
+        </section>
+
+        <nav aria-label="Page sections" className={`col-[1] row-[2] flex md:hidden ${tabStrip}`}>
+          <Tab pressed={tab === "chat"} onClick={() => setTab("chat")} controls="voice-transcript">
+            Transcript
+          </Tab>
+          <Tab pressed={tab === "products"} onClick={() => setTab("products")} controls="voice-products">
+            Products <Count n={products.length} label="products" />
+          </Tab>
+        </nav>
+
+        <main
+          id="voice-transcript"
+          className={`col-[1] row-[3] min-h-0 flex-col overflow-hidden rounded-xl border border-brand-100 bg-white shadow-sm md:row-[2] lg:col-[2] lg:row-[1] ${visibility(
+            tab === "chat",
+            true,
+          )}`}
+        >
+          <h2 className="shrink-0 border-b border-brand-100 px-4 py-2 text-sm font-medium text-slate-700">Transcript</h2>
+          <Transcript call={call} empty="Tap the mic and start talking, or type a question below." />
+          <div className="shrink-0 border-t border-brand-100 bg-brand-50/50 p-3">
+            <Composer call={call} mic={false} />
           </div>
-        </div>
-      </section>
+        </main>
 
-      <nav aria-label="Page sections" className={`col-[1] row-[3] flex md:hidden ${tabStrip}`}>
-        <Tab pressed={tab === "chat"} onClick={() => setTab("chat")} controls="voice-transcript">
-          Transcript
-        </Tab>
-        <Tab pressed={tab === "products"} onClick={() => setTab("products")} controls="voice-products">
-          Products <Count n={products.length} label="products" />
-        </Tab>
-      </nav>
-
-      <main
-        id="voice-transcript"
-        className={`col-[1] row-[4] min-h-0 flex-col overflow-hidden rounded-xl border border-brand-100 bg-white shadow-sm md:row-[3] lg:col-[2] lg:row-[2] ${visibility(
-          tab === "chat",
-          true,
-        )}`}
-      >
-        <h2 className="border-b border-brand-100 px-4 py-2 text-sm font-medium text-slate-700">Transcript</h2>
-        <Transcript call={call} empty="Tap the mic and start talking, or type a question below." />
-        <div className="border-t border-brand-100 bg-brand-50/50 p-3">
-          <Composer call={call} mic={false} />
-        </div>
-      </main>
-
-      <aside
-        id="voice-products"
-        aria-label="Products"
-        className={`col-[1] row-[4] min-h-0 flex-col gap-2 overflow-y-auto md:col-[2] md:row-[2/4] lg:col-[3] lg:row-[2] ${visibility(
-          tab === "products",
-          true,
-        )}`}
-      >
-        <h2 className="hidden px-1 text-sm font-medium text-slate-700 md:block">
-          Products <Count n={products.length} label="products" />
-        </h2>
-        <ProductsPanel products={products} linkTarget="_blank" />
-      </aside>
+        <aside
+          id="voice-products"
+          aria-label="Products"
+          className={`col-[1] row-[3] min-h-0 flex-col gap-2 overflow-y-auto overscroll-contain p-1 md:col-[2] md:row-[1/3] lg:col-[3] lg:row-[1] ${visibility(
+            tab === "products",
+            true,
+          )}`}
+        >
+          <h2 className="hidden px-1 text-sm font-medium text-slate-700 md:block">
+            Products <Count n={products.length} label="products" />
+          </h2>
+          <ProductsPanel products={products} linkTarget="_blank" />
+        </aside>
+      </div>
     </div>
   );
 }
