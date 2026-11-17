@@ -54,9 +54,14 @@ async function startVoiceCall(continuation?: Continuation): Promise<StartResult>
     if (typeof data.resume_token === "string") {
       resume = data.resume_token;
       write(resume);
+    } else if (!response.ok && !data.error && !resume) {
+      // Not Snowie's refusal (a proxy or server error): the token was not spent; keep it.
+      // Snowie's own refusals without a token (expired, access removed) mean it is done.
+      resume = used.resume;
+      write(resume);
     }
     if (response.ok) return { ok: true, session: data as SessionInfo };
-    return { ok: false, message: data.detail || EXPIRED };
+    return { ok: false, message: data.detail || EXPIRED, code: data.error };
   } catch {
     // Never reached Snowie (or its answer was lost): the token may still be good; keep it.
     if (!resume) {

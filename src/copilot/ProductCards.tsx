@@ -49,7 +49,14 @@ export function useProductCards(call: string | null, nudge: number): ProductCard
         if (!response.ok || stopped) return;
         const data = await response.json();
         const next = typeof data?.v === "string" && Array.isArray(data.products) ? data : NONE;
-        if (!stopped) setShown((prev) => (prev.v === next.v ? prev : { v: next.v, products: next.products }));
+        // Same answer, but its cards may have been read again (stock settles a moment after
+        // a change): replace them only when something in them changed.
+        if (!stopped)
+          setShown((prev) =>
+            prev.v === next.v && JSON.stringify(prev.products) === JSON.stringify(next.products)
+              ? prev
+              : { v: next.v, products: next.products },
+          );
       } catch {
         // no cards this time
       }

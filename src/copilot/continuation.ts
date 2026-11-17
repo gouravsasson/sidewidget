@@ -3,7 +3,10 @@
 // (`max_seconds` in the start answer); when a call the server ended ran that long,
 // the panel and the voice page start the next one without a tap, passing the last
 // lines of the transcript (`previous`) so the copilot continues where it stopped.
-// A call the merchant ended, or one that ended after quiet minutes, never continues.
+// A call the merchant ended, or one that ended after quiet minutes, never continues;
+// nor one nobody attended (calls are billed): the merchant must have spoken (a final
+// speech segment) or typed within MERCHANT_ACTIVE_MS, with the page visible. Otherwise
+// the merchant gets a Continue button.
 //
 // Pure and import-free: tests/merchant_copilot/test_continuation.py runs it with node.
 
@@ -12,6 +15,8 @@ export type EndReason = "user" | "idle" | "closed";
 
 /** Automatic continuations per page session; after that the merchant taps Continue. */
 export const MAX_AUTO_CONTINUATIONS = 6;
+/** The merchant spoke or typed this recently: someone is there. */
+export const MERCHANT_ACTIVE_MS = 2 * 60 * 1000;
 /** A call that lasted this close to the limit was ended by it. */
 export const LIMIT_MARGIN_SECONDS = 30;
 /** What the server accepts as `previous` (it trims too, keeping the newest lines). */
@@ -39,9 +44,25 @@ export function endedAtLimit({ reason, startedAt, endedAt, maxSeconds }: Ending)
   return (endedAt - startedAt) / 1000 >= maxSeconds - LIMIT_MARGIN_SECONDS;
 }
 
-/** Start the next call by itself: ended at the limit, and continuations are left. */
-export function shouldContinue(ending: Ending & { count: number }): boolean {
-  return ending.count < MAX_AUTO_CONTINUATIONS && endedAtLimit(ending);
+export interface Attendance {
+  /** Automatic continuations so far on this page. */
+  count: number;
+  /** Date.now() of the merchant's last final speech segment or typed message (0: none). */
+  lastMerchantAt: number;
+  /** Whether the page is visible (document.visibilityState). */
+  visible: boolean;
+}
+
+/** Start the next call by itself: ended at the limit, continuations are left, and the
+ *  merchant is there (spoke or typed lately, page visible). */
+export function shouldContinue(ending: Ending & Attendance): boolean {
+  return (
+    ending.count < MAX_AUTO_CONTINUATIONS &&
+    ending.visible &&
+    ending.lastMerchantAt > 0 &&
+    ending.endedAt - ending.lastMerchantAt <= MERCHANT_ACTIVE_MS &&
+    endedAtLimit(ending)
+  );
 }
 
 /** The newest transcript lines, oldest first, within what the server accepts. */

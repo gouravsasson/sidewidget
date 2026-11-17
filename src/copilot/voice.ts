@@ -27,6 +27,8 @@ export interface Line {
   id: string;
   fromAgent: boolean;
   text: string;
+  /** False while a transcription segment is still being spoken (refined later). */
+  final?: boolean;
 }
 
 /** What the voice agent reports it is doing (LiveKit agents' `lk.agent.state` attribute). */
@@ -42,6 +44,8 @@ export interface Activity {
 
 export interface Handlers {
   onLine(line: Line): void;
+  /** The room is gone (before the hold is released): the call is no longer live. */
+  onDisconnected?(): void;
   onEnded(reason: EndReason): void;
   onAudioBlocked(blocked: boolean): void;
   onActivity?(activity: Activity): void;
@@ -94,7 +98,7 @@ export async function connect(connection: Connection, handlers: Handlers): Promi
     touch();
     for (const segment of segments) {
       const text = segment.text.trim();
-      if (text) handlers.onLine({ id: segment.id, fromAgent: !participant?.isLocal, text });
+      if (text) handlers.onLine({ id: segment.id, fromAgent: !participant?.isLocal, text, final: segment.final });
     }
   });
   room.registerTextStreamHandler("lk.chat", async (reader, from) => {
@@ -136,6 +140,7 @@ export async function connect(connection: Connection, handlers: Handlers): Promi
     ended = true;
     window.clearTimeout(idleTimer);
     audio.splice(0).forEach((el) => el.remove());
+    handlers.onDisconnected?.();
     released ??= release(connection.release_token);
     const why = reason;
     void released.then(() => handlers.onEnded(why));

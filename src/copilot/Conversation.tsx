@@ -10,7 +10,10 @@ export interface SessionInfo extends Connection {
   max_seconds?: number;
 }
 
-export type StartResult = { ok: true; session: SessionInfo } | { ok: false; message: string };
+/** `code`: the server's error code (e.g. "call_active" while the last call is still closing). */
+export type StartResult =
+  | { ok: true; session: SessionInfo }
+  | { ok: false; message: string; code?: string };
 
 /** What a start sends to go on with the conversation: its last lines, and the release token
  *  of the call they came from (the server takes them only for the same staff member). */
@@ -30,12 +33,17 @@ const ENDED: Record<EndReason | "limit", string> = {
 
 const QUIET: Activity = { agentState: null, agentSpeaking: false, userSpeaking: false };
 
+/** How long a continuation waits before trying once more when the last call is still closing. */
+const RETRY_BUSY_MS = 2000;
+const STILL_CLOSING = "The last call is still closing. Tap Continue in a moment.";
+
 /**
  * One copilot conversation: transcript, text and mic. Nothing starts (no call, no mic prompt)
  * until the merchant sends a message or taps the mic; each start is one call. When the server
- * ends a call at its time limit, the next call starts by itself with the transcript carried
- * over (continuation.ts), keeping the merchant's mic choice; after MAX_AUTO_CONTINUATIONS, or
- * when that start fails, a Continue button does the same.
+ * ends a call at its time limit while the merchant is there, the next call starts by itself
+ * with the transcript carried over (continuation.ts), keeping the merchant's mic choice;
+ * otherwise -- or after MAX_AUTO_CONTINUATIONS, or when that start fails -- a Continue button,
+ * a typed message or the mic does the same. Ending the call (End, leaving the page) stops it.
  */
 export function useCall(start: StartCall, autoMic = false) {
   const [connecting, setConnecting] = useState(false);
@@ -57,14 +65,31 @@ export function useCall(start: StartCall, autoMic = false) {
   linesNow.current = lines;
   /** The merchant's mic choice (null: not made yet), kept across continued calls. */
   const micWanted = useRef<boolean | null>(null);
-  /** Release token of the call that ended last: what a Continue carries over. */
+  /** Release token of the call that ended last: what a continuation carries over. */
   const lastCall = useRef("");
   /** Automatic continuations on this page. */
   const continued = useRef(0);
+  /** The page is gone: nothing may start or stay connected. */
+  const mounted = useRef(true);
+  /** The merchant ended the call: nothing restarts by itself until they start again. */
+  const stopped = useRef(false);
+  /** The last call ended at its limit: the merchant's next start goes on with the conversation. */
+  const continuable = useRef(false);
+  /** When the merchant last spoke (a final segment) or typed. */
+  const lastMerchantAt = useRef(0);
 
-  useEffect(() => () => void voice.current?.disconnect(), []);
+  useEffect(() => {
+    mounted.current = true;
+    stopped.current = false;
+    return () => {
+      mounted.current = false;
+      stopped.current = true;
+      void voice.current?.disconnect();
+    };
+  }, []);
 
-  const addLine = (line: Line) =>
+  const addLine = (line: Line) => {
+    if (!line.fromAgent && line.final) lastMerchantAt.current = Date.now();
     setLines((prev) => {
       const i = prev.findIndex((l) => l.id === line.id);
       if (i === -1) return [...prev, line];
@@ -72,52 +97,84 @@ export function useCall(start: StartCall, autoMic = false) {
       next[i] = line; // a transcription segment refined while it is spoken
       return next;
     });
+  };
 
   const carryOver = (): Continuation => ({
     previous: previousLines(linesNow.current),
     continues: lastCall.current,
   });
 
+  // A continuation right after a call ended may find its hold not yet released: once more.
+  const startCall = async (continuation?: Continuation): Promise<StartResult> => {
+    const result = await start(continuation);
+    if (result.ok || !continuation || result.code !== "call_active") return result;
+    await new Promise((done) => window.setTimeout(done, RETRY_BUSY_MS));
+    if (!mounted.current || stopped.current) return result;
+    const again = await start(continuation);
+    return again.ok || again.code !== "call_active" ? again : { ...again, message: STILL_CLOSING };
+  };
+
   const open = async (continuation?: Continuation): Promise<CopilotVoice | null> => {
     setConnecting(true);
     setReconnecting(Boolean(continuation));
     setCanContinue(false);
     setError("");
+    const offerContinue = () => {
+      if (continuation && !stopped.current) setCanContinue(true);
+    };
     try {
-      const result = await start(continuation);
+      const result = await startCall(continuation);
       if (!result.ok) {
         setError(result.message);
-        if (continuation) setCanContinue(true);
+        offerContinue();
         return null;
       }
       const startedAt = Date.now();
       const maxSeconds = result.session.max_seconds ?? 0;
+      let mine: CopilotVoice | null = null;
       const { connect } = await import("./voice");
       const session = await connect(result.session, {
         onLine: addLine,
         onAudioBlocked: setAudioBlocked,
         onActivity: setActivity,
-        onEnded: (reason) => {
+        onDisconnected: () => {
+          if (voice.current && voice.current !== mine) return; // a newer call is live
           voice.current = null;
-          lastCall.current = result.session.release_token;
           setLive(false);
           setCall(null);
           setMicOn(false);
           setAudioBlocked(false);
           setActivity(QUIET);
+        },
+        onEnded: (reason) => {
+          lastCall.current = result.session.release_token;
+          // Gone, or the merchant already started another call: nothing to decide here.
+          if (!mounted.current || voice.current || pending.current) return;
           const ending = { reason, startedAt, endedAt: Date.now(), maxSeconds };
-          if (shouldContinue({ ...ending, count: continued.current })) {
+          const atLimit = endedAtLimit(ending) && !stopped.current;
+          continuable.current = atLimit;
+          const attended = {
+            count: continued.current,
+            lastMerchantAt: lastMerchantAt.current,
+            visible: document.visibilityState === "visible",
+          };
+          if (atLimit && shouldContinue({ ...ending, ...attended })) {
             continued.current += 1;
             setAnnouncement("Reconnecting…");
             void ensureSession(carryOver());
             return;
           }
-          const atLimit = endedAtLimit(ending);
           setAnnouncement(ENDED[atLimit ? "limit" : reason]);
-          if (atLimit) setCanContinue(true);
+          setCanContinue(atLimit);
         },
       });
+      if (!mounted.current || stopped.current) {
+        await session.disconnect(); // ended or left while it was connecting
+        return null;
+      }
+      mine = session;
       voice.current = session;
+      continuable.current = false;
       setAgentName(result.session.agent_name);
       setCall(result.session.release_token);
       setLive(true);
@@ -132,7 +189,7 @@ export function useCall(start: StartCall, autoMic = false) {
       return session;
     } catch {
       setError("Could not connect to the copilot. Check your connection and try again.");
-      if (continuation) setCanContinue(true);
+      offerContinue();
       return null;
     } finally {
       setConnecting(false);
@@ -149,13 +206,21 @@ export function useCall(start: StartCall, autoMic = false) {
     return pending.current;
   };
 
+  /** A start by the merchant (typing, the mic): after a call that hit its limit, it goes on
+   *  with the conversation. */
+  const begin = () => {
+    stopped.current = false;
+    return ensureSession(continuable.current ? carryOver() : undefined);
+  };
+
   /** The Continue button: the next call, with the conversation so far. */
   const continueCall = async () => {
+    stopped.current = false;
     await ensureSession(carryOver());
   };
 
   const toggleMic = async () => {
-    const session = await ensureSession();
+    const session = await begin();
     if (!session) return;
     try {
       await session.setMic(!micOn);
@@ -168,10 +233,11 @@ export function useCall(start: StartCall, autoMic = false) {
 
   /** Resolves true when the message went out. */
   const send = async (message: string): Promise<boolean> => {
-    const session = await ensureSession();
+    const session = await begin();
     if (!session) return false;
     try {
       await session.send(message);
+      lastMerchantAt.current = Date.now();
       addLine({ id: `you-${Date.now()}`, fromAgent: false, text: message });
       return true;
     } catch {
@@ -181,6 +247,8 @@ export function useCall(start: StartCall, autoMic = false) {
   };
 
   const end = async () => {
+    stopped.current = true;
+    continuable.current = false;
     setCanContinue(false);
     await voice.current?.disconnect();
   };

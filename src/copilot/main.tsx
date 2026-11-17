@@ -73,7 +73,9 @@ function ready(data: ShopSession): View {
  *  reached its time limit. */
 async function startPanelCall(continuation?: Continuation): Promise<StartResult> {
   const { status, data } = await post<SessionInfo>("/api/copilot/panel/session/", continuation ?? {});
-  return status === 200 ? { ok: true, session: data } : { ok: false, message: errorMessage(status, data) };
+  return status === 200
+    ? { ok: true, session: data }
+    : { ok: false, message: errorMessage(status, data), code: data.error };
 }
 
 /**

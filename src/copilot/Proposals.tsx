@@ -171,8 +171,14 @@ export default function Proposals({ onPending }: { onPending?: (ids: string[]) =
         themeGranted.current = true;
         setMissingTheme([]);
       }
-    } catch {
-      setError("Could not turn on website editing. Try again.");
+    } catch (failure) {
+      // Usually: the app version live in Shopify doesn't list read_themes/write_themes as
+      // optional scopes yet (the app config was not deployed with `shopify app deploy`).
+      console.warn("Snowie: website editing scope request failed", failure);
+      setError(
+        "Shopify didn't offer the website editing permission. The Snowie app needs its latest " +
+          "settings released in Shopify first; if it still fails after that, try again.",
+      );
     }
   };
 
