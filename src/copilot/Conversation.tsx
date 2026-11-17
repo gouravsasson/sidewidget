@@ -1,28 +1,46 @@
 import { FormEvent, ReactNode, RefObject, useEffect, useRef, useState } from "react";
 import { Mic, MicOff, Send, Volume2 } from "lucide-react";
 import ProductCards, { ProductCard, useProductCards } from "./ProductCards";
+import { EndReason, PreviousLine, endedAtLimit, previousLines, shouldContinue } from "./continuation";
 import type { Activity, CopilotVoice, Connection, Line } from "./voice";
 
 export interface SessionInfo extends Connection {
   agent_name: string;
+  /** The call limit Agni enforces (seconds); the conversation goes on in a new call after it. */
+  max_seconds?: number;
 }
 
 export type StartResult = { ok: true; session: SessionInfo } | { ok: false; message: string };
 
-const ENDED: Record<string, string> = {
+/** What a start sends to go on with the conversation: its last lines, and the release token
+ *  of the call they came from (the server takes them only for the same staff member). */
+export interface Continuation {
+  previous: PreviousLine[];
+  continues: string;
+}
+
+export type StartCall = (continuation?: Continuation) => Promise<StartResult>;
+
+const ENDED: Record<EndReason | "limit", string> = {
+  user: "You ended the call.",
   idle: "The call ended after two quiet minutes.",
-  hidden: "The call ended while this page was in the background.",
   closed: "The call ended.",
+  limit: "The call reached its time limit.",
 };
 
 const QUIET: Activity = { agentState: null, agentSpeaking: false, userSpeaking: false };
 
 /**
- * One copilot call: transcript, text and mic. Nothing starts (no call, no mic prompt)
- * until the merchant sends a message or taps the mic; each start is one call.
+ * One copilot conversation: transcript, text and mic. Nothing starts (no call, no mic prompt)
+ * until the merchant sends a message or taps the mic; each start is one call. When the server
+ * ends a call at its time limit, the next call starts by itself with the transcript carried
+ * over (continuation.ts), keeping the merchant's mic choice; after MAX_AUTO_CONTINUATIONS, or
+ * when that start fails, a Continue button does the same.
  */
-export function useCall(start: () => Promise<StartResult>, autoMic = false) {
+export function useCall(start: StartCall, autoMic = false) {
   const [connecting, setConnecting] = useState(false);
+  const [reconnecting, setReconnecting] = useState(false);
+  const [canContinue, setCanContinue] = useState(false);
   const [live, setLive] = useState(false);
   const [lines, setLines] = useState<Line[]>([]);
   const [micOn, setMicOn] = useState(false);
@@ -35,6 +53,14 @@ export function useCall(start: () => Promise<StartResult>, autoMic = false) {
   const voice = useRef<CopilotVoice | null>(null);
   const pending = useRef<Promise<CopilotVoice | null> | null>(null);
   const products = useProductCards(call, lines.filter((l) => l.fromAgent).length);
+  const linesNow = useRef(lines);
+  linesNow.current = lines;
+  /** The merchant's mic choice (null: not made yet), kept across continued calls. */
+  const micWanted = useRef<boolean | null>(null);
+  /** Release token of the call that ended last: what a Continue carries over. */
+  const lastCall = useRef("");
+  /** Automatic continuations on this page. */
+  const continued = useRef(0);
 
   useEffect(() => () => void voice.current?.disconnect(), []);
 
@@ -47,15 +73,25 @@ export function useCall(start: () => Promise<StartResult>, autoMic = false) {
       return next;
     });
 
-  const open = async (): Promise<CopilotVoice | null> => {
+  const carryOver = (): Continuation => ({
+    previous: previousLines(linesNow.current),
+    continues: lastCall.current,
+  });
+
+  const open = async (continuation?: Continuation): Promise<CopilotVoice | null> => {
     setConnecting(true);
+    setReconnecting(Boolean(continuation));
+    setCanContinue(false);
     setError("");
     try {
-      const result = await start();
+      const result = await start(continuation);
       if (!result.ok) {
         setError(result.message);
+        if (continuation) setCanContinue(true);
         return null;
       }
+      const startedAt = Date.now();
+      const maxSeconds = result.session.max_seconds ?? 0;
       const { connect } = await import("./voice");
       const session = await connect(result.session, {
         onLine: addLine,
@@ -63,12 +99,22 @@ export function useCall(start: () => Promise<StartResult>, autoMic = false) {
         onActivity: setActivity,
         onEnded: (reason) => {
           voice.current = null;
+          lastCall.current = result.session.release_token;
           setLive(false);
           setCall(null);
           setMicOn(false);
           setAudioBlocked(false);
           setActivity(QUIET);
-          setAnnouncement(ENDED[reason]);
+          const ending = { reason, startedAt, endedAt: Date.now(), maxSeconds };
+          if (shouldContinue({ ...ending, count: continued.current })) {
+            continued.current += 1;
+            setAnnouncement("Reconnecting…");
+            void ensureSession(carryOver());
+            return;
+          }
+          const atLimit = endedAtLimit(ending);
+          setAnnouncement(ENDED[atLimit ? "limit" : reason]);
+          if (atLimit) setCanContinue(true);
         },
       });
       voice.current = session;
@@ -76,26 +122,36 @@ export function useCall(start: () => Promise<StartResult>, autoMic = false) {
       setCall(result.session.release_token);
       setLive(true);
       setAnnouncement("Connected.");
-      if (autoMic) {
+      // A continued call keeps the merchant's mic choice; a new one follows `autoMic`.
+      const mic = continuation && micWanted.current !== null ? micWanted.current : autoMic;
+      if (mic) {
         await session.setMic(true);
         setMicOn(true);
+        micWanted.current = true;
       }
       return session;
     } catch {
       setError("Could not connect to the copilot. Check your connection and try again.");
+      if (continuation) setCanContinue(true);
       return null;
     } finally {
       setConnecting(false);
+      setReconnecting(false);
     }
   };
 
   // One call at a time: a double tap or a second Enter waits for the first start.
-  const ensureSession = (): Promise<CopilotVoice | null> => {
+  const ensureSession = (continuation?: Continuation): Promise<CopilotVoice | null> => {
     if (voice.current) return Promise.resolve(voice.current);
-    pending.current ??= open().finally(() => {
+    pending.current ??= open(continuation).finally(() => {
       pending.current = null;
     });
     return pending.current;
+  };
+
+  /** The Continue button: the next call, with the conversation so far. */
+  const continueCall = async () => {
+    await ensureSession(carryOver());
   };
 
   const toggleMic = async () => {
@@ -104,6 +160,7 @@ export function useCall(start: () => Promise<StartResult>, autoMic = false) {
     try {
       await session.setMic(!micOn);
       setMicOn(!micOn);
+      micWanted.current = !micOn;
     } catch {
       setError("The microphone could not be turned on. Check your browser's microphone setting.");
     }
@@ -124,11 +181,14 @@ export function useCall(start: () => Promise<StartResult>, autoMic = false) {
   };
 
   const end = async () => {
+    setCanContinue(false);
     await voice.current?.disconnect();
   };
 
   return {
     connecting,
+    reconnecting,
+    canContinue,
     live,
     lines,
     micOn,
@@ -143,6 +203,7 @@ export function useCall(start: () => Promise<StartResult>, autoMic = false) {
     toggleMic,
     send,
     end,
+    continueCall,
   };
 }
 
@@ -182,14 +243,29 @@ export function Transcript({ call, empty }: { call: Call; empty: string }) {
   );
 }
 
-/** Errors and the "turn on sound" tap, shown above the text box. */
+/** Reconnecting, errors, Continue and the "turn on sound" tap, shown above the text box. */
 export function CallNotices({ call }: { call: Call }) {
   return (
     <>
+      {call.reconnecting && (
+        <p className="mb-2 text-sm text-slate-600">Reconnecting…</p>
+      )}
       {call.error && (
         <p role="alert" className="mb-2 text-sm text-red-700">
           {call.error}
         </p>
+      )}
+      {call.canContinue && !call.connecting && (
+        <div className="mb-2 flex flex-wrap items-center gap-2 self-start">
+          {!call.error && <span className="text-sm text-slate-600">{call.announcement}</span>}
+          <button
+            type="button"
+            onClick={() => void call.continueCall()}
+            className="rounded-md border border-brand-700 bg-white px-3 py-1.5 text-sm font-medium text-brand-800 hover:bg-brand-50"
+          >
+            Continue
+          </button>
+        </div>
       )}
       {call.audioBlocked && (
         <button
@@ -324,8 +400,9 @@ type PhoneTab = "chat" | "side" | "settings";
 
 interface Props {
   title: string;
-  /** Starts a billed call; called on the first message or mic tap only. */
-  start: () => Promise<StartResult>;
+  /** Starts a billed call; called on the first message or mic tap only, and to go on
+   *  with the conversation after a call reached its time limit. */
+  start: StartCall;
   /** Show the in-page mic toggle (only where the browser allows the microphone). */
   micInline: boolean;
   /** Where the mic is not allowed: open voice elsewhere, after ending this page's call.

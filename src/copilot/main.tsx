@@ -2,7 +2,7 @@ import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./copilot.css";
 import { get, post } from "./api";
-import Conversation, { SessionInfo, StartResult } from "./Conversation";
+import Conversation, { Continuation, SessionInfo, StartResult } from "./Conversation";
 import Proposals from "./Proposals";
 import Setup, { ApprovalModes, PlanBadge, SetupState } from "./Setup";
 
@@ -69,8 +69,10 @@ function ready(data: ShopSession): View {
   return { kind: "ready", shopName: data.profile?.name || data.shop };
 }
 
-async function startPanelCall(): Promise<StartResult> {
-  const { status, data } = await post<SessionInfo>("/api/copilot/panel/session/");
+/** A call for the in-panel chat; `continuation` goes on with the conversation after a call
+ *  reached its time limit. */
+async function startPanelCall(continuation?: Continuation): Promise<StartResult> {
+  const { status, data } = await post<SessionInfo>("/api/copilot/panel/session/", continuation ?? {});
   return status === 200 ? { ok: true, session: data } : { ok: false, message: errorMessage(status, data) };
 }
 

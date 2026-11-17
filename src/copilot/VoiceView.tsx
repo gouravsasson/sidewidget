@@ -6,7 +6,7 @@ import {
   Composer,
   Count,
   ProductsPanel,
-  StartResult,
+  StartCall,
   Tab,
   Transcript,
   tabStrip,
@@ -109,7 +109,7 @@ function Orb({ call, phase }: { call: Call; phase: Phase }) {
  * right. Tablets put the orb above the transcript; phones show the orb on top and
  * the transcript or the products below it.
  */
-export default function VoiceView({ title, start }: { title: string; start: () => Promise<StartResult> }) {
+export default function VoiceView({ title, start }: { title: string; start: StartCall }) {
   const call = useCall(start, true);
   const [tab, setTab] = useState<"chat" | "products">("chat");
   const phase = phaseOf(call);

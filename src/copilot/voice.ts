@@ -3,10 +3,17 @@
 // text goes out on the "lk.chat" topic.
 //
 // Calls are billed, so a call ends itself after IDLE_MS without any transcript
-// or chat activity, and after the page has been hidden for IDLE_MS. Ending
-// always tells the backend (release token), which frees the one-call-per-staff hold.
+// or chat activity (also while the page is in the background: the merchant often
+// talks while looking at Shopify admin in another tab, so being hidden alone never
+// ends a call). Ending
+// always tells the backend (release token), which frees the one-call-per-staff hold;
+// `onEnded` is called once that is done, so a next call started from it finds the
+// hold free. Its reason says who ended the call: the merchant ("user": disconnect(),
+// the End button), the quiet timer ("idle"), or the server/agent ("closed", e.g. the
+// call limit -- see continuation.ts).
 import { Room, RoomEvent, Track } from "livekit-client";
 import { SNOWIE_API_ORIGIN } from "../config";
+import type { EndReason } from "./continuation";
 
 const IDLE_MS = 2 * 60 * 1000;
 
@@ -35,7 +42,7 @@ export interface Activity {
 
 export interface Handlers {
   onLine(line: Line): void;
-  onEnded(reason: "idle" | "hidden" | "closed"): void;
+  onEnded(reason: EndReason): void;
   onAudioBlocked(blocked: boolean): void;
   onActivity?(activity: Activity): void;
 }
@@ -49,8 +56,10 @@ export interface CopilotVoice {
   levels(): { user: number; agent: number };
 }
 
+const RELEASE_WAIT_MS = 5000;
+
 function release(token: string): Promise<void> {
-  return fetch(`${SNOWIE_API_ORIGIN}/api/copilot/panel/call/`, {
+  const sent = fetch(`${SNOWIE_API_ORIGIN}/api/copilot/panel/call/`, {
     method: "POST",
     credentials: "omit",
     keepalive: true, // still sent if the page is closing
@@ -60,27 +69,25 @@ function release(token: string): Promise<void> {
     () => undefined,
     () => undefined,
   );
+  // Never wait on it for long: the hold also expires by itself.
+  return Promise.race([sent, new Promise<void>((done) => window.setTimeout(done, RELEASE_WAIT_MS))]);
 }
 
 export async function connect(connection: Connection, handlers: Handlers): Promise<CopilotVoice> {
   const room = new Room();
   const audio: HTMLMediaElement[] = [];
-  let reason: "idle" | "hidden" | "closed" = "closed";
+  let reason: EndReason = "closed"; // unless we end it: the server or the agent did
+  let ended = false;
   let released: Promise<void> | null = null;
   let idleTimer = 0;
-  let hiddenTimer = 0;
 
-  const end = (why: typeof reason) => {
-    reason = why;
+  const end = (why: EndReason) => {
+    if (!ended) reason = why;
     void room.disconnect();
   };
   const touch = () => {
     window.clearTimeout(idleTimer);
     idleTimer = window.setTimeout(() => end("idle"), IDLE_MS);
-  };
-  const onVisibility = () => {
-    window.clearTimeout(hiddenTimer);
-    if (document.hidden) hiddenTimer = window.setTimeout(() => end("hidden"), IDLE_MS);
   };
 
   room.on(RoomEvent.TranscriptionReceived, (segments, participant) => {
@@ -125,12 +132,13 @@ export async function connect(connection: Connection, handlers: Handlers): Promi
     handlers.onAudioBlocked(!room.canPlaybackAudio),
   );
   room.on(RoomEvent.Disconnected, () => {
+    if (ended) return;
+    ended = true;
     window.clearTimeout(idleTimer);
-    window.clearTimeout(hiddenTimer);
-    document.removeEventListener("visibilitychange", onVisibility);
     audio.splice(0).forEach((el) => el.remove());
     released ??= release(connection.release_token);
-    handlers.onEnded(reason);
+    const why = reason;
+    void released.then(() => handlers.onEnded(why));
   });
 
   try {
@@ -140,8 +148,6 @@ export async function connect(connection: Connection, handlers: Handlers): Promi
     released ??= release(connection.release_token);
     throw error;
   }
-  document.addEventListener("visibilitychange", onVisibility);
-  onVisibility();
   touch();
   report();
   try {
@@ -164,6 +170,7 @@ export async function connect(connection: Connection, handlers: Handlers): Promi
       handlers.onAudioBlocked(!room.canPlaybackAudio);
     },
     async disconnect() {
+      if (!ended) reason = "user";
       await room.disconnect();
       await released;
     },
