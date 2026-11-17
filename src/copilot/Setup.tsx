@@ -51,8 +51,8 @@ const LANGUAGES: [string, string][] = [
 ];
 
 const SCOPES: [SetupState["settings"]["voice_approval_scope"], string][] = [
+  ["all", "All changes (stock, prices, visibility, discounts)"],
   ["everyday", "Everyday discounts only (safest)"],
-  ["all", "All changes (stock, prices, visibility, discounts) — ending a discount still needs a tap"],
 ];
 
 const input = "w-full rounded-md border border-slate-300 px-2 py-1";
@@ -81,8 +81,8 @@ export function PlanBadge({ plan, onDark = false }: { plan: Plan; onDark?: boole
 }
 
 /**
- * How changes get approved besides a tap: a "yes" said or typed to the copilot (everyday
- * discounts), and auto mode (Pro). Only the store owner changes them; others see them.
+ * How changes get approved besides a tap: a "yes" said or typed to the copilot (all changes
+ * by default, or everyday discounts only), and auto mode (Pro). Only the store owner changes them; others see them.
  */
 export function ApprovalModes({ state, onChange }: { state: SetupState; onChange: (s: SetupState) => void }) {
   const [busy, setBusy] = useState(false);
@@ -144,14 +144,14 @@ export function ApprovalModes({ state, onChange }: { state: SetupState; onChange
                 name="voice-approval-scope"
                 value={value}
                 className="mt-0.5 accent-brand-700"
-                checked={(s.voice_approval_scope ?? "everyday") === value}
+                checked={(s.voice_approval_scope ?? "all") === value}
                 onChange={() => void save({ voice_approval_scope: value })}
               />
               <span>{label}</span>
             </label>
           ))}
           <p className="text-xs text-slate-500">
-            {s.voice_approval_scope === "all"
+            {s.voice_approval_scope !== "everyday"
               ? "Ending a discount and cart-recovery codes still need a tap here."
               : "Prices, stock, visibility and bigger changes need a tap here."}
           </p>
