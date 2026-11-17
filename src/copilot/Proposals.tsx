@@ -33,6 +33,9 @@ interface Row {
   before: string;
   after: string;
   margin_after?: string | null;
+  /** The whole value when `before`/`after` is cut short (website text): what is written. */
+  before_full?: string;
+  after_full?: string;
 }
 
 interface Item {
@@ -63,6 +66,8 @@ interface Proposal {
   code_count?: number | null;
   /** Once applied: the changed products, to open in Shopify admin. */
   products?: { id: string; title: string; url: string }[];
+  /** An applied website draft: the copy's preview and theme editor links. */
+  theme?: { name: string; preview_url: string; editor_url: string } | null;
 }
 
 type Action = "approve" | "reject" | "undo";
@@ -77,7 +82,11 @@ const FOCUS = (() => {
 const undoText = (p: Proposal) =>
   p.kind === "recovery_codes"
     ? `All ${p.code_count ?? ""} codes stop working, including any already given to customers.`
-    : "Undo will set these back, unless they were changed in Shopify since:\n" +
+    : p.kind === "theme_draft"
+      ? "Undo deletes the draft copy of your theme, unless it has been published since. Your live website is not affected."
+      : p.kind === "publish_theme"
+        ? "Undo makes your previous theme live again, unless the live theme was changed in Shopify since. The draft stays in your theme library: delete it in Online Store > Themes if you don't want it."
+        : "Undo will set these back, unless they were changed in Shopify since:\n" +
   p.changes
     .map((r) => `${r.target}${r.detail ? ` (${r.detail})` : ""}: ${r.field} back to ${r.before}`)
     .join("\n");
@@ -89,6 +98,9 @@ const undoText = (p: Proposal) =>
 export default function Proposals({ onPending }: { onPending?: (ids: string[]) => void }) {
   const [list, setList] = useState<Proposal[]>([]);
   const [missing, setMissing] = useState<string[]>([]);
+  // Theme scopes: offered only once the merchant asked the copilot for a website edit.
+  const [missingTheme, setMissingTheme] = useState<string[]>([]);
+  const themeGranted = useRef(false);
   const [error, setError] = useState("");
   const [upgradeUrl, setUpgradeUrl] = useState<string | null>(null);
   const [working, setWorking] = useState("");
@@ -105,13 +117,16 @@ export default function Proposals({ onPending }: { onPending?: (ids: string[]) =
   const reported = useRef<string | null>(null);
 
   const load = useCallback(async () => {
-    const { status, data } = await get<{ proposals: Proposal[]; missing_action_scopes: string[] }>(
-      "/api/copilot/panel/proposals/",
-    );
+    const { status, data } = await get<{
+      proposals: Proposal[];
+      missing_action_scopes: string[];
+      missing_theme_scopes?: string[];
+    }>("/api/copilot/panel/proposals/");
     if (status === 200) {
       setList(data.proposals);
       setLoaded(true);
       setMissing(granted.current ? [] : data.missing_action_scopes);
+      setMissingTheme(themeGranted.current ? [] : data.missing_theme_scopes ?? []);
     } else setError(data.detail || "Could not load proposed changes.");
   }, []);
 
@@ -146,6 +161,18 @@ export default function Proposals({ onPending }: { onPending?: (ids: string[]) =
       }
     } catch {
       setError("Could not turn on actions. Try again.");
+    }
+  };
+
+  const turnOnTheme = async () => {
+    try {
+      const { result } = await shopify.scopes.request(missingTheme);
+      if (result === "granted-all") {
+        themeGranted.current = true;
+        setMissingTheme([]);
+      }
+    } catch {
+      setError("Could not turn on website editing. Try again.");
     }
   };
 
@@ -218,6 +245,21 @@ export default function Proposals({ onPending }: { onPending?: (ids: string[]) =
             className="mt-2 rounded-md bg-brand-700 px-3 py-1.5 text-white hover:bg-brand-800"
           >
             Turn on actions
+          </button>
+        </div>
+      )}
+      {missingTheme.length > 0 && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm">
+          <p>
+            Turn on website editing to let the copilot prepare theme changes on a draft copy of
+            your theme. Your live website changes only when you approve publishing it.
+          </p>
+          <button
+            type="button"
+            onClick={() => void turnOnTheme()}
+            className="mt-2 rounded-md bg-brand-700 px-3 py-1.5 text-white hover:bg-brand-800"
+          >
+            Turn on website editing
           </button>
         </div>
       )}
@@ -383,6 +425,21 @@ function Card({
               <span className="sr-only"> to </span>
               <strong className="font-semibold text-slate-900">{r.after}</strong>
             </p>
+            {(r.before_full || r.after_full) && (
+              <details className="mt-1 text-slate-700">
+                <summary className="cursor-pointer text-brand-700 hover:text-brand-900">Show the full text</summary>
+                {r.before_full && (
+                  <p className="mt-1 whitespace-pre-wrap break-words">
+                    <span className="font-medium">Before:</span> {r.before_full}
+                  </p>
+                )}
+                {r.after_full && (
+                  <p className="mt-1 whitespace-pre-wrap break-words">
+                    <span className="font-medium">After:</span> {r.after_full}
+                  </p>
+                )}
+              </details>
+            )}
             {showMargin && <p className="mt-0.5 text-slate-600">Margin after: {r.margin_after || "unknown"}</p>}
           </li>
         ))}
@@ -432,6 +489,33 @@ function Card({
             </li>
           ))}
         </ul>
+      )}
+
+      {p.theme && (
+        <div className="mt-2 rounded-lg border border-brand-100 bg-brand-50 px-3 py-2 text-xs">
+          <p className="text-slate-700">
+            Draft “{p.theme.name}” is ready. Customers don't see it until it is published.
+          </p>
+          <ul aria-label="Website draft" className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
+            {[
+              { href: p.theme.preview_url, label: "Preview" },
+              { href: p.theme.editor_url, label: "Open in theme editor" },
+            ].map((link) => (
+              <li key={link.label}>
+                <a
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 font-medium text-brand-700 hover:text-brand-900 hover:underline"
+                >
+                  {link.label}
+                  <ExternalLink aria-hidden className="h-3 w-3" />
+                  <span className="sr-only"> (opens in a new tab)</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       {p.status === "pending" && (
