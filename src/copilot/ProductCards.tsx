@@ -14,6 +14,8 @@ export interface ProductCard {
   url: string;
   /** Set when the card shows a change just applied, e.g. "10% off · until 23 Nov". */
   badge?: string;
+  /** The price customers pay now, under a discount just applied. */
+  sale_price?: string | null;
 }
 
 const POLL_MS = 10000;
@@ -79,7 +81,7 @@ const STATUS: Record<string, string> = {
 /** How long a card whose data just changed stays highlighted. */
 const HIGHLIGHT_MS = 6000;
 
-const signature = (p: ProductCard) => JSON.stringify([p.title, p.status, p.stock, p.price, p.image, p.badge]);
+const signature = (p: ProductCard) => JSON.stringify([p.title, p.status, p.stock, p.price, p.sale_price, p.image, p.badge]);
 
 /**
  * Ids of cards whose data changed since the last list (a new `v` after a change was
@@ -156,7 +158,18 @@ export default function ProductCards({
             )}
             <div className="flex flex-1 flex-col gap-1 p-2">
               <p className="line-clamp-2 font-medium text-slate-900">{p.title}</p>
-              {p.price && <p className="text-slate-800">{p.price}</p>}
+              {p.price &&
+                (p.sale_price && p.sale_price !== p.price ? (
+                  <p className="flex flex-wrap items-baseline gap-x-1.5">
+                    <span className="font-semibold text-brand-800">{p.sale_price}</span>
+                    <s className="text-slate-500">
+                      <span className="sr-only">was </span>
+                      {p.price}
+                    </s>
+                  </p>
+                ) : (
+                  <p className="text-slate-800">{p.price}</p>
+                ))}
               <p className={p.stock !== null && p.stock <= 0 ? "text-red-700" : "text-slate-600"}>
                 {stockText(p.stock)}
               </p>
