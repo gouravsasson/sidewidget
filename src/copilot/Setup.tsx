@@ -1,5 +1,7 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, ReactNode, useState } from "react";
+import { AlertCircle, ListChecks, Loader2, Lock } from "lucide-react";
 import { post } from "./api";
+import { btn } from "./styles";
 
 export interface Plan {
   plan: "free" | "growth" | "pro";
@@ -55,28 +57,68 @@ const SCOPES: [SetupState["settings"]["voice_approval_scope"], string][] = [
   ["everyday", "Everyday discounts only (safest)"],
 ];
 
-const input = "w-full rounded-md border border-slate-300 px-2 py-1";
-const button = "rounded-md px-3 py-1.5 disabled:opacity-60";
+const input =
+  "mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm font-normal text-slate-900 shadow-sm focus:border-brand-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-200 disabled:bg-slate-50 disabled:text-slate-500";
+const card = "rounded-2xl border border-slate-200 bg-white p-4 text-sm shadow-sm";
 
 /** The plan line, with Shopify's plan page when there is more to get. */
 export function PlanBadge({ plan, onDark = false }: { plan: Plan; onDark?: boolean }) {
   return (
-    <p className={`whitespace-nowrap text-xs ${onDark ? "text-white" : "text-slate-600"}`}>
-      Plan:{" "}
-      <span className="rounded-full bg-brand-100 px-2 py-0.5 font-medium capitalize text-brand-900">{plan.plan}</span>
+    <p className={`flex items-center gap-2 whitespace-nowrap text-xs ${onDark ? "text-white" : "text-slate-600"}`}>
+      <span className="sr-only">Plan: </span>
+      <span className="rounded-full bg-brand-50 px-2 py-0.5 font-medium capitalize text-brand-800 ring-1 ring-inset ring-brand-200">
+        {plan.plan}
+      </span>
       {plan.plan !== "pro" && plan.upgrade_url && (
-        <>
-          {" · "}
-          <a
-            href={plan.upgrade_url}
-            target="_top"
-            className={onDark ? "text-white underline hover:text-brand-100 focus-visible:outline-white" : "text-brand-700 underline hover:text-brand-900"}
-          >
-            See plans
-          </a>
-        </>
+        <a
+          href={plan.upgrade_url}
+          target="_top"
+          className={
+            onDark
+              ? "text-white underline hover:text-brand-100 focus-visible:outline-white"
+              : "font-medium text-brand-700 hover:text-brand-900 hover:underline"
+          }
+        >
+          See plans
+        </a>
       )}
     </p>
+  );
+}
+
+/** A checkbox drawn as a switch; the whole row is its label. */
+function Toggle({
+  checked,
+  disabled,
+  onChange,
+  title,
+  children,
+}: {
+  checked: boolean;
+  disabled: boolean;
+  onChange: (on: boolean) => void;
+  title: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <label className={`flex items-start justify-between gap-4 ${disabled ? "cursor-not-allowed" : "cursor-pointer"}`}>
+      <span className="min-w-0">
+        <span className="flex items-center gap-2 font-medium text-slate-900">{title}</span>
+        <span className="mt-0.5 block text-slate-600">{children}</span>
+      </span>
+      <input
+        type="checkbox"
+        role="switch"
+        className="peer sr-only"
+        checked={checked}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+      <span
+        aria-hidden
+        className="relative mt-0.5 h-5 w-9 shrink-0 rounded-full bg-slate-300 transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-white after:shadow-sm after:transition-transform peer-checked:bg-brand-700 peer-checked:after:translate-x-4 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand-600 peer-disabled:opacity-50"
+      />
+    </label>
   );
 }
 
@@ -108,7 +150,7 @@ export function ApprovalModes({ state, onChange }: { state: SetupState; onChange
     }
   };
   const cap = (key: "auto_max_discount_pct" | "auto_changes_per_day", label: string) => (
-    <label className="flex items-center gap-2 text-xs">
+    <label className="block text-xs font-medium text-slate-700">
       {label}
       <input
         type="number"
@@ -116,69 +158,91 @@ export function ApprovalModes({ state, onChange }: { state: SetupState; onChange
         defaultValue={s[key]}
         disabled={!edit}
         onBlur={(e) => Number(e.target.value) !== s[key] && void save({ [key]: Number(e.target.value) })}
-        className="w-16 rounded-md border border-slate-300 px-1"
+        className={input}
       />
     </label>
   );
 
   return (
-    <section aria-label="Approvals" className="rounded-xl border border-brand-100 bg-white p-4 text-sm shadow-sm">
-      <h2 className="mb-2 font-medium">Approvals</h2>
-      <label className="flex items-start gap-2">
-        <input
-          type="checkbox"
-          className="mt-0.5 accent-brand-700"
+    <section aria-label="Approvals" className="space-y-3 text-sm">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold text-slate-900">Approvals</h3>
+        {busy && (
+          <span role="status" className="inline-flex items-center gap-1.5 text-xs text-slate-600">
+            <Loader2 aria-hidden className="h-3.5 w-3.5 motion-safe:animate-spin" />
+            Saving…
+          </span>
+        )}
+      </div>
+      {!state.can_edit && (
+        <p className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600">
+          <Lock aria-hidden className="h-3.5 w-3.5 shrink-0" />
+          Only the store owner can change these.
+        </p>
+      )}
+      <div className={card}>
+        <Toggle
           checked={s.voice_approval}
           disabled={!edit}
-          onChange={(e) => void save({ voice_approval: e.target.checked })}
-        />
-        <span>Approve changes by saying or typing “yes” to the copilot.</span>
-      </label>
-      {s.voice_approval && (
-        <fieldset className="mt-2 space-y-1.5 pl-6" disabled={!edit}>
-          <legend className="sr-only">What a “yes” may approve</legend>
-          {SCOPES.map(([value, label]) => (
-            <label key={value} className="flex items-start gap-2">
-              <input
-                type="radio"
-                name="voice-approval-scope"
-                value={value}
-                className="mt-0.5 accent-brand-700"
-                checked={(s.voice_approval_scope ?? "all") === value}
-                onChange={() => void save({ voice_approval_scope: value })}
-              />
-              <span>{label}</span>
-            </label>
-          ))}
-          <p className="text-xs text-slate-500">
-            {s.voice_approval_scope !== "everyday"
-              ? "Ending a discount and cart-recovery codes still need a tap here."
-              : "Prices, stock, visibility and bigger changes need a tap here."}
-          </p>
-        </fieldset>
-      )}
-      <label className="mt-2 flex items-start gap-2">
-        <input
-          type="checkbox"
-          className="mt-0.5 accent-brand-700"
+          onChange={(on) => void save({ voice_approval: on })}
+          title="Approve with a “yes”"
+        >
+          Approve changes by saying or typing “yes” to the copilot.
+        </Toggle>
+        {s.voice_approval && (
+          <fieldset className="mt-3 space-y-2 border-t border-slate-100 pt-3" disabled={!edit}>
+            <legend className="sr-only">What a “yes” may approve</legend>
+            {SCOPES.map(([value, label]) => (
+              <label
+                key={value}
+                className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-slate-200 px-3 py-2 has-[:checked]:border-brand-300 has-[:checked]:bg-brand-50"
+              >
+                <input
+                  type="radio"
+                  name="voice-approval-scope"
+                  value={value}
+                  className="mt-0.5 accent-brand-700"
+                  checked={(s.voice_approval_scope ?? "all") === value}
+                  onChange={() => void save({ voice_approval_scope: value })}
+                />
+                <span className="text-slate-800">{label}</span>
+              </label>
+            ))}
+            <p className="text-xs text-slate-600">
+              {s.voice_approval_scope !== "everyday"
+                ? "Ending a discount and cart-recovery codes still need a tap here."
+                : "Prices, stock, visibility and bigger changes need a tap here."}
+            </p>
+          </fieldset>
+        )}
+      </div>
+      <div className={card}>
+        <Toggle
           checked={s.auto_mode}
           disabled={!edit || (!s.auto_mode && !inPlan)}
-          onChange={(e) => void save({ auto_mode: e.target.checked })}
-        />
-        <span>
-          Auto mode: apply small timed discounts from Snowie's suggestions without asking. You're
-          told after each one and can undo it here.{!inPlan && " Needs the Pro plan."}
-        </span>
-      </label>
-      {s.auto_mode && (
-        <div className="mt-1 flex gap-3 pl-6">
-          {cap("auto_max_discount_pct", "Max % off")}
-          {cap("auto_changes_per_day", "Per day")}
-        </div>
-      )}
-      {!state.can_edit && <p className="mt-2 text-xs text-slate-500">Only the store owner can change these.</p>}
+          onChange={(on) => void save({ auto_mode: on })}
+          title={
+            <>
+              Auto mode
+              <span className="rounded-full bg-brand-50 px-1.5 py-px text-[11px] font-semibold text-brand-800 ring-1 ring-inset ring-brand-200">
+                Pro
+              </span>
+            </>
+          }
+        >
+          Apply small timed discounts from Snowie's suggestions without asking. You're told after
+          each one and can undo it here.{!inPlan && " Needs the Pro plan."}
+        </Toggle>
+        {s.auto_mode && (
+          <div className="mt-3 grid grid-cols-2 gap-3 border-t border-slate-100 pt-3">
+            {cap("auto_max_discount_pct", "Max % off")}
+            {cap("auto_changes_per_day", "Per day")}
+          </div>
+        )}
+      </div>
       {error && (
-        <p role="alert" className="mt-2 text-red-700">
+        <p role="alert" className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-red-800">
+          <AlertCircle aria-hidden className="mt-0.5 h-4 w-4 shrink-0" />
           {error}
         </p>
       )}
@@ -243,7 +307,7 @@ export default function Setup({ state, onChange }: { state: SetupState; onChange
     });
 
   const field = (key: keyof typeof form, label: string) => (
-    <label className="block">
+    <label className="block text-xs font-medium text-slate-700">
       {label}
       <input
         value={form[key]}
@@ -255,21 +319,46 @@ export default function Setup({ state, onChange }: { state: SetupState; onChange
   );
 
   return (
-    <section aria-label="Get started" className="rounded-xl border border-brand-300 bg-white p-4 text-sm shadow-sm">
-      <h2 className="mb-2 font-medium">Get started</h2>
+    <section aria-label="Get started" className={`@container ${card} border-brand-200`}>
+      <div className="mb-4 flex items-start gap-3">
+        <span
+          aria-hidden
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-700 ring-1 ring-brand-100"
+        >
+          <ListChecks className="h-4.5 w-4.5" />
+        </span>
+        <div>
+          <h2 className="font-semibold text-slate-900">Get started</h2>
+          <p className="text-xs text-slate-600">A few optional settings for your copilot. Leave any of them as they are.</p>
+        </div>
+      </div>
       {look && (
-        <p className="mb-3 rounded bg-brand-50 p-2">
-          {look.period.from} to {look.period.to}: {look.orders} orders, {look.net_sales.display} net
-          sales, {look.average_order_value.display} average order. Ask the copilot anything about it.
-        </p>
+        <div className="mb-4 rounded-xl bg-slate-50 p-3 ring-1 ring-inset ring-slate-200">
+          <p className="text-xs text-slate-600">
+            {look.period.from} to {look.period.to}
+          </p>
+          <dl className="mt-2 grid grid-cols-3 gap-2">
+            {[
+              ["Orders", String(look.orders)],
+              ["Net sales", look.net_sales.display],
+              ["Average order", look.average_order_value.display],
+            ].map(([label, value]) => (
+              <div key={label} className="min-w-0">
+                <dt className="truncate text-xs text-slate-600">{label}</dt>
+                <dd className="truncate text-base font-semibold text-slate-900">{value}</dd>
+              </div>
+            ))}
+          </dl>
+          <p className="mt-2 text-xs text-slate-600">Ask the copilot anything about it.</p>
+        </div>
       )}
       {wa?.configured && !wa.number && (
-        <div className="mb-3">
-          <p className="mb-1">Morning summary and approval alerts on WhatsApp (optional)</p>
+        <div className="mb-4 rounded-xl border border-slate-200 p-3">
+          <p className="mb-2 font-medium text-slate-900">Morning summary and approval alerts on WhatsApp (optional)</p>
           {codeSent ? (
-            <div className="flex gap-2">
-              <input value={code} onChange={(e) => setCode(e.target.value)} aria-label="Code" className={input} />
-              <button type="button" disabled={busy} onClick={() => whatsapp({ code })} className={`${button} border border-slate-300`}>
+            <div className="flex items-center gap-2">
+              <input value={code} onChange={(e) => setCode(e.target.value)} aria-label="Code" className={`${input} mt-0`} />
+              <button type="button" disabled={busy} onClick={() => whatsapp({ code })} className={btn.secondary}>
                 Confirm
               </button>
             </div>
@@ -280,17 +369,22 @@ export default function Setup({ state, onChange }: { state: SetupState; onChange
                 onChange={(e) => setNumber(e.target.value)}
                 placeholder="+91 98765 43210"
                 aria-label="WhatsApp number"
-                className={input}
+                className={`${input} mt-0`}
               />
-              <label className="mt-1 flex items-start gap-2 text-xs">
-                <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
+              <label className="mt-2 flex items-start gap-2 text-xs text-slate-700">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 accent-brand-700"
+                  checked={agreed}
+                  onChange={(e) => setAgreed(e.target.checked)}
+                />
                 {wa.opt_in_text}
               </label>
               <button
                 type="button"
                 disabled={busy || !agreed}
                 onClick={() => whatsapp({ number, opt_in: agreed })}
-                className={`${button} mt-1 border border-slate-300`}
+                className={`${btn.secondary} mt-2`}
               >
                 Send code
               </button>
@@ -298,12 +392,12 @@ export default function Setup({ state, onChange }: { state: SetupState; onChange
           )}
         </div>
       )}
-      {wa?.number && <p className="mb-3 text-slate-600">WhatsApp: {wa.number}</p>}
-      <form onSubmit={finish} className="grid gap-2 @md:grid-cols-2">
+      {wa?.number && <p className="mb-4 text-slate-600">WhatsApp: {wa.number}</p>}
+      <form onSubmit={finish} className="grid gap-3 @md:grid-cols-2">
         {field("max_discount_pct", "Largest discount Snowie may suggest (%)")}
         {field("margin_floor_pct", "Never suggest below this margin (%)")}
         {field("tax_rate_pct", "Tax included in your prices (%)")}
-        <label className="block">
+        <label className="block text-xs font-medium text-slate-700">
           Reply language
           <select
             value={form.language}
@@ -317,18 +411,19 @@ export default function Setup({ state, onChange }: { state: SetupState; onChange
             ))}
           </select>
         </label>
-        <div className="flex gap-2 @md:col-span-2">
-          <button type="submit" disabled={busy} className={`${button} bg-brand-700 text-white hover:bg-brand-800`}>
+        <div className="flex gap-2 pt-1 @md:col-span-2">
+          <button type="submit" disabled={busy} className={btn.primary}>
             Save and finish
           </button>
-          <button type="button" disabled={busy} onClick={skip} className={`${button} border border-slate-300`}>
+          <button type="button" disabled={busy} onClick={skip} className={btn.secondary}>
             Skip
           </button>
         </div>
       </form>
 
       {error && (
-        <p role="alert" className="mt-2 text-red-700">
+        <p role="alert" className="mt-3 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-red-800">
+          <AlertCircle aria-hidden className="mt-0.5 h-4 w-4 shrink-0" />
           {error}
         </p>
       )}

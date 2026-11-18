@@ -5,6 +5,9 @@ import { get, post } from "./api";
 import Conversation, { Continuation, SessionInfo, StartResult } from "./Conversation";
 import Proposals from "./Proposals";
 import Setup, { ApprovalModes, PlanBadge, SetupState } from "./Setup";
+import { btn } from "./styles";
+import { BrandMark } from "./ui";
+import { AlertCircle, Loader2 } from "lucide-react";
 
 interface ShopSession {
   shop: string;
@@ -136,19 +139,18 @@ function App() {
     const micInline = micAllowedHere();
     return (
       <Conversation
-        title={`Ask ${view.shopName}`}
+        title="Snowie Copilot"
+        subtitle={view.shopName}
         start={startPanelCall}
         micInline={micInline}
         onTalkByVoice={micInline ? undefined : talkByVoice}
-        headerExtra={setup && <PlanBadge plan={setup.plan} onDark />}
+        headerExtra={setup && <PlanBadge plan={setup.plan} />}
+        checklist={setup?.can_edit && !setup.onboarded ? <Setup state={setup} onChange={setSetup} /> : undefined}
         settings={
           setup ? (
-            <>
-              {setup.can_edit && !setup.onboarded && <Setup state={setup} onChange={setSetup} />}
-              <ApprovalModes state={setup} onChange={setSetup} />
-            </>
+            <ApprovalModes state={setup} onChange={setSetup} />
           ) : (
-            <p className="p-2 text-sm text-slate-500">
+            <p className="text-sm text-slate-600">
               {setupFailed ? "Settings could not be loaded. Reload the app to try again." : "Loading settings…"}
             </p>
           )
@@ -162,47 +164,53 @@ function App() {
   }
 
   return (
-    <main className="mx-auto max-w-xl p-6 text-slate-800">
-      <h1 className="mb-3 rounded-xl bg-gradient-to-r from-brand-700 to-brand-violet px-4 py-3 text-xl font-semibold text-white">
-        Snowie Copilot
-      </h1>
-      {view.kind === "loading" && <p role="status">Loading…</p>}
-      {view.kind === "error" && (
-        <p role="alert" className="text-red-700">
-          {view.message}
-        </p>
-      )}
-      {view.kind === "connect" && (
-        <section className="space-y-3 rounded-xl border border-brand-100 bg-white p-4">
-          <h2 className="font-medium">Connect to your Snowie account</h2>
-          {view.ownerOnly ? (
-            <p>Only the store owner can connect this store. Ask the store owner to connect it.</p>
-          ) : view.company ? (
-            <>
-              <p>
-                Connect this store to the Snowie account <strong>{view.company}</strong>? Its
-                admins will be able to set up a copilot that reads your sales, stock and
-                discounts. It proposes changes; nothing changes until a staff member approves
-                (here, or by saying yes to the copilot), or in auto mode if the store owner
-                turns it on.
-              </p>
-              <button
-                type="button"
-                onClick={confirm}
-                disabled={confirming}
-                className="rounded-md bg-brand-700 px-4 py-2 text-white hover:bg-brand-800 disabled:opacity-60"
-              >
-                {confirming ? "Connecting…" : "Confirm"}
-              </button>
-            </>
-          ) : (
-            <>
-              {view.note && <p className="text-amber-800">{view.note}</p>}
-              <p>{CONNECT_HELP}</p>
-            </>
-          )}
-        </section>
-      )}
+    <main className="mx-auto flex min-h-dvh max-w-lg flex-col justify-center p-4 text-slate-800 sm:p-6">
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="mb-5 flex items-center gap-2.5">
+          <BrandMark />
+          <h1 className="text-base font-semibold text-slate-900">Snowie Copilot</h1>
+        </div>
+        {view.kind === "loading" && (
+          <p role="status" className="flex items-center gap-2 text-sm text-slate-600">
+            <Loader2 aria-hidden className="h-4 w-4 motion-safe:animate-spin" />
+            Loading…
+          </p>
+        )}
+        {view.kind === "error" && (
+          <p role="alert" className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+            <AlertCircle aria-hidden className="mt-0.5 h-4 w-4 shrink-0" />
+            {view.message}
+          </p>
+        )}
+        {view.kind === "connect" && (
+          <section className="space-y-3 text-sm leading-relaxed">
+            <h2 className="text-lg font-semibold text-slate-900">Connect to your Snowie account</h2>
+            {view.ownerOnly ? (
+              <p>Only the store owner can connect this store. Ask the store owner to connect it.</p>
+            ) : view.company ? (
+              <>
+                <p>
+                  Connect this store to the Snowie account <strong>{view.company}</strong>? Its
+                  admins will be able to set up a copilot that reads your sales, stock and
+                  discounts. It proposes changes; nothing changes until a staff member approves
+                  (here, or by saying yes to the copilot), or in auto mode if the store owner
+                  turns it on.
+                </p>
+                <button type="button" onClick={confirm} disabled={confirming} className={`${btn.primary} px-4 py-2`}>
+                  {confirming ? "Connecting…" : "Confirm"}
+                </button>
+              </>
+            ) : (
+              <>
+                {view.note && (
+                  <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900">{view.note}</p>
+                )}
+                <p className="text-slate-700">{CONNECT_HELP}</p>
+              </>
+            )}
+          </section>
+        )}
+      </div>
     </main>
   );
 }

@@ -1,6 +1,23 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { ExternalLink } from "lucide-react";
+import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import {
+  AlertCircle,
+  AlertTriangle,
+  ArrowRight,
+  Check,
+  ChevronDown,
+  ChevronRight,
+  ClipboardCheck,
+  Clock,
+  Copy,
+  ExternalLink,
+  Loader2,
+  Palette,
+  Undo2,
+  Zap,
+} from "lucide-react";
 import { get, post } from "./api";
+import { btn, surface } from "./styles";
+import { EmptyState } from "./ui";
 
 const IN_FLIGHT = ["approved", "applying", "undoing"];
 const STATUS: Record<string, string> = {
@@ -233,50 +250,56 @@ export default function Proposals({ onPending }: { onPending?: (ids: string[]) =
         {announcement}
       </p>
       {loaded && !shown.length && !error && (
-        <p className="rounded-xl border border-dashed border-brand-200 bg-white p-4 text-center text-sm text-slate-500">
-          No changes yet. Ask the copilot to prepare one.
-        </p>
+        <EmptyState icon={<ClipboardCheck className="h-5 w-5" />} title="No changes yet" className={`${surface} py-10`}>
+          Ask the copilot to prepare one. Nothing changes in your store until you approve it here.
+        </EmptyState>
       )}
-      {!loaded && !error && <p className="p-2 text-sm text-slate-500">Loading changes…</p>}
+      {!loaded && !error && (
+        <div aria-hidden className="space-y-3">
+          {[0, 1].map((i) => (
+            <div key={i} className={`${surface} space-y-3 p-4`}>
+              <div className="h-4 w-2/3 rounded bg-slate-200 motion-safe:animate-pulse" />
+              <div className="h-14 rounded-lg bg-slate-100 motion-safe:animate-pulse" />
+              <div className="h-8 w-1/2 rounded-lg bg-slate-100 motion-safe:animate-pulse" />
+            </div>
+          ))}
+        </div>
+      )}
+      {!loaded && !error && <p className="sr-only">Loading changes…</p>}
       {missing.length > 0 && (
-        <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm">
+        <Banner icon={<Zap className="h-4 w-4" />} title="Actions are off">
           <p>
             Turn on actions to let the copilot propose discounts, campaigns, price, stock, status
             and tag changes.
             Nothing changes in your store until you approve it here.
           </p>
-          <button
-            type="button"
-            onClick={() => void turnOn()}
-            className="mt-2 rounded-md bg-brand-700 px-3 py-1.5 text-white hover:bg-brand-800"
-          >
+          <button type="button" onClick={() => void turnOn()} className={`${btn.primary} mt-2.5`}>
             Turn on actions
           </button>
-        </div>
+        </Banner>
       )}
       {missingTheme.length > 0 && (
-        <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm">
+        <Banner icon={<Palette className="h-4 w-4" />} title="Website editing is off">
           <p>
             Turn on website editing to let the copilot prepare theme changes on a draft copy of
             your theme. Your live website changes only when you approve publishing it.
           </p>
-          <button
-            type="button"
-            onClick={() => void turnOnTheme()}
-            className="mt-2 rounded-md bg-brand-700 px-3 py-1.5 text-white hover:bg-brand-800"
-          >
+          <button type="button" onClick={() => void turnOnTheme()} className={`${btn.primary} mt-2.5`}>
             Turn on website editing
           </button>
-        </div>
+        </Banner>
       )}
       {error && (
-        <p role="alert" className="text-sm text-red-700">
-          {error}
-          {upgradeUrl && (
-            <a href={upgradeUrl} target="_top" className="ml-1 text-brand-700 underline hover:text-brand-900">
-              See plans
-            </a>
-          )}
+        <p role="alert" className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-800">
+          <AlertCircle aria-hidden className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>
+            {error}
+            {upgradeUrl && (
+              <a href={upgradeUrl} target="_top" className="ml-1 font-medium text-brand-700 underline hover:text-brand-900">
+                See plans
+              </a>
+            )}
+          </span>
         </p>
       )}
       {shown.map((p) => (
@@ -290,6 +313,21 @@ export default function Proposals({ onPending }: { onPending?: (ids: string[]) =
         />
       ))}
     </section>
+  );
+}
+
+/** A compact call to action: an icon, a short title, the explanation and its button. */
+function Banner({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
+  return (
+    <div className="flex gap-3 rounded-xl border border-brand-200 bg-brand-50/70 p-3 text-sm text-slate-700">
+      <span aria-hidden className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white text-brand-700 ring-1 ring-brand-200">
+        {icon}
+      </span>
+      <div className="min-w-0">
+        <p className="font-medium text-slate-900">{title}</p>
+        <div className="mt-0.5 text-xs leading-relaxed">{children}</div>
+      </div>
+    </div>
   );
 }
 
@@ -308,18 +346,15 @@ function Codes({ codes }: { codes: string[] }) {
     }
   };
   return (
-    <div className="mt-2">
+    <div className="mt-3 rounded-lg border border-slate-200 p-3">
       <div className="flex items-center justify-between">
-        <span className="text-slate-600">{codes.length} single-use codes</span>
-        <button
-          type="button"
-          onClick={() => void copy()}
-          className="rounded-md border border-slate-300 px-2 py-0.5 text-xs hover:bg-slate-100"
-        >
+        <span className="text-xs font-medium text-slate-700">{codes.length} single-use codes</span>
+        <button type="button" onClick={() => void copy()} className={`${btn.secondary} px-2 py-0.5 text-xs`}>
+          {copied ? <Check aria-hidden className="h-3 w-3" /> : <Copy aria-hidden className="h-3 w-3" />}
           {copied ? "Copied" : "Copy all"}
         </button>
       </div>
-      <ul aria-label="Discount codes" className="mt-1 font-mono text-xs">
+      <ul aria-label="Discount codes" className="mt-2 grid grid-cols-2 gap-x-3 gap-y-0.5 font-mono text-xs text-slate-800">
         {(all ? codes : codes.slice(0, CODES_SHOWN)).map((c) => (
           <li key={c}>{c}</li>
         ))}
@@ -329,13 +364,24 @@ function Codes({ codes }: { codes: string[] }) {
           type="button"
           aria-expanded={all}
           onClick={() => setAll(!all)}
-          className="mt-1 text-xs font-medium text-brand-700 hover:text-brand-900 hover:underline"
+          className="mt-1.5 text-xs font-medium text-brand-700 hover:text-brand-900 hover:underline"
         >
           {all ? "Show fewer" : `Show all ${codes.length}`}
         </button>
       )}
     </div>
   );
+}
+
+/** The status pill's colours. */
+function tone(status: string): string {
+  if (status === "pending") return "bg-brand-50 text-brand-800 ring-brand-200";
+  if (status === "applied") return "bg-emerald-50 text-emerald-800 ring-emerald-200";
+  if (status === "failed") return "bg-red-50 text-red-700 ring-red-200";
+  if (status === "partially_applied" || status === "undo_partial" || status === "expired")
+    return "bg-amber-50 text-amber-900 ring-amber-200";
+  if (IN_FLIGHT.includes(status)) return "bg-sky-50 text-sky-800 ring-sky-200";
+  return "bg-slate-100 text-slate-700 ring-slate-200";
 }
 
 function Card({
@@ -358,208 +404,218 @@ function Card({
   );
   const why = REASON[p.status];
   const showWhy = Boolean(why && (p.error || problems.length));
-  const button = "rounded-md px-3 py-1.5 disabled:opacity-60";
+  const pending = p.status === "pending";
   return (
     <article
       id={`card-${p.id}`}
       aria-labelledby={`proposal-${p.id}`}
       aria-current={focused ? "true" : undefined}
       tabIndex={-1}
-      className={`scroll-m-2 rounded-xl border bg-white p-4 text-sm shadow-sm transition-shadow ${
+      className={`scroll-m-2 overflow-hidden rounded-2xl border bg-white text-sm shadow-sm transition-shadow ${
         focused
           ? "border-brand-600 ring-2 ring-brand-600"
           : fresh
             ? "border-brand-600 ring-4 ring-brand-200"
-            : p.status === "pending"
+            : pending
               ? "border-brand-300"
-              : "border-brand-100"
+              : "border-slate-200"
       }`}
     >
-      <header className="flex items-start justify-between gap-2">
-        <h2 id={`proposal-${p.id}`} className="font-medium text-slate-900">
-          {fresh && (
-            <span className="mr-1.5 rounded bg-brand-700 px-1.5 py-0.5 align-middle text-[10px] font-semibold uppercase tracking-wide text-white">
-              New
-            </span>
-          )}
-          {p.summary}
-          {p.version > 1 && <span className="text-slate-500"> (version {p.version})</span>}
-        </h2>
-        <span
-          className={`shrink-0 rounded-full px-2 py-0.5 text-xs ${
-            p.status === "pending" ? "bg-brand-100 text-brand-900" : "bg-slate-100 text-slate-800"
-          }`}
-        >
-          {STATUS[p.status] || p.status}
-        </span>
-      </header>
-      {p.approved_via && VIA[p.approved_via] && <p className="text-xs text-slate-500">{VIA[p.approved_via]}</p>}
+      <div className="p-4">
+        <header className="flex items-start justify-between gap-3">
+          <h2 id={`proposal-${p.id}`} className="min-w-0 font-medium leading-snug text-slate-900">
+            {fresh && (
+              <span className="mr-1.5 rounded bg-brand-700 px-1.5 py-0.5 align-middle text-[10px] font-semibold uppercase tracking-wide text-white">
+                New
+              </span>
+            )}
+            {p.summary}
+            {p.version > 1 && <span className="font-normal text-slate-600"> (version {p.version})</span>}
+          </h2>
+          <span
+            className={`inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${tone(p.status)}`}
+          >
+            {IN_FLIGHT.includes(p.status) && <Loader2 aria-hidden className="h-3 w-3 motion-safe:animate-spin" />}
+            {STATUS[p.status] || p.status}
+          </span>
+        </header>
+        {p.approved_via && VIA[p.approved_via] && <p className="mt-0.5 text-xs text-slate-600">{VIA[p.approved_via]}</p>}
 
-      {showWhy && why && (
-        <div className={`mt-2 rounded-lg border px-3 py-2 ${why.box}`}>
-          <p className="font-medium">{why.title}</p>
-          {p.error && <p className="mt-0.5 break-words">{p.error}</p>}
-          {problems.length > 0 && (
-            <ul className="mt-1 list-disc space-y-0.5 pl-5 break-words">
-              {problems.map((i) => (
-                <li key={i.idx}>
-                  {i.target}: {i.error || "Shopify may or may not have made this change; check it."}
-                  {i.verified === false && (
-                    <span className="ml-1 rounded bg-white/70 px-1 text-xs">Check in Shopify</span>
+        {showWhy && why && (
+          <div className={`mt-3 rounded-lg border px-3 py-2 ${why.box}`}>
+            <p className="font-medium">{why.title}</p>
+            {p.error && <p className="mt-0.5 break-words">{p.error}</p>}
+            {problems.length > 0 && (
+              <ul className="mt-1 list-disc space-y-0.5 pl-5 break-words">
+                {problems.map((i) => (
+                  <li key={i.idx}>
+                    {i.target}: {i.error || "Shopify may or may not have made this change; check it."}
+                    {i.verified === false && (
+                      <span className="ml-1 rounded bg-white/70 px-1 text-xs">Check in Shopify</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {p.status === "failed" && (
+              <p className="mt-1 text-xs opacity-90">To try again, ask the copilot to propose it again.</p>
+            )}
+          </div>
+        )}
+
+        <ul
+          aria-label="Changes: before and after"
+          className="mt-3 divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-200 text-xs"
+        >
+          {p.changes.map((r, i) => (
+            <li key={i} className="px-3 py-2">
+              <p className="break-words font-medium text-slate-900">
+                {r.target}
+                {r.detail && <span className="font-normal text-slate-600"> · {r.detail}</span>}
+              </p>
+              <p className="mt-1 grid grid-cols-[minmax(0,auto)_minmax(0,1fr)] items-baseline gap-x-3">
+                <span className="text-slate-600">{r.field}</span>
+                <span className="flex min-w-0 flex-wrap items-baseline justify-end gap-x-1.5 text-right">
+                  <span className="sr-only">from </span>
+                  <s className="break-words text-slate-500">{r.before}</s>
+                  <ArrowRight aria-hidden className="h-3 w-3 shrink-0 self-center text-slate-400" />
+                  <span className="sr-only"> to </span>
+                  <strong className="break-words font-semibold text-slate-900">{r.after}</strong>
+                </span>
+              </p>
+              {(r.before_full || r.after_full) && (
+                <details className="group mt-1.5 text-slate-700">
+                  <summary className="inline-flex cursor-pointer items-center gap-1 font-medium text-brand-700 hover:text-brand-900">
+                    <ChevronRight aria-hidden className="h-3 w-3 transition-transform group-open:rotate-90" />
+                    Show the full text
+                  </summary>
+                  {r.before_full && (
+                    <p className="mt-1.5 whitespace-pre-wrap break-words rounded-md bg-slate-50 p-2">
+                      <span className="font-medium">Before:</span> {r.before_full}
+                    </p>
                   )}
-                </li>
+                  {r.after_full && (
+                    <p className="mt-1.5 whitespace-pre-wrap break-words rounded-md bg-brand-50 p-2">
+                      <span className="font-medium">After:</span> {r.after_full}
+                    </p>
+                  )}
+                </details>
+              )}
+              {showMargin && <p className="mt-1 text-slate-600">Margin after: {r.margin_after || "unknown"}</p>}
+            </li>
+          ))}
+        </ul>
+
+        {p.warnings.length > 0 && (
+          <details open={pending} className="group mt-3 rounded-lg border border-amber-200 bg-amber-50 text-amber-900">
+            <summary className="flex cursor-pointer items-center gap-2 px-3 py-2 text-xs font-medium">
+              <AlertTriangle aria-hidden className="h-3.5 w-3.5 shrink-0" />
+              {p.warnings.length === 1 ? "1 thing to check" : `${p.warnings.length} things to check`}
+              <ChevronDown aria-hidden className="ml-auto h-3.5 w-3.5 transition-transform group-open:rotate-180" />
+            </summary>
+            <ul className="list-disc space-y-1 pb-2.5 pl-8 pr-3 text-xs leading-relaxed">
+              {p.warnings.map((w) => (
+                <li key={w}>{w}</li>
               ))}
             </ul>
-          )}
-          {p.status === "failed" && (
-            <p className="mt-1 text-xs opacity-90">To try again, ask the copilot to propose it again.</p>
-          )}
-        </div>
-      )}
-
-      <ul aria-label="Changes: before and after" className="mt-3 divide-y divide-slate-100 rounded-lg bg-slate-50 text-xs">
-        {p.changes.map((r, i) => (
-          <li key={i} className="px-3 py-2">
-            <p className="font-medium text-slate-900">
-              {r.target}
-              {r.detail && <span className="font-normal text-slate-500"> · {r.detail}</span>}
+          </details>
+        )}
+        {IN_FLIGHT.includes(p.status) && (
+          <div role="status" className="mt-3 text-xs text-slate-600">
+            <p>
+              {p.progress.applied} of {p.progress.total} changes applied…
             </p>
-            <p className="mt-0.5 text-slate-700">
-              {r.field}: <span className="sr-only">from </span>
-              <span className="text-slate-600">{r.before}</span>
-              <span aria-hidden> → </span>
-              <span className="sr-only"> to </span>
-              <strong className="font-semibold text-slate-900">{r.after}</strong>
-            </p>
-            {(r.before_full || r.after_full) && (
-              <details className="mt-1 text-slate-700">
-                <summary className="cursor-pointer text-brand-700 hover:text-brand-900">Show the full text</summary>
-                {r.before_full && (
-                  <p className="mt-1 whitespace-pre-wrap break-words">
-                    <span className="font-medium">Before:</span> {r.before_full}
-                  </p>
+            <div aria-hidden className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-100">
+              <div
+                className="h-full rounded-full bg-brand-600 transition-[width] duration-500"
+                style={{ width: `${p.progress.total ? Math.round((100 * p.progress.applied) / p.progress.total) : 0}%` }}
+              />
+            </div>
+          </div>
+        )}
+        {!showWhy && p.error && <p className="mt-2 text-red-700">{p.error}</p>}
+        {!showWhy && problems.length > 0 && (
+          <ul className="mt-1 list-disc pl-5 text-slate-700">
+            {problems.map((i) => (
+              <li key={i.idx}>
+                {i.target}: {i.error || "Shopify may or may not have made this change; check it."}
+                {i.verified === false && (
+                  <span className="ml-1 rounded bg-amber-100 px-1 text-xs text-amber-900">Check in Shopify</span>
                 )}
-                {r.after_full && (
-                  <p className="mt-1 whitespace-pre-wrap break-words">
-                    <span className="font-medium">After:</span> {r.after_full}
-                  </p>
-                )}
-              </details>
-            )}
-            {showMargin && <p className="mt-0.5 text-slate-600">Margin after: {r.margin_after || "unknown"}</p>}
-          </li>
-        ))}
-      </ul>
+              </li>
+            ))}
+          </ul>
+        )}
 
-      {p.warnings.length > 0 && (
-        <ul className="mt-3 list-disc rounded-lg bg-amber-50 py-2 pl-7 pr-3 text-amber-900">
-          {p.warnings.map((w) => (
-            <li key={w}>{w}</li>
-          ))}
-        </ul>
-      )}
-      {IN_FLIGHT.includes(p.status) && (
-        <p role="status" className="mt-2 text-slate-600">
-          {p.progress.applied} of {p.progress.total} changes applied…
-        </p>
-      )}
-      {!showWhy && p.error && <p className="mt-2 text-red-700">{p.error}</p>}
-      {!showWhy && problems.length > 0 && (
-        <ul className="mt-1 list-disc pl-5 text-slate-700">
-          {problems.map((i) => (
-            <li key={i.idx}>
-              {i.target}: {i.error || "Shopify may or may not have made this change; check it."}
-              {i.verified === false && (
-                <span className="ml-1 rounded bg-amber-100 px-1 text-xs text-amber-900">Check in Shopify</span>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
+        {p.codes.length > 0 && <Codes codes={p.codes} />}
 
-      {p.codes.length > 0 && <Codes codes={p.codes} />}
-
-      {!!p.products?.length && (
-        <ul aria-label="Changed products" className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs">
-          {p.products.map((product) => (
-            <li key={product.id}>
-              <a
-                href={`shopify://admin/products/${product.id.split("/").pop()}`}
-                target="_top"
-                className="inline-flex items-center gap-1 font-medium text-brand-700 hover:text-brand-900 hover:underline"
-              >
-                {product.title}
-                <ExternalLink aria-hidden className="h-3 w-3" />
-                <span className="sr-only"> (open in Shopify)</span>
-              </a>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {p.theme && (
-        <div className="mt-2 rounded-lg border border-brand-100 bg-brand-50 px-3 py-2 text-xs">
-          <p className="text-slate-700">
-            Draft “{p.theme.name}” is ready. Customers don't see it until it is published.
-          </p>
-          <ul aria-label="Website draft" className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
-            {[
-              { href: p.theme.preview_url, label: "Preview" },
-              { href: p.theme.editor_url, label: "Open in theme editor" },
-            ].map((link) => (
-              <li key={link.label}>
-                <a
-                  href={link.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 font-medium text-brand-700 hover:text-brand-900 hover:underline"
-                >
-                  {link.label}
+        {!!p.products?.length && (
+          <ul aria-label="Changed products" className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs">
+            {p.products.map((product) => (
+              <li key={product.id}>
+                <a href={`shopify://admin/products/${product.id.split("/").pop()}`} target="_top" className={btn.link}>
+                  {product.title}
                   <ExternalLink aria-hidden className="h-3 w-3" />
-                  <span className="sr-only"> (opens in a new tab)</span>
+                  <span className="sr-only"> (open in Shopify)</span>
                 </a>
               </li>
             ))}
           </ul>
-        </div>
-      )}
+        )}
 
-      {p.status === "pending" && (
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => onAct(p, "approve")}
-            className={`${button} bg-brand-700 text-white hover:bg-brand-800`}
-          >
+        {p.theme && (
+          <div className="mt-3 rounded-lg border border-brand-200 bg-brand-50 px-3 py-2 text-xs">
+            <p className="text-slate-700">
+              Draft “{p.theme.name}” is ready. Customers don't see it until it is published.
+            </p>
+            <ul aria-label="Website draft" className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1">
+              {[
+                { href: p.theme.preview_url, label: "Preview" },
+                { href: p.theme.editor_url, label: "Open in theme editor" },
+              ].map((link) => (
+                <li key={link.label}>
+                  <a href={link.href} target="_blank" rel="noopener noreferrer" className={btn.link}>
+                    {link.label}
+                    <ExternalLink aria-hidden className="h-3 w-3" />
+                    <span className="sr-only"> (opens in a new tab)</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+
+      {pending && (
+        <footer className="flex flex-wrap items-center gap-2 border-t border-slate-100 bg-slate-50/70 px-4 py-3">
+          <button type="button" disabled={busy} onClick={() => onAct(p, "approve")} className={btn.primary}>
+            {busy ? (
+              <Loader2 aria-hidden className="h-4 w-4 motion-safe:animate-spin" />
+            ) : (
+              <Check aria-hidden className="h-4 w-4" />
+            )}
             {busy ? "Checking…" : "Approve"}
           </button>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => onAct(p, "reject")}
-            className={`${button} border border-slate-300 hover:bg-slate-100`}
-          >
+          <button type="button" disabled={busy} onClick={() => onAct(p, "reject")} className={btn.secondary}>
             Reject
           </button>
-          <span className="text-xs text-slate-500">Expires {p.expires_at}</span>
-        </div>
+          <span className="ml-auto inline-flex items-center gap-1 text-xs text-slate-600">
+            <Clock aria-hidden className="h-3 w-3" />
+            Expires {p.expires_at}
+          </span>
+        </footer>
       )}
       {p.undoable && (
-        <div className="mt-3">
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => onAct(p, "undo")}
-            className={`${button} border border-slate-300 hover:bg-slate-100`}
-          >
+        <footer className="flex items-start gap-3 border-t border-slate-100 bg-slate-50/70 px-4 py-3">
+          <button type="button" disabled={busy} onClick={() => onAct(p, "undo")} className={`${btn.secondary} shrink-0`}>
+            <Undo2 aria-hidden className="h-4 w-4" />
             Undo
           </button>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="text-xs text-slate-600">
             Undo puts back the values from before Snowie's change. Anything changed in Shopify
             since then is left as it is.
           </p>
-        </div>
+        </footer>
       )}
     </article>
   );

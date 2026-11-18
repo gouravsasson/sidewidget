@@ -80,9 +80,9 @@ export function useProductCards(call: string | null, nudge: number): ProductCard
 }
 
 const STATUS: Record<string, string> = {
-  active: "bg-emerald-50 text-emerald-800",
-  draft: "bg-slate-100 text-slate-700",
-  archived: "bg-amber-50 text-amber-900",
+  active: "bg-emerald-50 text-emerald-800 ring-1 ring-inset ring-emerald-200",
+  draft: "bg-white text-slate-700 ring-1 ring-inset ring-slate-200",
+  archived: "bg-amber-50 text-amber-900 ring-1 ring-inset ring-amber-200",
 };
 
 /** How long a card whose data just changed stays highlighted. */
@@ -119,9 +119,19 @@ function useUpdated(products: ProductCard[]): Set<string> {
   return updated;
 }
 
+/** At or under this many left, stock shows as low. */
+const LOW_STOCK = 5;
+
 function stockText(stock: number | null): string {
   if (stock === null) return "Stock not tracked";
   return stock <= 0 ? "Out of stock" : `${stock} in stock`;
+}
+
+function stockTone(stock: number | null): string {
+  if (stock === null) return "bg-slate-50 text-slate-700 ring-slate-200";
+  if (stock <= 0) return "bg-red-50 text-red-700 ring-red-200";
+  if (stock <= LOW_STOCK) return "bg-amber-50 text-amber-900 ring-amber-200";
+  return "bg-emerald-50 text-emerald-800 ring-emerald-200";
 }
 
 /**
@@ -143,53 +153,55 @@ export default function ProductCards({
       <p role="status" className="sr-only">
         {announced.map((p) => `Updated: ${p.title}${p.badge ? `, ${p.badge}` : ""}.`).join(" ")}
       </p>
-      <ul className="grid grid-cols-[repeat(auto-fill,minmax(9.5rem,1fr))] gap-3 p-1">
+      <ul className="grid grid-cols-[repeat(auto-fill,minmax(8.5rem,1fr))] gap-3">
         {products.map((p) => (
           <li
             key={p.id}
-            className={`flex min-w-0 flex-col overflow-hidden rounded-xl border bg-white text-xs shadow-sm transition-shadow duration-500 ${
-              updated.has(p.id) ? "border-brand-600 ring-4 ring-brand-300" : "border-brand-100"
+            className={`group relative flex min-w-0 flex-col overflow-hidden rounded-xl border bg-white text-xs shadow-sm transition-shadow duration-500 hover:shadow-md ${
+              updated.has(p.id) ? "border-brand-600 ring-4 ring-brand-200" : "border-slate-200"
             }`}
           >
+            <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
+              {p.image ? (
+                <img src={p.image} alt={p.image_alt} loading="lazy" className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full items-center justify-center text-slate-400">
+                  <Package aria-hidden className="h-8 w-8" />
+                </div>
+              )}
+              {p.status && (
+                <span
+                  className={`absolute left-2 top-2 rounded-full px-2 py-0.5 text-[11px] font-medium capitalize shadow-sm ${STATUS[p.status] || STATUS.draft}`}
+                >
+                  {p.status}
+                </span>
+              )}
+            </div>
             {p.badge && (
-              <p className="bg-brand-700 px-2 py-1 text-[13px] font-semibold leading-snug text-white">
-                {p.badge}
-              </p>
+              <p className="bg-brand-700 px-2.5 py-1 text-xs font-semibold leading-snug text-white">{p.badge}</p>
             )}
-            {p.image ? (
-              <img src={p.image} alt={p.image_alt} loading="lazy" className="h-28 w-full object-cover" />
-            ) : (
-              <div className="flex h-28 items-center justify-center bg-brand-50 text-brand-700">
-                <Package aria-hidden className="h-8 w-8" />
-              </div>
-            )}
-            <div className="flex flex-1 flex-col gap-1 p-2">
-              <p className="line-clamp-2 font-medium text-slate-900">{p.title}</p>
+            <div className="flex flex-1 flex-col gap-1.5 p-3">
+              <p className="line-clamp-2 text-[13px] font-medium leading-snug text-slate-900">{p.title}</p>
               {p.price &&
                 (p.sale_price && p.sale_price !== p.price ? (
                   <p className="flex flex-wrap items-baseline gap-x-1.5">
-                    <span className="font-semibold text-brand-800">{p.sale_price}</span>
+                    <span className="text-sm font-semibold text-brand-800">{p.sale_price}</span>
                     <s className="text-slate-500">
                       <span className="sr-only">was </span>
                       {p.price}
                     </s>
                   </p>
                 ) : (
-                  <p className="text-slate-800">{p.price}</p>
+                  <p className="text-sm font-semibold text-slate-900">{p.price}</p>
                 ))}
-              <p className={p.stock !== null && p.stock <= 0 ? "text-red-700" : "text-slate-600"}>
+              <span className={`self-start rounded-full px-2 py-0.5 font-medium ring-1 ring-inset ${stockTone(p.stock)}`}>
                 {stockText(p.stock)}
-              </p>
-              {p.status && (
-                <span className={`self-start rounded px-1.5 py-0.5 capitalize ${STATUS[p.status] || STATUS.draft}`}>
-                  {p.status}
-                </span>
-              )}
+              </span>
               <a
                 href={linkTarget === "_top" ? `shopify://admin/products/${p.id.split("/").pop()}` : p.url}
                 target={linkTarget}
                 rel="noopener noreferrer"
-                className="mt-auto inline-flex items-center gap-1 pt-1 font-medium text-brand-700 hover:text-brand-900 hover:underline"
+                className="mt-auto inline-flex items-center gap-1 pt-1.5 font-medium text-brand-700 hover:text-brand-900 hover:underline"
               >
                 Open in Shopify
                 <ExternalLink aria-hidden className="h-3 w-3" />
