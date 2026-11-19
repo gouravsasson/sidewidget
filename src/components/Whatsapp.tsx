@@ -25,6 +25,7 @@ import { WhatsAppIcon } from "./whatsappicon";
 import whatsappIcon from "../assets/whatsapp-svgrepo-com.svg";
 import PoweredByRavan from "./PoweredByRavan";
 
+import { SNOWIE_API_ORIGIN } from "../config";
 export interface WidgetTheme {
   widget_theme: {
     bot_auto_start: boolean;
@@ -101,7 +102,7 @@ const Whatsapp = () => {
     status,
     setStatus,
   } = useUltravoxStore();
-  const baseurl = "https://app.snowie.ai";
+  const baseurl = SNOWIE_API_ORIGIN;
   const { agent_id, schema } = useWidgetContext();
   // const agent_id = "be2af828-47d6-4f0e-bbae-08aaff1d6908";
   // const schema = "9cd3db15-5dbe-4199-aa8c-80c5701857f7";

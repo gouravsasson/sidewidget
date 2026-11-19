@@ -8,6 +8,7 @@ import useSessionStore from "../store/session";
 import { useUltravoxStore } from "../store/ultrasession";
 import logo from "../assets/logo.png";
 
+import { SNOWIE_API_ORIGIN } from "../config";
 const Autostart = () => {
   const [expanded, setExpanded] = useState(false);
   const [inputValue, setInputValue] = useState("");
@@ -36,7 +37,7 @@ const Autostart = () => {
     status,
     setStatus,
   } = useUltravoxStore();
-  const baseurl = "https://app.snowie.ai";
+  const baseurl = SNOWIE_API_ORIGIN;
   // const agent_id = "bd204830-afcb-4ddb-881c-4f7b2d00dd95";
   // const schema = "21babbd4-cd63-4763-9b08-671951c04470";
 

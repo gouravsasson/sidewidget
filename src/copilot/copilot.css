@@ -1,0 +1,134 @@
+@import "tailwindcss" source(".");
+
+/*
+ * Snowie brand colours (the dashboard's purple-600 -> violet-600 gradient and its deep
+ * purple #441F65), for the copilot pages only: `bg-brand-700`, `text-brand-800`, ...
+ * Text colours used on white or brand-50 are 700 and darker (WCAG AA); white text sits
+ * on 600 and darker. The app chrome is neutral (slate); purple is for accents and
+ * primary actions.
+ */
+@theme {
+  --color-brand-50: #faf5ff;
+  --color-brand-100: #f3e8ff;
+  --color-brand-200: #e9d5ff;
+  --color-brand-300: #d8b4fe;
+  --color-brand-400: #c084fc;
+  --color-brand-500: #a855f7;
+  --color-brand-600: #9333ea;
+  --color-brand-700: #7e22ce;
+  --color-brand-800: #6b21a8;
+  --color-brand-900: #441f65;
+  --color-brand-violet: #7c3aed;
+
+  /* Animations: always used with motion-safe: (and switched off below for reduced motion). */
+  --animate-breathe: copilot-breathe 3.2s ease-in-out infinite;
+  --animate-breathe-slow: copilot-breathe 5s ease-in-out infinite;
+  --animate-ripple: copilot-ripple 1.8s ease-out infinite;
+  --animate-ripple-late: copilot-ripple 1.8s ease-out 0.9s infinite;
+  --animate-orbit: copilot-orbit 1.6s linear infinite;
+  --animate-orbit-slow: copilot-orbit 3.2s linear infinite;
+  --animate-typing: copilot-typing 1.2s ease-in-out infinite;
+  --animate-fade-in: copilot-fade-in 0.2s ease-out both;
+
+  @keyframes copilot-breathe {
+    0%,
+    100% {
+      transform: scale(0.96);
+    }
+    50% {
+      transform: scale(1.04);
+    }
+  }
+  @keyframes copilot-ripple {
+    0% {
+      transform: scale(0.8);
+      opacity: 0.9;
+    }
+    100% {
+      transform: scale(1.45);
+      opacity: 0;
+    }
+  }
+  @keyframes copilot-orbit {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes copilot-typing {
+    0%,
+    80%,
+    100% {
+      transform: translateY(0);
+      opacity: 0.45;
+    }
+    40% {
+      transform: translateY(-3px);
+      opacity: 1;
+    }
+  }
+  @keyframes copilot-fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--color-brand-600);
+    outline-offset: 2px;
+  }
+}
+
+@layer base {
+  body {
+    background-color: var(--color-slate-50);
+    color: var(--color-slate-800);
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "cv11", "ss01";
+  }
+
+  /*
+   * The admin panel (Shopify admin's frame) and the voice page (its tab) fill the viewport
+   * exactly and only their columns scroll, so the page itself never does (no second
+   * scrollbar, the header stays put).
+   */
+  html:has(.copilot-fill),
+  html:has(.copilot-fill) body {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  /* Room at the bottom of each column for Shopify's floating Sidekick bar. */
+  .copilot-panel {
+    --copilot-overlay: 4.5rem;
+  }
+
+  /* Thin, quiet scrollbars inside the columns. */
+  .copilot-fill * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-slate-300) transparent;
+  }
+
+  details > summary {
+    list-style: none;
+  }
+  details > summary::-webkit-details-marker {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .copilot-fill *,
+  .copilot-fill *::before,
+  .copilot-fill *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
