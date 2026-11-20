@@ -12,6 +12,7 @@ import {
   ExternalLink,
   Loader2,
   Palette,
+  TrendingUp,
   Undo2,
   Zap,
 } from "lucide-react";
@@ -85,6 +86,14 @@ interface Proposal {
   products?: { id: string; title: string; url: string }[];
   /** An applied website draft: the copy's preview and theme editor links. */
   theme?: { name: string; preview_url: string; editor_url: string } | null;
+  /** Historical impact prediction from past outcomes (shown before approval). */
+  prediction?: {
+    pct_range: [number, number];
+    median_pct: number;
+    direction: "positive" | "negative" | "mixed";
+    sample_size: number;
+    wording: string;
+  } | null;
 }
 
 type Action = "approve" | "reject" | "undo";
@@ -505,6 +514,16 @@ function Card({
             </li>
           ))}
         </ul>
+
+        {p.prediction && pending && (
+          <div className="mt-3 flex items-start gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs text-indigo-900">
+            <TrendingUp aria-hidden className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            <div>
+              <p className="font-medium">Predicted impact</p>
+              <p className="mt-0.5 leading-relaxed">{p.prediction.wording}</p>
+            </div>
+          </div>
+        )}
 
         {p.warnings.length > 0 && (
           <details open={pending} className="group mt-3 rounded-lg border border-amber-200 bg-amber-50 text-amber-900">

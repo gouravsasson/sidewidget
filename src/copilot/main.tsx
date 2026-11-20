@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import "./copilot.css";
 import { get, post } from "./api";
 import Conversation, { Continuation, SessionInfo, StartResult } from "./Conversation";
+import Inventory from "./Inventory";
 import Proposals from "./Proposals";
 import Setup, { ApprovalModes, PlanBadge, SetupState } from "./Setup";
 import { btn } from "./styles";
@@ -157,6 +158,7 @@ function App() {
         }
         settingsAttention={Boolean(setup?.can_edit && !setup.onboarded)}
         changes={<Proposals onPending={setPending} />}
+        inventory={<Inventory />}
         pending={pending}
         startOnChanges={query.has("proposal")}
       />

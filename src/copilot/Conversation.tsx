@@ -620,7 +620,7 @@ export function ProductsPanel({
   );
 }
 
-type SideTab = "changes" | "products";
+type SideTab = "changes" | "products" | "inventory";
 type PhoneTab = "chat" | "side";
 
 interface Props {
@@ -645,6 +645,8 @@ interface Props {
   checklist?: ReactNode;
   /** Right column: the proposed changes. */
   changes?: ReactNode;
+  /** Right column: live inventory panel. */
+  inventory?: ReactNode;
   /** Ids of changes waiting for approval, first one first. */
   pending?: string[];
   /** Open on the changes (a link to one proposal). */
@@ -669,6 +671,7 @@ export default function Conversation({
   settingsAttention = false,
   checklist,
   changes,
+  inventory,
   pending = [],
   startOnChanges = false,
   linkTarget = "_top",
@@ -713,9 +716,8 @@ export default function Conversation({
     setSideTab(tab);
     setPhoneTab("side");
   };
-  const showingChanges = hasChanges && sideTab === "changes";
   // The "waiting" pill: wherever the changes are out of sight.
-  const pillShown = sideTab === "products" ? "flex" : "flex md:hidden";
+  const pillShown = sideTab !== "changes" ? "flex" : "flex md:hidden";
   const status = call.live ? "live" : call.connecting ? "connecting" : "idle";
 
   // The panel fills the frame exactly; only the columns scroll. Their bottom padding
@@ -773,6 +775,11 @@ export default function Conversation({
         <Tab pressed={phoneTab === "side" && sideTab === "products"} onClick={() => side("products")} controls="copilot-side">
           Products <Count n={products.length} label="products" />
         </Tab>
+        {inventory && (
+          <Tab pressed={phoneTab === "side" && sideTab === "inventory"} onClick={() => side("inventory")} controls="copilot-side">
+            Inventory
+          </Tab>
+        )}
       </nav>
 
       {/* The columns: they take the rest of the frame, down to its bottom edge. */}
@@ -828,16 +835,22 @@ export default function Conversation({
           <Tab pressed={sideTab === "products"} onClick={() => setSideTab("products")} controls="copilot-side">
             Products <Count n={products.length} label="products" />
           </Tab>
+          {inventory && (
+            <Tab pressed={sideTab === "inventory"} onClick={() => setSideTab("inventory")} controls="copilot-side">
+              Inventory
+            </Tab>
+          )}
         </nav>
 
         <div
           id="copilot-side"
           className={`col-[1] row-[1] flex-col md:col-[2] md:row-[2] ${scroller} ${visibility(phoneTab === "side", true)}`}
         >
-          {hasChanges && <div className={showingChanges ? "" : "hidden"}>{changes}</div>}
-          <div className={showingChanges ? "hidden" : ""}>
+          {hasChanges && <div className={sideTab === "changes" ? "" : "hidden"}>{changes}</div>}
+          <div className={sideTab === "products" ? "" : "hidden"}>
             <ProductsPanel products={products} linkTarget={linkTarget} />
           </div>
+          {inventory && <div className={sideTab === "inventory" ? "" : "hidden"}>{inventory}</div>}
         </div>
       </div>
 
