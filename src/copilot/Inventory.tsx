@@ -85,9 +85,8 @@ export default function Inventory() {
 
   if (!data || data.summary.total_tracked === 0) {
     return (
-      <EmptyState icon={Package}>
-        No inventory data yet. Stock levels appear here once Shopify starts
-        sending inventory updates.
+      <EmptyState icon={<Package className="h-5 w-5" />} title="No inventory data">
+        Stock levels appear here once Shopify starts sending inventory updates.
       </EmptyState>
     );
   }
