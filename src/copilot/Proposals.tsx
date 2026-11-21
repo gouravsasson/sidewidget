@@ -42,7 +42,11 @@ const REASON: Record<string, { title: string; box: string }> = {
   undo_partial: { title: "Why it was only partly undone", box: "border-amber-300 bg-amber-50 text-amber-900" },
 };
 /** How a proposal was approved, when not by a tap here. */
-const VIA: Record<string, string> = { voice: "Approved by a yes to the copilot", auto: "Applied by auto mode" };
+const VIA: Record<string, string> = {
+  voice: "Approved by a yes to the copilot",
+  auto: "Applied by auto mode",
+  wa: "Approved by a WhatsApp reply",
+};
 
 interface Row {
   target: string;
