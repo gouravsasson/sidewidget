@@ -113,6 +113,12 @@ export const AGNI_COMPANY_CONFIGS: Record<string, AgniCompanyConfig> = {
     // #f5f5f5 form background — the header still uses the theme color.
     formTextColor: "#1f2937",
   },
+  // Company 3 — Belmac Infinity (thunderemotionlite embed)
+  "3c69d0d8-de81-41c8-82b8-8b34254fa321": {
+    agniAgentId: "01a20cfa-c71a-7c86-8f66-829402626773",
+    apiKey:
+      "ak_15e870ad37386472657bc5a5fdf86ee9b71bfc99b5a5b6d10a4aafc933eaa91d",
+  },
 };
 
 export const COMPANY_SNOWIE_AGENT_ID = "514e1c5a-72c8-4670-a2f7-3851f7b49bae";
