@@ -6,6 +6,7 @@ import Conversation, { Continuation, SessionInfo, StartResult } from "./Conversa
 import Inventory from "./Inventory";
 import Proposals from "./Proposals";
 import Setup, { ApprovalModes, PlanBadge, SetupState } from "./Setup";
+import StoreWhatsApp from "./StoreWhatsApp";
 import { btn } from "./styles";
 import { BrandMark } from "./ui";
 import { AlertCircle, Loader2 } from "lucide-react";
@@ -149,7 +150,10 @@ function App() {
         checklist={setup?.can_edit && !setup.onboarded ? <Setup state={setup} onChange={setSetup} /> : undefined}
         settings={
           setup ? (
-            <ApprovalModes state={setup} onChange={setSetup} />
+            <div className="space-y-4">
+              <ApprovalModes state={setup} onChange={setSetup} />
+              <StoreWhatsApp />
+            </div>
           ) : (
             <p className="text-sm text-slate-600">
               {setupFailed ? "Settings could not be loaded. Reload the app to try again." : "Loading settings…"}
