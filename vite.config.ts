@@ -3,7 +3,7 @@ import path from "path";
 import { defineConfig } from "vite";
 import tailwindcss from "@tailwindcss/vite";
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
@@ -13,6 +13,10 @@ export default defineConfig({
   define: {
     // Define process.env as an empty object to avoid needing window.process
     "process.env": {},
+    // Lib mode doesn't replace process.env.NODE_ENV, so without this the
+    // IIFE ships React's development build: StrictMode double-runs every
+    // effect (duplicate API calls) and dev-only warnings print on customer sites.
+    "process.env.NODE_ENV": JSON.stringify(mode === "production" ? "production" : "development"),
   },
   build: {
     lib: {
@@ -33,4 +37,4 @@ export default defineConfig({
       },
     },
   },
-});
+}));
