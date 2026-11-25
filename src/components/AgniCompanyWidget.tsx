@@ -29,11 +29,13 @@ import {
 } from "@livekit/components-react";
 import {
   DataPacket_Kind,
+  LogLevel,
   RemoteParticipant,
   RoomEvent,
   RpcError,
   RpcInvocationData,
   Track,
+  setLogLevel,
 } from "livekit-client";
 import axios from "axios";
 import PoweredByRavan from "./PoweredByRavan";
@@ -78,6 +80,14 @@ type AgniCompanyConfig = {
    * white bot_text_color over a light bot_background_color).
    */
   formTextColor?: string;
+  /**
+   * Fetch this agent's "client" tools from api.ravan.ai/api/v1/tools and
+   * register them as LiveKit RPC methods. Off by default: that endpoint
+   * currently sends no CORS headers, so from a customer's site the request
+   * is always blocked and only produces console errors. Turn on per agent
+   * once the backend allows cross-origin requests to /tools.
+   */
+  clientTools?: boolean;
 };
 
 export const AGNI_COMPANY_CONFIGS: Record<string, AgniCompanyConfig> = {
@@ -182,6 +192,10 @@ interface RetellaiAgentProps {
   botName?: string;
   botIcon?: string | null;
 }
+
+// livekit-client logs at "info" by default (e.g. "disconnect from room"),
+// which prints into the customer's site console. Only surface real problems.
+setLogLevel(LogLevel.warn);
 
 let audioCtx: AudioContext | null = null;
 
@@ -295,7 +309,6 @@ const MicDeniedModal = ({
           <iframe
             src="https://www.youtube.com/embed/vWp-3eZw3WI?autoplay=1&mute=1&controls=0&loop=1&playlist=vWp-3eZw3WI&rel=0&modestbranding=1&showinfo=0&iv_load_policy=3"
             allow="autoplay; encrypted-media"
-            allowFullScreen={false}
             style={{
               position: "absolute",
               top: "-40px",
@@ -651,7 +664,6 @@ const AgniCompanyWidget = ({
     if (onlyOnce.current) return;
     const getWidgetTheme = async () => {
       try {
-        console.log("hello 2222 ")
         const settingsType =
           companyConfig?.settingsType ||
           (agent_type === "thunderemotionlite"
@@ -660,9 +672,7 @@ const AgniCompanyWidget = ({
         const response = await axios.get(
           `${settingsBaseUrl}/api/thunder-widget-settings/${schema}/${agent_id}/?type=${settingsType}`,
         );
-        console.log(response);
         const data = response.data.response;
-        console.log(data)
         setWidgetTheme(data);
         onlyOnce.current = true;
       } catch (error) {
@@ -740,6 +750,8 @@ const AgniCompanyWidget = ({
   const handlerMapRef = useRef<Record<string, (data: RpcInvocationData) => Promise<string>>>({});
 
   useEffect(() => {
+    if (!companyConfig?.clientTools) return;
+
     // Clear on each run so handler logic updates are picked up
     registeredToolsRef.current.clear();
 
@@ -750,7 +762,6 @@ const AgniCompanyWidget = ({
       if (toolName.includes("location")) {
         return async (data) => {
           const params = JSON.parse(data.payload || "{}");
-          console.log(`[${toolName}] params:`, params);
           const position = await new Promise<GeolocationPosition>((resolve, reject) => {
             navigator.geolocation.getCurrentPosition(resolve, reject, {
               enableHighAccuracy: params.high_accuracy ?? false,
@@ -764,11 +775,8 @@ const AgniCompanyWidget = ({
         };
       }
 
-      // Default: log invocation and return empty object
-      return async (data) => {
-        console.log(`[${toolName}] invoked, payload:`, data.payload);
-        return JSON.stringify({});
-      };
+      // Default: no-op that returns an empty object
+      return async () => JSON.stringify({});
     };
 
     const registerClientTools = async () => {
@@ -780,7 +788,6 @@ const AgniCompanyWidget = ({
 
         const tools: Array<{ name: string; type: string }> = res.data.data ?? [];
         const clientTools = tools.filter((t) => t.type === "client");
-        console.log(`[registerClientTools] found ${clientTools.length} client tools:`, clientTools.map((t) => t.name));
 
         for (const clientTool of clientTools) {
           const handler = buildHandler(clientTool.name);
@@ -795,7 +802,6 @@ const AgniCompanyWidget = ({
               }
             });
             registeredToolsRef.current.add(clientTool.name);
-            console.log(`[registerClientTools] registered: ${clientTool.name}`);
           }
           // Always update the live handler so RPC calls use the latest logic
           handlerMapRef.current[clientTool.name] = handler;
@@ -996,9 +1002,7 @@ const AgniCompanyWidget = ({
           "X-Api-Key": agniApiKey
         }
       });
-      console.log("API response:", res);
       const decryptedPayload = res.data.data;
-      console.log(decryptedPayload);
       const accessToken = decryptedPayload.access_token;
       const callId =
         decryptedPayload.call_id || decryptedPayload.room_id || "active";
@@ -1118,7 +1122,6 @@ const AgniCompanyWidget = ({
         Object.entries(formData).forEach(([key, value]) => {
           payload[key] = value;
         });
-        console.log(payload)
         // Send the lead out before starting the call so a slow/failing
         // webhook can't be skipped, but don't await it blocking the call.
         void sendLeadToWebhook(formData);
