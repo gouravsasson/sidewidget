@@ -19,6 +19,7 @@ import {
 import { get, post } from "./api";
 import { btn, surface } from "./styles";
 import { EmptyState } from "./ui";
+import ImportProducts from "./ImportProducts";
 
 const IN_FLIGHT = ["approved", "applying", "undoing"];
 const STATUS: Record<string, string> = {
@@ -278,6 +279,7 @@ export default function Proposals({ onPending }: { onPending?: (ids: string[]) =
           ))}
         </div>
       )}
+      <ImportProducts onDone={() => void load().catch(() => setError("Could not reach Snowie."))} />
       {!loaded && !error && <p className="sr-only">Loading changes…</p>}
       {missing.length > 0 && (
         <Banner icon={<Zap className="h-4 w-4" />} title="Actions are off">

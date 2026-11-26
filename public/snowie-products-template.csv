@@ -1,0 +1,5 @@
+Title,Description,Size,Color,Price,MRP,SKU,Stock,Image URL,Brand,Category,Tags
+Black Hoodie,Soft cotton hoodie,S,Black,1499,1999,BH-S-BLK,10,https://example.com/black-hoodie.jpg,Your Brand,Hoodies,"winter, new"
+Black Hoodie,,M,Black,1499,1999,BH-M-BLK,8,,,,
+Black Hoodie,,L,Black,1599,1999,BH-L-BLK,5,,,,
+Plain White Tee,100% cotton t-shirt,,,499,,TEE-WHT,25,https://example.com/white-tee.jpg,Your Brand,T-shirts,basics

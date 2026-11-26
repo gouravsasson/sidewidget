@@ -19,6 +19,22 @@ export async function get<T>(path: string): Promise<ApiResult<T>> {
   return send<T>(path);
 }
 
+/** A file upload (multipart): the browser sets the boundary, so no Content-Type here. */
+export async function upload<T>(path: string, form: FormData): Promise<ApiResult<T>> {
+  for (let attempt = 0; ; attempt++) {
+    const token = await shopify.idToken();
+    const response = await fetch(`${SNOWIE_API_ORIGIN}${path}`, {
+      method: "POST",
+      credentials: "omit",
+      headers: { Authorization: `Bearer ${token}` },
+      body: form,
+    });
+    if (response.status === 401 && attempt === 0) continue;
+    const data = await response.json().catch(() => ({}));
+    return { status: response.status, data };
+  }
+}
+
 async function send<T>(path: string, body?: object): Promise<ApiResult<T>> {
   for (let attempt = 0; ; attempt++) {
     const token = await shopify.idToken();
